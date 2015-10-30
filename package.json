@@ -1,0 +1,21 @@
+{
+    "name": "weibo-steel",
+    "version": "0.1.0",
+    "main": "Gruntfile.js",
+    "scripts": {
+        "test": "grunt"
+    },
+    "keywords": [
+        "weibo"
+    ],
+    "author": [
+        "weibo"
+    ],
+    "license": "GPL",
+    "devDependencies": {
+        "grunt": "~0.4.2",
+        "grunt-contrib-copy": "0.5.0",
+        "grunt-contrib-uglify": "0.2.7",
+        "grunt-contrib-watch": "0.5.3"
+    }
+}
