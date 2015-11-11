@@ -2,9 +2,9 @@
  * WebApp
  */
 
-!function(window, undefined) {
+! function(window, undefined) {
 
-   
+ 
 var steel = window.steel || {
     v : 0.1,
     t : now()
@@ -77,20 +77,14 @@ function getElementsByTagName( tagName, el ) {
 function now() {
     return Date.now ? Date.now() : +new Date();
 }
-   
+ 
 
 var config_list = [];
 
-config_push(function(config) {
-	if ('debug' in config) {
-		isDebug = config.debug
-	}
-	mainBox = config.mainBox;
-});
-
 steel.config = function(config) {
+  var parseParamFn = config_parseParamFn(config);
   for (var i = 0, l = config_list.length; i < l; ++i) {
-    config_list[i](config);
+    config_list[i](parseParamFn, config);
   }
 };
 
@@ -98,7 +92,15 @@ function config_push(fn) {
   config_list.push(fn);
 }
 
-   //已定义的模块容器
+function config_parseParamFn(config) {
+  return function(key, defaultValue) {
+    if (key in config) {
+      return config[key];
+    }
+    return defaultValue;
+  };
+}
+ //已定义的模块容器
 var require_defineDeps = {};
 var require_defineConstrutors = {};
 
@@ -1150,26 +1152,26 @@ function require_dataMain(){
     var lastScripts = scripts[scripts.length -1];
     require_dataMainId = lastScripts && lastScripts.getAttribute('data-main') || require_dataMainId;
 }
-   
+ 
 
-function loader_config(config) {
-    loader_base_version = config.version;
+function loader_config(parseParamFn) {
+  loader_base_version = parseParamFn('version', loader_base_version);
 }
 
 config_push(loader_config);//暂不做
-   
+ 
 
 var resource_config_slash = '/';
-function resource_config(config) {
-    resource_jsPath = config.jsPath;
-    resource_cssPath = config.cssPath;
-    resource_ajaxPath = config.ajaxPath || resource_config_slash;
-    resource_basePath = config.basePath || resource_config_slash;
-    resource_define_apiRule = config.defApiRule;
+function resource_config(parseParamFn) {
+    resource_jsPath = parseParamFn('jsPath', resource_jsPath);
+    resource_cssPath = parseParamFn('cssPath', resource_cssPath);
+    resource_ajaxPath = parseParamFn('ajaxPath', resource_ajaxPath);
+    resource_basePath = parseParamFn('basePath', resource_config_slash);
+    resource_define_apiRule = parseParamFn('defApiRule', resource_define_apiRule);
 }
 
 config_push(resource_config);
-   /**
+ /**
  * 公共对象方法定义文件
  */
 
@@ -2131,7 +2133,7 @@ function render_run(box, controller) {
         controller(control, render_run_rootScope);
     }
 }
-   /**
+ /**
  * 路由变量定义区
  *
  */
@@ -2157,14 +2159,11 @@ var router_base_params = {
 
 config_push(router_config);
 
-function router_config(config) {
-    if (config.router) {
-        router_base_routerTable = config.router;
-        router_base_useHash = config.useHash || router_base_useHash;
-        router_base_singlePage = (config.singlePage !== router_base_singlePage ? config.singlePage : router_base_singlePage);
-    }
-}
-/**
+function router_config(parseParamFn, config) {
+  router_base_routerTable = parseParamFn('router', router_base_routerTable);
+  router_base_useHash = parseParamFn('useHash', router_base_useHash);
+  router_base_singlePage = parseParamFn('singlePage', router_base_singlePage);
+}/**
  * router.getPath
  * 获取当前路由path，支持H5的history和非H5的hash两种方式
  * @return path String
@@ -2829,8 +2828,8 @@ var router_api = {
 function router_get() {
     return router_base_params;
 }
-   
-   /**
+ 
+ /**
  * 日志
  */
 
@@ -2845,44 +2844,47 @@ function core_log() {
 	}
 	new Function('console.log(' + evalString.join(',') + ')').apply(this, arguments);
 }
-    //初始化data-main
-    
-    require_dataMain();
-    steel.d = require_define; 
-    steel.res = resource_res;
-    steel.run =  render_run;
-    steel.router = router_api;
-    steel.setRouter = steel.router.set;
-    steel.on = core_notice_on;
-    steel.setExtTplData = render_control_setExtTplData;
-    
-    steel.boot = function(ns) {
-        steel.isDebug = isDebug;
-        setTimeout(function() {
-            require_boot(ns);
-            router_boot();
-            if (mainBox) {
-                var controller = router_match(location.toString());
-                if (controller !== false) {
-                    render_run(mainBox, controller);
-                    core_notice_fire('stageChange', mainBox);
-                }
-            }
-        });
-    };
 
-    steel._destroyByNode = function(node) {
-        var id = node && node.id;
-        var resContainer;
-        if (id && (resContainer = render_base_resContainer[id])) {
-            render_control_destroyLogic(resContainer);
-            render_control_destroyChildren(resContainer.toDestroyChildrenid);
+  config_push(function(parseParamFn) {
+    isDebug = parseParamFn('debug', isDebug);
+    mainBox = parseParamFn('mainBox', mainBox);
+  });
+
+  //初始化data-main
+  require_dataMain();
+  steel.d = require_define;
+  steel.res = resource_res;
+  steel.run = render_run;
+  steel.router = router_api;
+  steel.setRouter = steel.router.set;
+  steel.on = core_notice_on;
+  steel.setExtTplData = render_control_setExtTplData;
+
+  steel.boot = function(ns) {
+    steel.isDebug = isDebug;
+    setTimeout(function() {
+      require_boot(ns);
+      router_boot();
+      if (mainBox) {
+        var controller = router_match(location.toString());
+        if (controller !== false) {
+          render_run(mainBox, controller);
+          core_notice_fire('stageChange', mainBox);
         }
-    };
+      }
+    });
+  };
 
-    window.steel = steel;
+  steel._destroyByNode = function(node) {
+    var id = node && node.id;
+    var resContainer;
+    if (id && (resContainer = render_base_resContainer[id])) {
+      render_control_destroyLogic(resContainer);
+      render_control_destroyChildren(resContainer.toDestroyChildrenid);
+    }
+  };
+
+  window.steel = steel;
 
 
 }(window);
- 
-
