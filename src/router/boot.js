@@ -17,7 +17,8 @@ function router_boot(){
                 log('Error: redundant "," in router of steel.config');
             }
         }
-        router_use(items[0], items[1]);
+        //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
+        isHTML5 && router_base_singlePage && router_use(items[0], items[1]);
     }
     router_listen();
 }
