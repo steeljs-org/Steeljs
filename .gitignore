@@ -3,3 +3,9 @@
 
 #sublime
 sftp-config.json
+
+#node
+node_modules
+
+#rainer800
+distToDemo.sh
