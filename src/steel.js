@@ -27,6 +27,7 @@
   steel.router = router_api;
   steel.setRouter = steel.router.set;
   steel.on = core_notice_on;
+  steel.off = core_notice_off;
   steel.setExtTplData = render_control_setExtTplData;
 
   steel.boot = function(ns) {
