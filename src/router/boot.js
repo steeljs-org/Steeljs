@@ -12,13 +12,8 @@
 function router_boot(){
     for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
         var items = router_base_routerTable[i];
-        if (steel.isDebug) {
-            if (!items) {//IE8下若路由表中，用户不小心多写逗号，给出log提示
-                log('Error: redundant "," in router of steel.config');
-            }
-        }
-        //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
-        isHTML5 && router_base_singlePage && router_use(items[0], items[1]);
+        router_use(items[0], items[1]);
     }
-    router_listen();
+    //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
+    isHTML5 && router_base_singlePage && router_listen();
 }
