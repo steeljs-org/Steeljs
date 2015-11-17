@@ -1,7 +1,7 @@
 //import ./base
 //import ./error
 //import ./control/main
-//import ../core/dom/querySelectorAll
+/////import ../core/dom/querySelectorAll
 //import core/notice
 
 var render_run_controllerLoadFn = {};
@@ -29,7 +29,7 @@ function render_run(box, controller) {
         var parentResContainer;
         while(parentNode && parentNode !== docElem && (!parentNode.id || !(parentResContainer = render_base_resContainer[parentNode.id]))) {
             parentNode = parentNode.parentNode;
-        } 
+        }
         if (parentResContainer) {
             parentResContainer.childrenid[boxId] = true;
         }
@@ -46,7 +46,7 @@ function render_run(box, controller) {
                     ctrlNS: controllerNs
                 });
                 render_run_controllerLoadFn[boxId] = undefined;
-                render_run(boxId, controller)
+                render_run(boxId, controller);
             }
         };
         startTime = new Date;
