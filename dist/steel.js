@@ -395,8 +395,10 @@ var resource_cache_list = {};/*
 
 
 function core_fixUrl(baseUrl, path) {
+    baseUrl = baseUrl || location.href;
     var baseUrlJson = core_parseURL(baseUrl);
     var origin = baseUrlJson.scheme + '://' + baseUrlJson.host;
+    origin += baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port);
     var originPath = origin + '/';
     var basePath = baseUrl.slice(0, baseUrl.lastIndexOf('/') + 1);
 
@@ -407,23 +409,25 @@ function core_fixUrl(baseUrl, path) {
         return 'http:';
     }
     if (path === 'http:') {
-        return location.href;
+        return baseUrl;
     }
     if(path === 'http:/' || path === '/'){
         return originPath;
     }
-    if (path === '.') {
-        return basePath;
+    if (path === '.' || path === '') {
+        return baseUrl;
     }
     if (path.indexOf('./') === 0) {
         path = path.replace(/^\.\//, '');
         return basePath + path;
     }
     if (path === '..') {
-        // return 
         path = path.replace(/\.\./, '');
         basePath = core_fixUrl_handleTwoDots(basePath);
         return basePath + path;
+    }
+    if (/^\?/.test(path)) {
+        return origin + baseUrlJson.path + path;
     }
     if (/^\/[^\/]+/.test(path)) {
         return origin + path;
@@ -2117,7 +2121,12 @@ var router_base_singlePage = true;
 var router_base_params = {
     params:{}, 
     query:{}
-};/**
+};
+
+var router_base_routerType = 'init';
+var router_base_prevHref;
+var router_base_currentHref = location.toString();
+/**
  * 路由配置
  */
 
@@ -2237,6 +2246,8 @@ function router_getPath(url){
     router_base_params.path = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
     router_base_params.search = router_base_params.query;
     router_base_params.query = core_queryToJson(router_base_params.query);
+    router_base_params.type = router_base_routerType;
+    router_base_params.prev = router_base_prevHref;
 
     return router_base_params.path;
 }
@@ -2382,8 +2393,6 @@ function core_event_preventDefault( event ) {
 var router_listen_queryTime = 5;
 var router_listen_count;
 var router_listen_lastStateData = undefined;
-var router_listen_stateChangeType = 'init';
-var router_listen_lastHref = location.toString();
 
 function router_listen() {
     router_listen_lastStateData = history.state || 0;
@@ -2419,37 +2428,23 @@ function router_listen() {
     var popstateTime = 0;
     core_event_addEventListener(window, 'popstate', function() {
         if (router_listen_lastStateData > (history.state || 0)) {
-            router_listen_stateChangeType = 'back';
+            router_base_routerType = 'back';
         } else {
-            router_listen_stateChangeType = 'forward';
+            router_base_routerType = 'forward';
         }
         router_listen_lastStateData = history.state || 0;
         //router_match 如果有结果controller render_run(mainBox, controller);
         //                如果没有location.reload();
         var href = location.href;
-        if (popstateTime === 0 && router_listen_lastHref === href) {
+        if (popstateTime === 0 && router_base_currentHref === href) {
             return;
         }
-        router_listen_lastHref = href;
         router_listen_handleHrefChenged(href);
     });
     setTimeout(function() {
         popstateTime = 1;
     }, 1000);
     //popstate 事件在第一次被绑定时也会触发，但不是100%，所以加了个延时
-    // core_dom_ready(function() {
-    //     setTimeout(function() {
-    //         //绑定地址变化 前进后退
-    //         core_event_addEventListener(window, 'popstate', function() {
-    //             //router_match 如果有结果controller render_run(mainBox, controller);
-    //             //                如果没有location.reload();
-    //             var href = location.href;
-    //             router_listen_lastHref = href;
-    //             router_listen_handleHrefChenged(href);
-    //         });
-    //     }, 1000);
-    // });
-        
 }
 
 function router_listen_getHrefNode(el) {
@@ -2463,12 +2458,14 @@ function router_listen_getHrefNode(el) {
 }
 
 function router_listen_handleHrefChenged(url, urlmatch) {
+    router_base_prevHref = router_base_currentHref;
+    router_base_currentHref = url;
     var controller = urlmatch || router_match(url);
     if (controller !== false) {
         //派发routerChange事件，返回router变化数据 @shaobo3
         core_notice_fire('routerChange', {
             matchResult: controller,
-            changeType:router_listen_stateChangeType
+            changeType:router_base_routerType
         });
     } else {
         location.reload();
@@ -2477,19 +2474,17 @@ function router_listen_handleHrefChenged(url, urlmatch) {
 
 function router_listen_pushState(url, urlmatch) {
     url = router_listen_getFixUrl(url);
-    if (router_listen_lastHref !== url) {
-        router_listen_stateChangeType = 'forward';
+    if (router_base_currentHref !== url) {
+        router_base_routerType = 'forward';
         history.pushState(++router_listen_lastStateData, null, url);
     } else {
-        router_listen_stateChangeType = 'refresh';
+        router_base_routerType = 'refresh';
     }
-    router_listen_lastHref = url;
     router_listen_handleHrefChenged(url, urlmatch || router_match(url));
 }
 
 function router_listen_replaceState(url, urlmatch) {
-    router_listen_stateChangeType = 'replace';
-    router_listen_lastHref = url;
+    router_base_routerType = 'replace';
     history.replaceState(router_listen_lastStateData, null, url);
     router_listen_handleHrefChenged(url, urlmatch || router_match(url));
 }
@@ -2858,7 +2853,7 @@ function core_log() {
     window.scrollTo(0, 0);
     render_run(mainBox, controller);
     core_notice_fire('stageChange', mainBox);
-    console.log("routerChange", mainBox, controller, changeType);
+    core_log("routerChange", mainBox, controller, changeType);
   });
 
   window.steel = steel;
