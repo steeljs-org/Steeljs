@@ -59,7 +59,7 @@
     window.scrollTo(0, 0);
     render_run(mainBox, controller);
     core_notice_fire('stageChange', mainBox);
-    console.log("routerChange", mainBox, controller, changeType);
+    core_log("routerChange", mainBox, controller, changeType);
   });
 
   window.steel = steel;
