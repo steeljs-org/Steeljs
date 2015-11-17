@@ -154,7 +154,7 @@ function require_nameToPath(name){
 	}
  */
 function core_parseURL( url ) {
-	var parse_url = /^(?:([A-Za-z]+):(\/{0,3}))?([0-9.\-A-Za-z]+\.[0-9A-Za-z]+)?(?::(\d+))?(?:(\/[^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
+	var parse_url = /^(?:([A-Za-z]+):(\/{0,3}))?([0-9.\-A-Za-z-]+)?(?::(\d+))?(?:(\/[^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
     var names = [ "url", "scheme", "slash", "host", "port", "path", "query", "hash" ];
     var results = parse_url.exec(url);
     var retJson = {};
@@ -164,6 +164,7 @@ function core_parseURL( url ) {
         }
         retJson[names[i]] = results[i] || "";
     }
+    retJson.port = parseInt(retJson.port || 80);
     return retJson;
 }
 /*
@@ -2008,10 +2009,10 @@ function render_control_main(boxId, controllerNs) {
                 resContainer.dataReady = false;
             }
             if (cssChanged) {
-                resContainer.cssReady = false; 
+                resContainer.cssReady = false;
             }
             if (logicChanged) {
-                resContainer.logicReady = false; 
+                resContainer.logicReady = false;
             }
 
             !resContainer.tpl && delete resContainer.tplFn;
@@ -2024,45 +2025,8 @@ function render_control_main(boxId, controllerNs) {
             resContainer.childrenChanged && render_control_setChildren(resContainer);
         });
     }
-}/**
- * querySelectorAll
- * 在非h5下目前只支持标签名和属性选择如div[id=fsd],属性值不支持通配符
- */
-
-var core_dom_querySelectorAll_REG1 = /([^\[]*)(?:\[([^\]=]*)=?['"]?([^\]]*?)['"]?\])?/;
-
-function core_dom_querySelectorAll(dom, select) {
-	var result;
-	var matchResult;
-	var matchTag;
-	var matchAttrName;
-	var matchAttrValue;
-	var elements;
-	var elementAttrValue;
-	if (dom.querySelectorAll) {
-		result = dom.querySelectorAll(select);
-	} else {
-		if (matchResult = select.match(core_dom_querySelectorAll_REG1)) {
-			matchTag = matchResult[1];
-			matchAttrName = matchResult[2];
-			matchAttrValue = matchResult[3];
-			result = getElementsByTagName(matchTag || '*', dom);
-			if (matchAttrName) {
-				elements = result;
-				result = [];
-				for (var i = 0, l = elements.length; i < l; ++i) {
-					elementAttrValue = elements[i].getAttribute(matchAttrName);
-					if (elementAttrValue !== null && (!matchAttrValue || elementAttrValue === matchAttrValue)) {
-						result.push(elements[i])
-					}
-				}
-			}
-		}
-	}
-	return result || [];
 }
-
-
+/////import ../core/dom/querySelectorAll
 
 var render_run_controllerLoadFn = {};
 var render_run_rootScope = {};
@@ -2089,7 +2053,7 @@ function render_run(box, controller) {
         var parentResContainer;
         while(parentNode && parentNode !== docElem && (!parentNode.id || !(parentResContainer = render_base_resContainer[parentNode.id]))) {
             parentNode = parentNode.parentNode;
-        } 
+        }
         if (parentResContainer) {
             parentResContainer.childrenid[boxId] = true;
         }
@@ -2106,7 +2070,7 @@ function render_run(box, controller) {
                     ctrlNS: controllerNs
                 });
                 render_run_controllerLoadFn[boxId] = undefined;
-                render_run(boxId, controller)
+                render_run(boxId, controller);
             }
         };
         startTime = new Date;
@@ -2415,7 +2379,7 @@ function core_event_preventDefault( event ) {
 }
 
 
-var router_listen_queryTime = 3;
+var router_listen_queryTime = 5;
 var router_listen_count;
 var router_listen_lastStateData = undefined;
 var router_listen_stateChangeType = 'init';
@@ -2445,7 +2409,7 @@ function router_listen() {
             return;
         }
         //如果A连接有target=_blank或者用户同时按下command(新tab打开)、ctrl(新tab打开)、alt(下载)、shift(新窗口打开)键时，直接跳链。
-        //@shaobo3
+        //@shaobo3  （此处可以优化性能@Finrila）
         if (hrefNode.getAttribute("target") === "_blank" || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
             return;
         }
@@ -2460,8 +2424,6 @@ function router_listen() {
             router_listen_stateChangeType = 'forward';
         }
         router_listen_lastStateData = history.state || 0;
-        //派发routerChange事件，返回router变化数据 @shaobo3
-        core_notice_fire('routerChange', {changeType:router_listen_stateChangeType});
         //router_match 如果有结果controller render_run(mainBox, controller);
         //                如果没有location.reload();
         var href = location.href;
@@ -2491,9 +2453,9 @@ function router_listen() {
 }
 
 function router_listen_getHrefNode(el) {
-    if(el && router_listen_count < router_listen_queryTime){
+    if(el && router_listen_count < router_listen_queryTime) {
         router_listen_count++;
-        if (el.tagName && el.tagName === 'A' && /^http/.test(el.href)) {
+        if (el.tagName && el.tagName.toLowerCase() === 'a' && /^http/.test(el.href)) {
             return el;
         }
         return router_listen_getHrefNode(el.parentNode);
@@ -2503,22 +2465,17 @@ function router_listen_getHrefNode(el) {
 function router_listen_handleHrefChenged(url, urlmatch) {
     var controller = urlmatch || router_match(url);
     if (controller !== false) {
-        window.scrollTo(0, 0);
-        render_run(mainBox, controller);
-        core_notice_fire('stageChange', mainBox);
+        //派发routerChange事件，返回router变化数据 @shaobo3
+        core_notice_fire('routerChange', {
+            matchResult: controller,
+            changeType:router_listen_stateChangeType
+        });
     } else {
         location.reload();
     }
 }
 
 function router_listen_pushState(url, urlmatch) {
-    /*if (!/^http/.test(url)) {
-        if (/^\//.test(url)) {
-            url = 'http://' + location.host + url;
-        } else {
-            throw new Error('url error:' + url);
-        }
-    }*/
     url = router_listen_getFixUrl(url);
     if (router_listen_lastHref !== url) {
         router_listen_stateChangeType = 'forward';
@@ -2527,11 +2484,17 @@ function router_listen_pushState(url, urlmatch) {
         router_listen_stateChangeType = 'refresh';
     }
     router_listen_lastHref = url;
-    // render_run(router_base_mainBox, router_match(href));
     router_listen_handleHrefChenged(url, urlmatch || router_match(url));
 }
 
-function router_listen_setRouter(url) {
+function router_listen_replaceState(url, urlmatch) {
+    router_listen_stateChangeType = 'replace';
+    router_listen_lastHref = url;
+    history.replaceState(router_listen_lastStateData, null, url);
+    router_listen_handleHrefChenged(url, urlmatch || router_match(url));
+}
+
+function router_listen_setRouter(url, replace) {
     var basePath = location.href;
     url = core_fixUrl(basePath, url);
     var urlmatch = router_match(url);
@@ -2542,7 +2505,11 @@ function router_listen_setRouter(url) {
 			location.href = url;
 			return;
 		}
-		router_listen_pushState(url, urlmatch);
+        if (replace) {
+            router_listen_replaceState(url, urlmatch);
+        } else {
+            router_listen_pushState(url, urlmatch);
+        }
     }
 }
 
@@ -2813,15 +2780,10 @@ function router_use(path, controller) {
 function router_boot(){
     for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
         var items = router_base_routerTable[i];
-        if (steel.isDebug) {
-            if (!items) {//IE8下若路由表中，用户不小心多写逗号，给出log提示
-                log('Error: redundant "," in router of steel.config');
-            }
-        }
-        //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
-        isHTML5 && router_base_singlePage && router_use(items[0], items[1]);
+        router_use(items[0], items[1]);
     }
-    router_listen();
+    //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
+    isHTML5 && router_base_singlePage && router_listen();
 }
 //router资源
 
@@ -2877,7 +2839,7 @@ function core_log() {
         if (controller !== false) {
           render_run(mainBox, controller);
           core_notice_fire('stageChange', mainBox);
-        }
+        } 
       }
     });
   };
@@ -2890,6 +2852,14 @@ function core_log() {
       render_control_destroyChildren(resContainer.toDestroyChildrenid);
     }
   };
+  core_notice_on('routerChange', function(res) {
+    var controller = res.matchResult;
+    var changeType = res.changeType;
+    window.scrollTo(0, 0);
+    render_run(mainBox, controller);
+    core_notice_fire('stageChange', mainBox);
+    console.log("routerChange", mainBox, controller, changeType);
+  });
 
   window.steel = steel;
 
