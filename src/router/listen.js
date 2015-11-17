@@ -7,7 +7,7 @@
 //import core/notice
 //import core/fixUrl
 
-var router_listen_queryTime = 3;
+var router_listen_queryTime = 5;
 var router_listen_count;
 var router_listen_lastStateData = undefined;
 var router_listen_stateChangeType = 'init';
@@ -37,7 +37,7 @@ function router_listen() {
             return;
         }
         //如果A连接有target=_blank或者用户同时按下command(新tab打开)、ctrl(新tab打开)、alt(下载)、shift(新窗口打开)键时，直接跳链。
-        //@shaobo3
+        //@shaobo3  （此处可以优化性能@Finrila）
         if (hrefNode.getAttribute("target") === "_blank" || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
             return;
         }
@@ -52,8 +52,6 @@ function router_listen() {
             router_listen_stateChangeType = 'forward';
         }
         router_listen_lastStateData = history.state || 0;
-        //派发routerChange事件，返回router变化数据 @shaobo3
-        core_notice_fire('routerChange', {changeType:router_listen_stateChangeType});
         //router_match 如果有结果controller render_run(mainBox, controller);
         //                如果没有location.reload();
         var href = location.href;
@@ -83,9 +81,9 @@ function router_listen() {
 }
 
 function router_listen_getHrefNode(el) {
-    if(el && router_listen_count < router_listen_queryTime){
+    if(el && router_listen_count < router_listen_queryTime) {
         router_listen_count++;
-        if (el.tagName && el.tagName === 'A' && /^http/.test(el.href)) {
+        if (el.tagName && el.tagName.toLowerCase() === 'a' && /^http/.test(el.href)) {
             return el;
         }
         return router_listen_getHrefNode(el.parentNode);
@@ -95,22 +93,17 @@ function router_listen_getHrefNode(el) {
 function router_listen_handleHrefChenged(url, urlmatch) {
     var controller = urlmatch || router_match(url);
     if (controller !== false) {
-        window.scrollTo(0, 0);
-        render_run(mainBox, controller);
-        core_notice_fire('stageChange', mainBox);
+        //派发routerChange事件，返回router变化数据 @shaobo3
+        core_notice_fire('routerChange', {
+            matchResult: controller,
+            changeType:router_listen_stateChangeType
+        });
     } else {
         location.reload();
     }
 }
 
 function router_listen_pushState(url, urlmatch) {
-    /*if (!/^http/.test(url)) {
-        if (/^\//.test(url)) {
-            url = 'http://' + location.host + url;
-        } else {
-            throw new Error('url error:' + url);
-        }
-    }*/
     url = router_listen_getFixUrl(url);
     if (router_listen_lastHref !== url) {
         router_listen_stateChangeType = 'forward';
@@ -119,11 +112,17 @@ function router_listen_pushState(url, urlmatch) {
         router_listen_stateChangeType = 'refresh';
     }
     router_listen_lastHref = url;
-    // render_run(router_base_mainBox, router_match(href));
     router_listen_handleHrefChenged(url, urlmatch || router_match(url));
 }
 
-function router_listen_setRouter(url) {
+function router_listen_replaceState(url, urlmatch) {
+    router_listen_stateChangeType = 'replace';
+    router_listen_lastHref = url;
+    history.replaceState(router_listen_lastStateData, null, url);
+    router_listen_handleHrefChenged(url, urlmatch || router_match(url));
+}
+
+function router_listen_setRouter(url, replace) {
     var basePath = location.href;
     url = core_fixUrl(basePath, url);
     var urlmatch = router_match(url);
@@ -134,7 +133,11 @@ function router_listen_setRouter(url) {
 			location.href = url;
 			return;
 		}
-		router_listen_pushState(url, urlmatch);
+        if (replace) {
+            router_listen_replaceState(url, urlmatch);
+        } else {
+            router_listen_pushState(url, urlmatch);
+        }
     }
 }
 
