@@ -8,8 +8,10 @@
 //import core/parseURL
 
 function core_fixUrl(baseUrl, path) {
+    baseUrl = baseUrl || location.href;
     var baseUrlJson = core_parseURL(baseUrl);
     var origin = baseUrlJson.scheme + '://' + baseUrlJson.host;
+    origin += baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port);
     var originPath = origin + '/';
     var basePath = baseUrl.slice(0, baseUrl.lastIndexOf('/') + 1);
 
@@ -20,23 +22,25 @@ function core_fixUrl(baseUrl, path) {
         return 'http:';
     }
     if (path === 'http:') {
-        return location.href;
+        return baseUrl;
     }
     if(path === 'http:/' || path === '/'){
         return originPath;
     }
-    if (path === '.') {
-        return basePath;
+    if (path === '.' || path === '') {
+        return baseUrl;
     }
     if (path.indexOf('./') === 0) {
         path = path.replace(/^\.\//, '');
         return basePath + path;
     }
     if (path === '..') {
-        // return 
         path = path.replace(/\.\./, '');
         basePath = core_fixUrl_handleTwoDots(basePath);
         return basePath + path;
+    }
+    if (/^\?/.test(path)) {
+        return origin + baseUrlJson.path + path;
     }
     if (/^\/[^\/]+/.test(path)) {
         return origin + path;
