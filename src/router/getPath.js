@@ -29,6 +29,8 @@ function router_getPath(url){
     router_base_params.path = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
     router_base_params.search = router_base_params.query;
     router_base_params.query = core_queryToJson(router_base_params.query);
+    router_base_params.type = router_base_routerType;
+    router_base_params.prev = router_base_prevHref;
 
     return router_base_params.path;
 }
