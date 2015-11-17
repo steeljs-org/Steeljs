@@ -17,7 +17,7 @@
 	}
  */
 function core_parseURL( url ) {
-	var parse_url = /^(?:([A-Za-z]+):(\/{0,3}))?([0-9.\-A-Za-z]+\.[0-9A-Za-z]+)?(?::(\d+))?(?:(\/[^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
+	var parse_url = /^(?:([A-Za-z]+):(\/{0,3}))?([0-9.\-A-Za-z-]+)?(?::(\d+))?(?:(\/[^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
     var names = [ "url", "scheme", "slash", "host", "port", "path", "query", "hash" ];
     var results = parse_url.exec(url);
     var retJson = {};
@@ -27,5 +27,6 @@ function core_parseURL( url ) {
         }
         retJson[names[i]] = results[i] || "";
     }
+    retJson.port = parseInt(retJson.port || 80);
     return retJson;
 }
