@@ -40,7 +40,7 @@
         if (controller !== false) {
           render_run(mainBox, controller);
           core_notice_fire('stageChange', mainBox);
-        }
+        } 
       }
     });
   };
@@ -53,6 +53,14 @@
       render_control_destroyChildren(resContainer.toDestroyChildrenid);
     }
   };
+  core_notice_on('routerChange', function(res) {
+    var controller = res.matchResult;
+    var changeType = res.changeType;
+    window.scrollTo(0, 0);
+    render_run(mainBox, controller);
+    core_notice_fire('stageChange', mainBox);
+    console.log("routerChange", mainBox, controller, changeType);
+  });
 
   window.steel = steel;
 
