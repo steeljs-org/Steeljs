@@ -2013,10 +2013,10 @@ function render_control_main(boxId, controllerNs) {
                 resContainer.dataReady = false;
             }
             if (cssChanged) {
-                resContainer.cssReady = false;
+                resContainer.cssReady = false; 
             }
             if (logicChanged) {
-                resContainer.logicReady = false;
+                resContainer.logicReady = false; 
             }
 
             !resContainer.tpl && delete resContainer.tplFn;
@@ -2792,21 +2792,6 @@ function router_get() {
     return router_base_params;
 }
  
- /**
- * 日志
- */
-
-function core_log() {
-	var console = window.console;
-	if (!isDebug || !console) {
-		return;
-	}
-	var evalString = [];
-	for (var i = 0, l = arguments.length; i < l; ++i) {
-		evalString.push('arguments[' + i + ']');
-	}
-	new Function('console.log(' + evalString.join(',') + ')').apply(this, arguments);
-}
 
   config_push(function(parseParamFn) {
     isDebug = parseParamFn('debug', isDebug);
@@ -2853,7 +2838,7 @@ function core_log() {
     window.scrollTo(0, 0);
     render_run(mainBox, controller);
     core_notice_fire('stageChange', mainBox);
-    core_log("routerChange", mainBox, controller, changeType);
+    log("routerChange", mainBox, controller, changeType);
   });
 
   window.steel = steel;
