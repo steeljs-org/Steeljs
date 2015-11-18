@@ -12,7 +12,6 @@
   //import render/index
   //import router/index
   //import core/notice
-  //import core/log
 
   config_push(function(parseParamFn) {
     isDebug = parseParamFn('debug', isDebug);
@@ -59,7 +58,7 @@
     window.scrollTo(0, 0);
     render_run(mainBox, controller);
     core_notice_fire('stageChange', mainBox);
-    core_log("routerChange", mainBox, controller, changeType);
+    log("routerChange", mainBox, controller, changeType);
   });
 
   window.steel = steel;
