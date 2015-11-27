@@ -17,17 +17,11 @@ function router_listen() {
     core_event_addEventListener(document, 'click', function(e) {
         //e.target 是a 有.href　下一步，或者不是a e.target.parentNode
         //向上查找三层，找到带href属性的节点，如果没有找到放弃，找到后继续
-        //router_match 如果有匹配结果，那么要阻止默认行为、当地址变化了的时候假写地址栏history.pushState、render_run(mainBox, match result)
-        //                如果没有匹配到结果放弃
         var el = e.target;
         router_listen_count = 1;
         var hrefNode = router_listen_getHrefNode(el);
         var href = hrefNode && hrefNode.href;
-        var urlmatch = router_match(href);
-        if (hrefNode && hrefNode.getAttribute('href').trim() === ''){
-            location.reload();
-        }
-        if (!href || urlmatch === false) {
+        if (!href) {
             return;
         }
         if (android && history.length === 1) {
@@ -40,7 +34,7 @@ function router_listen() {
             return;
         }
         core_event_preventDefault(e);
-        router_listen_pushState(href, urlmatch);
+        router_listen_pushState(href);
     });
     var popstateTime = 0;
     core_event_addEventListener(window, 'popstate', function() {
@@ -50,8 +44,6 @@ function router_listen() {
             router_base_routerType = 'forward';
         }
         router_listen_lastStateData = history.state || 0;
-        //router_match 如果有结果controller render_run(mainBox, controller);
-        //                如果没有location.reload();
         var href = location.href;
         if (popstateTime === 0 && router_base_currentHref === href) {
             return;
@@ -74,10 +66,10 @@ function router_listen_getHrefNode(el) {
     }
 }
 
-function router_listen_handleHrefChenged(url, urlmatch) {
+function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
     router_base_currentHref = url;
-    var controller = urlmatch || router_match(url);
+    var controller = router_match(url);
     if (controller !== false) {
         //派发routerChange事件，返回router变化数据 @shaobo3
         core_notice_fire('routerChange', {
@@ -89,38 +81,39 @@ function router_listen_handleHrefChenged(url, urlmatch) {
     }
 }
 
-function router_listen_pushState(url, urlmatch) {
+function router_listen_pushState(url) {
     url = router_listen_getFixUrl(url);
     if (router_base_currentHref !== url) {
-        router_base_routerType = 'forward';
+        router_base_routerType = 'new';
         history.pushState(++router_listen_lastStateData, null, url);
     } else {
         router_base_routerType = 'refresh';
     }
-    router_listen_handleHrefChenged(url, urlmatch || router_match(url));
+    router_listen_handleHrefChenged(url);
 }
 
-function router_listen_replaceState(url, urlmatch) {
+function router_listen_replaceState(url) {
     router_base_routerType = 'replace';
     history.replaceState(router_listen_lastStateData, null, url);
-    router_listen_handleHrefChenged(url, urlmatch || router_match(url));
+    router_listen_handleHrefChenged(url);
 }
 
 function router_listen_setRouter(url, replace) {
     var basePath = location.href;
+
     url = core_fixUrl(basePath, url);
-    var urlmatch = router_match(url);
+
     if (!url) {
         location.reload();
     } else {// && history.length === 1
-		if (!urlmatch || (android && history.length === 1)) {
-			location.href = url;
-			return;
-		}
+        if (android && history.length === 1) {
+            location.href = url;
+            return;
+        }
         if (replace) {
-            router_listen_replaceState(url, urlmatch);
+            router_listen_replaceState(url);
         } else {
-            router_listen_pushState(url, urlmatch);
+            router_listen_pushState(url);
         }
     }
 }
