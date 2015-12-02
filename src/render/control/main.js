@@ -74,10 +74,12 @@ function render_control_main(boxId, controllerNs) {
         },
         _refresh: function() {
             resContainer.needToTriggerChildren = true;
+            resContainer.real_data = undefined;
             changeResList['data'] = true;
             toDoSets();
         },
         _destroy: function() {
+            resContainer.real_data = undefined;
             boxId = control._controller = resContainer = box = toDoSetsTimer = undefined;
         }
     };
