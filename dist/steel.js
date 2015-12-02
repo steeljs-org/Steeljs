@@ -2388,7 +2388,7 @@ function core_event_preventDefault( event ) {
 		event.returnValue = false;
 	}
 }
-
+
 
 var router_listen_queryTime = 5;
 var router_listen_count;
@@ -2407,17 +2407,13 @@ function router_listen() {
         if (!href) {
             return;
         }
-        if (android && history.length === 1) {
-            location.href = href;
-            return;
-        }
         //如果A连接有target=_blank或者用户同时按下command(新tab打开)、ctrl(新tab打开)、alt(下载)、shift(新窗口打开)键时，直接跳链。
         //@shaobo3  （此处可以优化性能@Finrila）
         if (hrefNode.getAttribute("target") === "_blank" || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
             return;
         }
         core_event_preventDefault(e);
-        router_listen_pushState(href);
+        router_listen_setRouter(href);
     });
     var popstateTime = 0;
     core_event_addEventListener(window, 'popstate', function() {
@@ -2464,53 +2460,41 @@ function router_listen_handleHrefChenged(url) {
     }
 }
 
-function router_listen_pushState(url) {
-    url = router_listen_getFixUrl(url);
-    if (router_base_currentHref !== url) {
-        router_base_routerType = 'new';
-        history.pushState(++router_listen_lastStateData, null, url);
-    } else {
-        router_base_routerType = 'refresh';
-    }
-    router_listen_handleHrefChenged(url);
-}
-
-function router_listen_replaceState(url) {
-    router_base_routerType = 'replace';
-    history.replaceState(router_listen_lastStateData, null, url);
-    router_listen_handleHrefChenged(url);
-}
-
 function router_listen_setRouter(url, replace) {
     var basePath = location.href;
-
     url = core_fixUrl(basePath, url);
-
-    if (!url) {
-        location.reload();
-    } else {// && history.length === 1
-        if (android && history.length === 1) {
-            location.href = url;
-            return;
-        }
+    
+    if (android && history.length === 1 || !router_listen_crossDomainCheck(url)) {
         if (replace) {
-            router_listen_replaceState(url);
+            location.replace(url);
         } else {
-            router_listen_pushState(url);
+            location.href = url;
         }
+    } else {
+        if (replace) {
+            outer_base_routerType = 'replace';
+            history.replaceState(router_listen_lastStateData, null, url);
+        } else {
+            if (router_base_currentHref !== url) {
+                router_base_routerType = 'new';
+                history.pushState(++router_listen_lastStateData, null, url);
+            } else {
+                router_base_routerType = 'refresh';
+            }
+        }
+        router_listen_handleHrefChenged(url);
     }
 }
 
-function router_listen_getFixUrl(url) {
-    if (!/^http/.test(url)) {
-        if (/^\//.test(url)) {
-            url = 'http://' + location.host + url;
-        } else {
-            throw new Error('url error:' + url);
-        }
-    }
-    return url;
-}/**
+function router_listen_crossDomainCheck(url) {
+    var urlPreReg = /^[^:]+:\/\/[^\/]+\//;
+    var locationMatch = location.href.match(urlPreReg);
+    var urlMatch = url.match(urlPreReg);
+    return (locationMatch && locationMatch[0]) === (urlMatch && urlMatch[0]);
+}
+
+
+/**
  * 路由启动接口
  * 1、设置侦听
  * 2、主动响应第一次的url(第一次是由后端渲染的，如果没有真实文件，无法启动页面)
