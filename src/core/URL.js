@@ -106,8 +106,8 @@ function core_URL(sURL,args){
         var url = [];
         var query = core_jsonToQuery(query_json, opts.isEncodeQuery);
         var hash = core_jsonToQuery(hash_json, opts.isEncodeQuery);
-        if (url_json.scheme != '') {
-            url.push(url_json.scheme + ':');
+        if (url_json.protocol) {
+            url.push(url_json.protocol);
             url.push(url_json.slash);
         }
         if (url_json.host != '') {

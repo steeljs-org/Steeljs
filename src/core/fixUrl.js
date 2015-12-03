@@ -8,23 +8,27 @@
 //import core/parseURL
 
 function core_fixUrl(baseUrl, path) {
-    baseUrl = baseUrl || location.href;
+    baseUrl = baseUrl || '.';
     var baseUrlJson = core_parseURL(baseUrl);
-    var origin = baseUrlJson.scheme + '://' + baseUrlJson.host;
-    origin += baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port);
+    var origin;
+    if (baseUrlJson.path.indexOf('/') !== 0) {
+        baseUrl = core_fixUrl(location.href, baseUrl);
+        baseUrlJson = core_parseURL(baseUrl);
+    }
+    if (baseUrlJson.protocol) {
+        origin = baseUrlJson.protocol + '//' + baseUrlJson.host + (baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port));
+    } else {
+        origin = location.origin;
+        baseUrl = origin + baseUrl;
+    }
     var originPath = origin + '/';
-    var basePath = baseUrl.slice(0, baseUrl.lastIndexOf('/') + 1);
+    var basePath = baseUrlJson.path;
+    basePath = origin + (basePath.indexOf('/') === 0 ? '' : '/') + basePath.slice(0, basePath.lastIndexOf('/') + 1);
 
-    if (/https?:\/\/\w+/.test(path)) {
+    if (/^([a-z]+:)?\/\/\w+/i.test(path)) {
         return path;
     }
-    if (path === 'http://') {
-        return 'http:';
-    }
-    if (path === 'http:') {
-        return baseUrl;
-    }
-    if(path === 'http:/' || path === '/'){
+    if (path === '/') {
         return originPath;
     }
     if (path === '.' || path === '') {
@@ -58,6 +62,6 @@ function core_fixUrl(baseUrl, path) {
 }
 
 function core_fixUrl_handleTwoDots(url) {
-    url = url.charAt(url.length -1) === '/' ? (url.slice(0, url.length -1)) : url;
+    url = url.charAt(url.length - 1) === '/' ? (url.slice(0, url.length - 1)) : url;
     return url.slice(0, url.lastIndexOf('/') + 1);
 }
