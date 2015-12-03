@@ -139,7 +139,8 @@ function require_nameToPath(name){
  * parse URL
  * @method core_parseURL
  * @private
- * @param {string} str
+ * @param {string} str 
+ *    可以传入 protocol//host 当protocol不写时使用location.protocol; 
  * @return {object}
  * @example
  * core_parseURL( 'http://t.sina.com.cn/profile?beijing=huanyingni' ) === 
@@ -153,21 +154,27 @@ function require_nameToPath(name){
 		href : 'http://t.sina.com.cn/profile?beijing=huanyingni'
 	}
  */
-function core_parseURL( url ) {
-	var parse_url = /^(?:([A-Za-z]+):(\/{0,3}))?([0-9.\-A-Za-z-]+)?(?::(\d+))?(?:(\/[^?#]*))?(?:\?([^#]*))?(?:#(.*))?$/;
-    var names = [ "url", "scheme", "slash", "host", "port", "path", "query", "hash" ];
+function core_parseURL(url) {
+    var parse_url = /^(?:([a-z]+:)?(\/{2,3})([0-9.\-a-z-]+)(?::(\d+))?)?(\/?[^?#]*)?(?:\?([^#]*))?(?:#(.*))?$/i;
+    var names = ["url", "protocol", "slash", "host", "port", "path", "query", "hash"];
     var results = parse_url.exec(url);
     var retJson = {};
+    if (!results) {
+        throw 'parseURL:"' + url + '" is wrong!';
+    }
     for (var i = 0, len = names.length; i < len; i += 1) {
-        if (!results) {
-            throw ', there is something wrong with this url or resource : "' + url + '"';
-        }
         retJson[names[i]] = results[i] || "";
     }
-    retJson.port = parseInt(retJson.port || 80);
+    if (retJson.host) {
+        retJson.protocol = retJson.protocol || location.protocol;
+        retJson.port = retJson.port || 80;
+    }
+    if (retJson.port) {
+        retJson.port = parseInt(retJson.port);
+    }
+    retJson.path = retJson.path || '/';
     return retJson;
-}
-/*
+}/*
  * query to json
  * @method core_queryToJson
  * @private
@@ -348,8 +355,8 @@ function core_URL(sURL,args){
         var url = [];
         var query = core_jsonToQuery(query_json, opts.isEncodeQuery);
         var hash = core_jsonToQuery(hash_json, opts.isEncodeQuery);
-        if (url_json.scheme != '') {
-            url.push(url_json.scheme + ':');
+        if (url_json.protocol) {
+            url.push(url_json.protocol);
             url.push(url_json.slash);
         }
         if (url_json.host != '') {
@@ -395,23 +402,27 @@ var resource_cache_list = {};/*
 
 
 function core_fixUrl(baseUrl, path) {
-    baseUrl = baseUrl || location.href;
+    baseUrl = baseUrl || '.';
     var baseUrlJson = core_parseURL(baseUrl);
-    var origin = baseUrlJson.scheme + '://' + baseUrlJson.host;
-    origin += baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port);
+    var origin;
+    if (baseUrlJson.path.indexOf('/') !== 0) {
+        baseUrl = core_fixUrl(location.href, baseUrl);
+        baseUrlJson = core_parseURL(baseUrl);
+    }
+    if (baseUrlJson.protocol) {
+        origin = baseUrlJson.protocol + '//' + baseUrlJson.host + (baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port));
+    } else {
+        origin = location.origin;
+        baseUrl = origin + baseUrl;
+    }
     var originPath = origin + '/';
-    var basePath = baseUrl.slice(0, baseUrl.lastIndexOf('/') + 1);
+    var basePath = baseUrlJson.path;
+    basePath = origin + (basePath.indexOf('/') === 0 ? '' : '/') + basePath.slice(0, basePath.lastIndexOf('/') + 1);
 
-    if (/https?:\/\/\w+/.test(path)) {
+    if (/^([a-z]+:)?\/\/\w+/i.test(path)) {
         return path;
     }
-    if (path === 'http://') {
-        return 'http:';
-    }
-    if (path === 'http:') {
-        return baseUrl;
-    }
-    if(path === 'http:/' || path === '/'){
+    if (path === '/') {
         return originPath;
     }
     if (path === '.' || path === '') {
@@ -445,142 +456,289 @@ function core_fixUrl(baseUrl, path) {
 }
 
 function core_fixUrl_handleTwoDots(url) {
-    url = url.charAt(url.length -1) === '/' ? (url.slice(0, url.length -1)) : url;
+    url = url.charAt(url.length - 1) === '/' ? (url.slice(0, url.length - 1)) : url;
     return url.slice(0, url.lastIndexOf('/') + 1);
-}
+}//router资源
+/**
+ * 路由变量定义区
+ *
+ */
+//收集用户路由配置信息
+var router_base_routerTable = [];
 
-function resource_fixUrl(url, type) {
-    // var path = (type === 'css' ? resource_cssPath : resource_jsPath);
+//处理后的路由集合，[{pathRegexp:RegExp, controller:'controllerFn', keys:{}}]
+var router_base_routerTableReg = [];
 
-    switch(type) {
-        case 'js':
-            path = resource_jsPath;
-            break;
-        case 'css':
-            path = resource_cssPath;
-            break;
-        case 'ajax':
-            path = resource_ajaxPath;
-    }
+//项目是否使用hash
+var router_base_useHash = false;
 
-     
-    var hrefJson = core_parseURL(location.href);
-    var hrefPath = location.protocol + '//' + location.host + hrefJson.path;
-    hrefPath = hrefPath.replace(/\/([^\/]+)$/, '/');
-    //匹配参数{id} -> ?id=2
-    // var urlMatch = url.match(/\{(.*?)\}/g);
-    if (type === 'ajax') {
-        var urlParams = {};
-        var hrefParams = core_queryToJson(hrefJson.query);
-        url = url.replace(/\{(.*?)\}/g, function(_, name) {
-            if (hrefParams[name]) {
-                urlParams[name] = hrefParams[name];
-            }        
-            return '';
-        });
-        url = core_URL(url).setParams(urlParams).toString();
-        url = url.charAt(0) === '/' ? url.slice(1) : url;
-    }
-    return resource_fixUrl_handle(path, url, resource_basePath, hrefPath);
-}
+//应用是否支持单页面（跳转与否），默认应用是单页面
+var router_base_singlePage = true;
 
-function resource_fixUrl_handle(path, url, basePath, hrefPath) {
-    var path = path || basePath || hrefPath;
-
-    return core_fixUrl(hrefPath, path + url);
-}
-
-/*function a = function(_baseUrl, _path) {
-    if (_path.indexOf('../') = 0) {
-        _path = _path.replace(/^\.\.\//, '');
-        _baseUrl = resource_fixUrl_handleTwoDots(_baseUrl);
-        a(_path)
-    }
-    return _baseUrl + _path;
-}*/
-/*function resource_fixUrl_toAbsURL(url){
-    var directlink = resource_fixUrl_directlink(url);
-
-    if (url === '') {
-        var div = core_dom_createElement('div');
-        div.innerHTML = '<a href="' + url.replace(/"/g, '%22') + '"/>';
-        return div.firstChild.href;
-    } 
-
-    return directlink;
+//当前访问path的变量集合,以及location相关的解析结果
+var router_base_params = {
+    params:{}, 
+    query:{}
 };
 
-function resource_fixUrl_directlink(url) {
-    var a = resource_fixUrl_a || core_dom_createElement('a');
-    a.href = url;
-    return a.href;
-}*//** 
- * 资源队列管理
- * @params
- * url 请求资源地址
- * succ 
- * err
- * access 是否成功
- * data 资源数据
+var router_base_routerType = 'init';
+var router_base_prevHref;
+var router_base_currentHref = location.toString();
+/*
+ * dom事件绑定
+ * @method core_event_addEventListener
+ * @private
+ * @param {Element} el
+ * @param {string} type
+ * @param {string} fn
+ */
+var core_event_addEventListener = isAddEventListener ? 
+	function( el, type, fn ) {
+		el.addEventListener( type, fn, false );
+	}
+	:
+	function( el, type, fn ) {
+		el.attachEvent( 'on' + type, fn );
+	};
+
+/*
+ * dom ready
+ * @method core_dom_ready
+ * @private
+ * @param {Function} handler
+ */
+function core_dom_ready( handler ) {
+	
+	function DOMReady() {
+		if ( DOMReady !== emptyFunction ) {
+			DOMReady = emptyFunction;
+			handler();
+		}
+	}
+	
+	if ( /complete/.test( document.readyState ) ) {
+		handler();
+	} else {
+		if ( isAddEventListener ) {
+			core_event_addEventListener( document, 'DOMContentLoaded', DOMReady );
+		} else {
+			core_event_addEventListener( document, 'onreadystatechange', DOMReady );
+
+			//在跨域嵌套iframe时 IE8- 浏览器获取window.frameElement 会出现权限问题
+			try {
+				var _frameElement = window.frameElement;
+			} catch (e) {}
+
+			if ( _frameElement == null && docElem.doScroll ) {
+				(function doScrollCheck() {
+					try {
+						docElem.doScroll( 'left' );
+					} catch ( e ) {
+						return setTimeout( doScrollCheck, 25 );
+					}
+					DOMReady();
+				})();
+			}
+		}
+		core_event_addEventListener( window, 'load', DOMReady );
+	}
+	
+}
+/*
+ * preventDefault
+ * @method core_event_preventDefault
+ * @private
+ * @return {Event} e 
+ */
+function core_event_preventDefault( event ) {
+	if ( event.preventDefault ) {
+		event.preventDefault();
+	} else {
+		event.returnValue = false;
+	}
+}
+/**
+ * router.getPath
+ * 获取当前路由path，支持H5的history和非H5的hash两种方式
+ * @return path String
+ * @author shaobo3@staff.sina.com.cn
+ * @create 15-2-3 上午12:19
+ * @example
+ *      var path = router_getPath();
+ */
+
+/**
+ * @id core_object_merge
+ * @param {Object} origin
+ * @param {Object} cover
+ * @return {Object} opts{isDeep:true/false}
+ * @example
+ * var j1 = {'a':1,'b':2,'c':3};
+ * var j2 = {'a':2,'d':4};
+ * var mJson = core_object_merge(j1, j2);
  */
 
-function resource_queue_create(url){
-    resource_queue_list[url] = [];
+// import("core.array.inArray");
+// import("core.array.isArray");
+// import("core.dom.isNode");
+// import("core.object.parseParam");
+
+var core_object_checkCell = function(obj) {
+    if(obj === undefined){
+        return true;
+    }
+    if(obj === null){
+        return true;
+    }
+    if(core_array_inArray( (typeof obj), ['number','string','function','boolean'])){
+        return true;
+    }
+    if(core_dom_isNode(obj)){
+        return true;
+    }
+    return false;
+};
+var core_object_deep = function(ret, key, coverItem) {
+    if(core_object_checkCell(coverItem)){
+        ret[key] = coverItem;
+        return;
+    }
+    if(core_array_isArray(coverItem)){
+        if(!core_array_isArray(ret[key])){
+            ret[key] = [];
+        }
+        for(var i = 0, len = coverItem.length; i < len; i += 1){
+            core_object_deep(ret[key], i, coverItem[i]);
+        }
+        return;
+    }
+    if(typeof coverItem === 'object'){
+        if(core_object_checkCell(ret[key]) || core_array_isArray(ret[key])){
+            ret[key] = {};
+        }
+        for(var k in coverItem){
+            core_object_deep(ret[key], k, coverItem[k]);
+        }
+        return;
+    }
+};
+
+var core_object_mergeBase = function(origin, cover, isDeep) {
+    var ret = {};
+    if(isDeep){
+        for(var k in origin){
+            core_object_deep(ret, k, origin[k]);
+        }
+        for(var k in cover){
+            core_object_deep(ret, k, cover[k]);
+        }
+    }else{
+        for(var k in origin){
+            ret[k] = origin[k];
+        }
+        for(var k in cover){
+            ret[k] = cover[k];
+        }
+    }
+    return ret;
+};
+
+function core_object_merge(origin, cover, opts) {
+    var conf = core_object_parseParam({
+        'isDeep' : false
+    }, opts);
+    
+    return core_object_mergeBase(origin, cover, conf.isDeep);
+};
+
+var router_getPath_hasStrip = /^#*/;
+
+function router_getPath(url){
+    var parseUrl, parsePath, subHref;
+    parseUrl = core_parseURL(url);
+    router_base_params = {};
+    //获取当前path
+    subHref = parseUrl.hash.replace(router_getPath_hasStrip, '').replace(/\/+/g, '/');
+    subHref = subHref.charAt(0) === '/' ? subHref : ('/' + subHref);
+    subHref = location.protocol + '//' + location.host + subHref
+
+    router_base_params = !isHTML5 && router_base_useHash ? core_parseURL(subHref) : parseUrl;
+    parsePath = router_base_params.path.replace(/\/+/g, '/');
+    router_base_params.path = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
+    router_base_params.search = router_base_params.query;
+    router_base_params.query = core_queryToJson(router_base_params.query);
+    router_base_params.type = router_base_routerType;
+    router_base_params.prev = router_base_prevHref;
+
+    return router_base_params.path;
 }
 
-function resource_queue_push(url, succ, err){
-    resource_queue_list[url].push([succ, err]);
+//匹配路由表，返回匹配的controller
+function router_match_bak(url) {
+    url = url || location.toString();
+    var parsePath = core_parseURL(url).path.replace(/\/+/g, '/');
+    parsePath = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
+    for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
+        if (router_match_urlFix(router_base_routerTable[i][0]) === router_match_urlFix(parsePath)) {
+            return router_base_routerTable[i][1];
+        }
+    }
+    return false;
 }
 
-function resource_queue_run(url, access, data){
-	access = access ? 0 : 1;
-    for(var i = 0, len = resource_queue_list[url].length; i < len; i++) {
-        resource_queue_list[url][i][access](data, url);
+function router_match(url) {
+    url = url || location.toString();
+    var path = router_getPath(url);// store values
+    var m = [];//正则校验结果；
+
+    for (var i = 0, len = router_base_routerTableReg.length; i < len; i++) {
+        var obj = router_base_routerTableReg[i];
+        if ((m = obj['pathRegexp'].exec(path))) {
+            var keys = obj['keys'];
+            var params = router_base_params.params;
+            var prop;
+            var n = 0;
+            var key;
+            var val;
+
+            for (var j = 1, len = m.length; j < len; ++j) {
+                key = keys[j - 1];
+                prop = key
+                    ? key.name
+                    : n++;
+                val = router_match_decodeParam(m[j]);
+
+                if (val !== undefined || !(hasOwnProperty.call(params, prop))) {
+                    params[prop] = val;
+                }
+            }
+            return obj['controller'];
+        }
+    }
+
+    return false;
+}
+
+function router_match_decodeParam(val) {
+    if (typeof val !== 'string') {
+        return val;
+    }
+
+    try {
+        return decodeURIComponent(val);
+    } catch (e) {
+        throw new Error("Failed to decode param '" + val + "'");
     }
 }
 
-function resource_queue_del(url) {
-    url in resource_queue_list && (delete resource_queue_list[url]);
-}
-
 /*
- * 缓存管理
- * @params
- * obj
- * {
- *   data: data,// 资源数据
- *   expire: null //过期时间
- * }
- */
-
-function resource_cache_create(url) {
-	resource_cache_list[url] = [];
-}
-
-function resource_cache_set(url, obj) {
-	resource_cache_list[url].data = obj.data;
-	resource_cache_list[url].expire = obj.expire;
-}
-
-function resource_cache_get(url) {
-	return resource_cache_list[url];
-}
-
-function resource_cache_del(url) {
-	if (url in resource_cache_list[url]) {
-		delete resource_cache_list[url];
-	}
-}/*版本号*/
-var loader_base_version;/*
- * 创建节点
- * @method core_dom_createElement
- * @private
- * @param {string} tagName
- */
-function core_dom_createElement( tagName ) {
-	return document.createElement( tagName );
-}
-var core_uniqueKey_index = 1;
+//最后一个不区分大小写 例如"/v1/public/h5/custommenu/main" 与 "/v1/public/h5/custommenu/mAiN"
+function router_match_urlFix(url) {
+	var res = url.slice(url.lastIndexOf('/') + 1);
+	return url.replace(res, res.toLowerCase());
+}*//**
+ * 公共对象方法定义文件
+ */var core_uniqueKey_index = 1;
 var core_uniqueKey_prefix = 'SL_' + now();
 
 /*
@@ -592,593 +750,7 @@ var core_uniqueKey_prefix = 'SL_' + now();
 function core_uniqueKey() {
 	return core_uniqueKey_prefix + core_uniqueKey_index++;
 }
-/*
- * 返回指定ID或者DOM的节点句柄
- * @method core_dom_removeNode
- * @private
- * @param {Element} node 节点对象
- * @example
- * core_dom_removeNode( node );
- */
-function core_dom_removeNode( node ) {
-	node && node.parentNode.removeChild( node );
-}
-
 
-function loader_js(url, callback){
-    var entityList = {};
-    var opts = {
-        'charset': 'UTF-8',
-        'timeout': 30 * 1000,
-        'args': {},
-        'isEncode' : false
-    };
-    
-    var js, requestTimeout;
-    
-    if (url == '') {
-        throw 'scriptLoader: url is null';
-    }
-    url = /(\.js)$/.test(url) ? url : (url + '.js');
-    url = url + '?version=' + loader_base_version;
-    
-    var uniqueID = core_uniqueKey();
-    
-    
-    js = entityList[uniqueID];
-    if (js != null && !IE) {
-        core_dom_removeNode(js);
-        js = null;
-    }
-    if (js == null) {
-        js = entityList[uniqueID] = core_dom_createElement('script');
-    }
-    
-    js.charset = opts.charset;
-    js.id = 'scriptRequest_script_' + uniqueID;
-    js.type = 'text/javascript';
-    if (callback != null) {
-        if (IE) {
-            js['onreadystatechange'] = function(){
-                if (js.readyState.toLowerCase() == 'loaded' || js.readyState.toLowerCase() == 'complete') {
-                    try{
-                        clearTimeout(requestTimeout);
-                        getElementsByTagName("head")[0].removeChild(js);
-                        js['onreadystatechange'] = null;
-                    }catch(exp){
-                        
-                    }
-                    callback(true);
-                }
-            };
-        }
-        else {
-            js['onload'] = function(){
-                try{
-                    clearTimeout(requestTimeout);
-                    core_dom_removeNode(js);
-                }catch(exp){}
-                callback(true);
-            };
-            
-        }
-        
-    }
-    
-    js.src = core_URL(url,{
-        'isEncodeQuery' : opts['isEncode']
-    }).setParams(opts.args).toString();
-    
-    getElementsByTagName("head")[0].appendChild(js);
-    
-    if (opts.timeout > 0) {
-        requestTimeout = setTimeout(function(){
-            try{
-                getElementsByTagName("head")[0].removeChild(js);
-            }catch(exp){
-                
-            }
-            callback(false);
-        }, opts.timeout);
-    }
-    return js;
-}
-/*
- * 给节点设置属性
- * @method core_dom_setAttribute
- * @private
- * @param {string} name
- * @param {string} value
- */
-function core_dom_setAttribute( el, name, value ) {
-	return el.setAttribute( name, value );
-}
-
-var core_hideDiv_hideDiv;
-/*
- * 向隐藏容器添加节点
- * @method core_hideDiv_appendChild
- * @private
- * @param {Element} el 节点
- */
-function core_hideDiv_appendChild( el ) {
-	if ( !core_hideDiv_hideDiv ) {
-		( core_hideDiv_hideDiv = core_dom_createElement( 'div' ) ).style.cssText = 'position:absolute;top:-9999px;';
-		head.appendChild( core_hideDiv_hideDiv );
-	}
-	core_hideDiv_hideDiv.appendChild( el );
-}
-
-/*
- * 向隐藏容器添加节点
- * @method core_hideDiv_removeChild
- * @private
- * @param {Element} el 节点
- */
-function core_hideDiv_removeChild( el ) {
-	core_hideDiv_hideDiv && core_hideDiv_hideDiv.removeChild( el );
-}
-
-
-function loader_css( url, callback, load_ID ){
-    var link = core_dom_createElement('link');
-    var load_div = null;
-    var domID = core_uniqueKey();
-    var timer = null;
-    var _rTime = 300;//3000;
-    url = /(\.css)$/.test(url) ? url : (url + '.css');
-    url = url + '?version=' + loader_base_version;
-
-    core_dom_setAttribute(link, 'rel', 'Stylesheet');
-    core_dom_setAttribute(link, 'type', 'text/css');
-    core_dom_setAttribute(link, 'charset', 'utf-8');
-    core_dom_setAttribute(link, 'id', load_ID);
-    /*if(IE){
-        (link.Stylesheet || link.sheet).addImport(url);
-    }else {
-        core_dom_setAttribute(link, 'href', url);
-        head.appendChild(link);
-    }*/
-    core_dom_setAttribute(link, 'href', url);
-    head.appendChild(link);
-    load_div = core_dom_createElement('div');
-    core_dom_setAttribute(load_div, 'id', load_ID);
-    core_hideDiv_appendChild(load_div);
-
-    timer = function(){
-        if(parseInt(window.getComputedStyle ? getComputedStyle(load_div, null)['height'] : load_div.currentStyle && load_div.currentStyle['height']) === 42){
-            core_hideDiv_removeChild(load_div);
-            callback(true);
-            return;
-        }
-        if(--_rTime > 0){
-            setTimeout(timer, 10);
-        }else {
-            log(url + ' timeout!');
-            core_hideDiv_removeChild(load_div);
-            callback(false);
-        }
-    };
-    setTimeout(timer, 50);
-}/**
- * make an ajax request
- * @alias loader_ajax
- * @param {Object}  {
-        'url': '',
-        'charset': 'UTF-8',
-        'timeout': 30 * 1000,
-        'args': {},
-        'onComplete': null,
-        'onTimeout': null,
-        
-        'onFail': null,
-        'method': 'get', // post or get
-        'asynchronous': true,
-        'contentType': 'application/x-www-form-urlencoded',
-        'responseType': 'text'// xml or text or json
-    };
- * @return {Void} 
- * @example
- * loader_ajax(url, {//'url':'/ajax.php',
-    
-    'args':{'id':123,'test':'true'},
-    });
- */
-
-
-function loader_ajax(url, onComplete){//(url, callback)
-    var opts = {
-        'charset': 'UTF-8',
-        'timeout': 30 * 1000,
-        'args': {},
-        'onComplete': onComplete || emptyFunction,
-        'onTimeout': emptyFunction,
-        'uniqueID': null,
-        
-        'onFail': emptyFunction,
-        'method': 'get', // post or get
-        'asynchronous': true,
-        'header' : {},
-        'isEncode' : false,
-        'responseType': 'json'// xml or text or json
-    };
-    
-    if (url == '') {
-        throw 'ajax need url in parameters object';
-    }
-    
-    var tm;
-    
-    var trans = getXHR();
-    
-    var cback = function(){
-        if (trans.readyState == 4) {
-            clearTimeout(tm);
-            var data = '';
-            if (opts['responseType'] === 'xml') {
-                    data = trans.responseXML;
-            }else if(opts['responseType'] === 'text'){
-                    data = trans.responseText;
-            }else {
-                try{
-                    if(trans.responseText && typeof trans.responseText === 'string'){
-                        
-                        // data = $.core.json.strToJson(trans.responseText);
-                        data = window['eval']('(' + trans.responseText + ')');
-                    }else{
-                        data = {};
-                    }
-                }catch(exp){
-                    data = url + 'return error : data error';
-                    // throw opts['url'] + 'return error : syntax error';
-                }
-            }
-            if (trans.status == 200) {
-                if (opts.onComplete != null) {
-                    opts.onComplete(data);
-                }
-            }else if(trans.status == 0){
-                //for abort;
-            } else {
-                if (opts.onFail != null) {
-                    opts.onFail(data, trans);
-                }
-            }
-        }
-        /*else {
-            if (opts['onTraning'] != null) {
-                opts['onTraning'](trans);
-            }
-        }*/
-    };
-    trans.onreadystatechange = cback;
-    
-    if(!opts['header']['Content-Type']){
-        opts['header']['Content-Type'] = 'application/x-www-form-urlencoded';
-    }
-    if(!opts['header']['X-Requested-With']){
-        opts['header']['X-Requested-With'] = 'XMLHttpRequest';
-    }
-    
-    if (opts['method'].toLocaleLowerCase() == 'get') {
-        var url = core_URL(url, {
-            'isEncodeQuery' : opts['isEncode']
-        });
-        url.setParams(opts['args']);
-        url.setParam('__rnd', new Date().valueOf());
-        trans.open(opts['method'], url.toString(), opts['asynchronous']);
-        try{
-            for(var k in opts['header']){
-                trans.setRequestHeader(k, opts['header'][k]);
-            }
-        }catch(exp){
-        
-        }
-        trans.send('');
-        
-    }
-    else {
-        trans.open(opts['method'], url, opts['asynchronous']);
-        try{
-            for(var k in opts['header']){
-                trans.setRequestHeader(k, opts['header'][k]);
-            }
-        }catch(exp){
-        
-        }
-        trans.send(core_jsonToQuery(opts['args'],opts['isEncode']));
-    }
-    if(opts['timeout']){
-        tm = setTimeout(function(){
-            try{
-                trans.abort();
-                opts['onTimeout']({}, trans);
-                callback(false, {}, trans);
-            }catch(exp){
-                
-            }
-        }, opts['timeout']);
-    }
-
-    function getXHR(){
-        var _XHR = false;
-        try {
-            _XHR = new XMLHttpRequest();
-        } 
-        catch (try_MS) {
-            try {
-                _XHR = new ActiveXObject("Msxml2.XMLHTTP");
-            } 
-            catch (other_MS) {
-                try {
-                    _XHR = new ActiveXObject("Microsoft.XMLHTTP");
-                } 
-                catch (failed) {
-                    _XHR = false;
-                }
-            }
-        }
-        return _XHR;
-    }
-    return trans;
-}
-
-function resource_request(url, callback) {
-    var apiRule = resource_define_apiRule || onComplete;
-
-    function onComplete(req, params, callback) {
-        if (req && req.code == '100000') {
-            callback(true, req);
-        }else {
-            log(url + ': The api error code is ' + (req && req.code) + '. The error reason is ' + (req && req.msg));
-            callback(false, req, params);
-        }
-    }
-    return loader_ajax(url, function(req, params) {
-        apiRule(req, params, callback);
-    });
-}
-
-var resource_res = {
-    js: function(name, succ, err) {
-        resource_res_handle(resource_fixUrl(name, 'js'), succ, err, loader_js);
-    },
-
-    css: function(name, succ, err, cssId) {
-        resource_res_handle(resource_fixUrl(name, 'css'), succ, err, loader_css, cssId);
-    },
-
-    get: function(name, succ, err) {
-        resource_res_handle(resource_fixUrl(name, 'ajax'), succ, err, resource_request);//loader_ajax);
-    }
-};
-
-function resource_res_handle(url, succ, err, loader, cssId) {
-    //check 缓存
-    var cache = resource_cache_get(url);
-    if(cache){
-        succ(cache.data);
-        return;
-    }
-
-    //check 队列    
-    if(resource_queue_list[url]){
-        resource_queue_push(url, succ, err);
-    }else {
-        resource_queue_create(url);
-        resource_queue_push(url, succ, err);
-        //loader
-        loader(url, function(access, data) {
-            // resource_cache_create(url);
-            // resource_cache_set(url, {
-            //     data: data,
-            //     expire: null
-            // });
-            resource_queue_run(url, access, data);
-            resource_queue_del(url);
-        }, cssId);
-    }
-}
-
-//外部异步调用require方法
-function require_global(deps, cb, errcb, curNs){
-    var ns;
-    var loaded = 0;
-    var errored = 0;
-    var basePath;
-    deps = [].concat(deps);
-    function call_cb() {
-        var runner_result = require_runner(deps);
-        cb && cb.apply(this, runner_result);
-    }
-    for(var i = 0, len = deps.length; i < len; i++){
-        ns = deps[i];
-        if (curNs) {
-            basePath = require_nameToPath(curNs);
-            ns = require_idFix(ns, basePath);
-            deps[i] = ns;
-        }
-        
-        if(!require_ismodule_defined(ns)){
-            resource_res.js(ns, function(){
-                loaded++;
-                check();
-            }, function() {
-                errored ++;
-            });
-        }else {
-            loaded++;
-        }
-    }
-    check();
-    function check() {
-        if (deps.length <= loaded) {
-            if (errored) {
-                errcb();
-            } else {
-                call_cb();
-            }
-        }
-    }
-}/*
- * 把类数组改变成数组
- * @method core_array_makeArray
- * @private
- * @param {arrayLike} obj
- *	需要查找的对象
- * @return {Array} 
- */
-function core_array_makeArray( obj ) {
-	try {
-		return [].slice.call(obj);
-	} catch (e) { //for IE
-		var j, i = 0, rs = [];
-		while ( j = obj[i] ){
-			rs[i++] = j;
-		}
-		return rs;
-	}
-}
-
-//内部同步调用require方法
-function require_runner_makeRequire(curNs) {
-    var basePath = require_nameToPath(curNs);
-    return require;
-
-    function require(ns){
-        if (toString.call(ns).toLowerCase().indexOf('array') != -1) {
-            var paramList = core_array_makeArray(arguments);
-            paramList[3] = paramList[3] || curNs;
-            return require_global.apply(this, paramList);
-        }
-        ns = require_idFix(ns, basePath);
-
-        if (!require_ismodule_defined(ns)) {
-            throw '[' + ns + '] 依赖未定义!';
-        }
-        return require_runList[ns];
-    }
-}
-
-//运行define列表，并返回实例集
-function require_runner(pkg, basePath) {
-    // log('%cpkg_runner', 'color:green;font-size:20px;');
-    pkg = [].concat(pkg);
-    var i, len;
-    var ns, nsConstructor, module;
-    var resultList = [];
-
-    for (i = 0, len = pkg.length; i < len; i++) {
-        ns = pkg[i];
-        ns = require_idFix(ns, basePath);
-        nsConstructor = require_defineConstrutors[ns];
-        if(!nsConstructor){
-            log('Exception: please take notice of your resource  "', ns, '"  is right or not.(especial the upper/lower case)');
-            resultList.push(undefined);
-        }else {
-            if (!require_ismodule_runed(ns)) {
-                if(require_defineDeps[ns]){
-                    require_runner(require_defineDeps[ns], require_nameToPath(ns));
-                }
-                module = {
-                    exports: {}
-                };
-                require_runList[ns] = nsConstructor.apply(window, [require_runner_makeRequire(ns), module.exports, module]) || module.exports;
-            }
-            resultList.push(require_runList[ns]);
-        }
-    }
-    return resultList;
-}
-
-//全局define
-function require_define(ns, deps, construtor) {
-    if(require_ismodule_defined[ns]){
-        return;
-    }
-    require_defineDeps[ns] = construtor ? deps : [];
-    require_defineConstrutors[ns] = construtor || deps;
-    /*//模块自执行
-    if(require_dataMainId === ns){
-        setTimeout(function(){
-            require_runner([ns]);
-        });
-    }*/
-    if((deps = require_defineDeps[ns]) && deps.length){
-        setTimeout(function(){
-            var loadList = [];
-            for(var i = 0, l = deps.length; i < l; i++){
-                var depNs = require_idFix(deps[i], require_nameToPath(ns));
-                if(!require_ismodule_defined(depNs)){
-                    loadList.push(depNs);
-                }
-            }
-            if(loadList.length){
-                require_global_loadingNum++;
-                require_global(loadList, function(){
-                    log(ns + ' deps loaded ok!', '');
-                    setTimeout(function(){
-                        require_global_loadingNum--;
-                        require_main();
-                    });
-                },function(){
-                    log(ns + ' deps loaded error!', '');
-                });
-            }else {
-                require_main();
-            }
-        });
-    }else {
-        require_main();
-    }
-    function require_main(){
-        clearTimeout(require_mainTimer);
-        if(require_global_loadingNum < 1){
-            // if(require_dataMainId === ns){
-                require_mainTimer = setTimeout(function(){
-                    if(require_dataMainId && require_ismodule_defined(require_dataMainId)){
-                       require_runner([ns]); 
-                    }
-                    
-                }, 10);
-            // }
-        }
-    }
-}
-
-//定义boot
-function require_boot(ns) {
-    require_runner([ns]);
-}
-
-//调用入口的获取
-function require_dataMain(){
-    var scripts = getElementsByTagName('script');
-    var lastScripts = scripts[scripts.length -1];
-    require_dataMainId = lastScripts && lastScripts.getAttribute('data-main') || require_dataMainId;
-}
- 
-
-function loader_config(parseParamFn) {
-  loader_base_version = parseParamFn('version', loader_base_version);
-}
-
-config_push(loader_config);//暂不做
- 
-
-var resource_config_slash = '/';
-function resource_config(parseParamFn) {
-    resource_jsPath = parseParamFn('jsPath', resource_jsPath);
-    resource_cssPath = parseParamFn('cssPath', resource_cssPath);
-    resource_ajaxPath = parseParamFn('ajaxPath', resource_ajaxPath);
-    resource_basePath = parseParamFn('basePath', resource_config_slash);
-    resource_define_apiRule = parseParamFn('defApiRule', resource_define_apiRule);
-}
-
-config_push(resource_config);
- /**
- * 公共对象方法定义文件
- */
 
 //control容器
 var render_base_controlCache = {};
@@ -1193,7 +765,7 @@ var render_base_count = 0;
 function render_base_idMaker(){
     return core_uniqueKey();
 }
-
+
 //污染到对象上的属性定义
 var core_uniqueID_attr = '__SL_ID';
 /*
@@ -1287,7 +859,25 @@ function core_notice_fire( type, args ) {
 		}
 	}
 }
-
+/*
+ * 把类数组改变成数组
+ * @method core_array_makeArray
+ * @private
+ * @param {arrayLike} obj
+ *	需要查找的对象
+ * @return {Array} 
+ */
+function core_array_makeArray( obj ) {
+	try {
+		return [].slice.call(obj);
+	} catch (e) { //for IE
+		var j, i = 0, rs = [];
+		while ( j = obj[i] ){
+			rs[i++] = j;
+		}
+		return rs;
+	}
+}
 
 
 function render_error() {
@@ -1329,7 +919,18 @@ function core_object_clone( obj ) {
 	return ret;
 	
 }
-
+/*
+ * 返回指定ID或者DOM的节点句柄
+ * @method core_dom_removeNode
+ * @private
+ * @param {Element} node 节点对象
+ * @example
+ * core_dom_removeNode( node );
+ */
+function core_dom_removeNode( node ) {
+	node && node.parentNode.removeChild( node );
+}
+
 
 function render_control_setChildren(resContainer) {
     var children = resContainer.children || {};
@@ -2102,295 +1703,7 @@ function render_run(box, controller) {
         control._controller = controller;
         controller(control, render_run_rootScope);
     }
-}
- /**
- * 路由变量定义区
- *
- */
-//收集用户路由配置信息
-var router_base_routerTable = [];
-
-//处理后的路由集合，[{pathRegexp:RegExp, controller:'controllerFn', keys:{}}]
-var router_base_routerTableReg = [];
-
-//项目是否使用hash
-var router_base_useHash = false;
-
-//应用是否支持单页面（跳转与否），默认应用是单页面
-var router_base_singlePage = true;
-
-//当前访问path的变量集合,以及location相关的解析结果
-var router_base_params = {
-    params:{}, 
-    query:{}
-};
-
-var router_base_routerType = 'init';
-var router_base_prevHref;
-var router_base_currentHref = location.toString();
-/**
- * 路由配置
- */
-
-config_push(router_config);
-
-function router_config(parseParamFn, config) {
-  router_base_routerTable = parseParamFn('router', router_base_routerTable);
-  router_base_useHash = parseParamFn('useHash', router_base_useHash);
-  router_base_singlePage = parseParamFn('singlePage', router_base_singlePage);
-}/**
- * router.getPath
- * 获取当前路由path，支持H5的history和非H5的hash两种方式
- * @return path String
- * @author shaobo3@staff.sina.com.cn
- * @create 15-2-3 上午12:19
- * @example
- *      var path = router_getPath();
- */
-
-/**
- * @id core_object_merge
- * @param {Object} origin
- * @param {Object} cover
- * @return {Object} opts{isDeep:true/false}
- * @example
- * var j1 = {'a':1,'b':2,'c':3};
- * var j2 = {'a':2,'d':4};
- * var mJson = core_object_merge(j1, j2);
- */
-
-// import("core.array.inArray");
-// import("core.array.isArray");
-// import("core.dom.isNode");
-// import("core.object.parseParam");
-
-var core_object_checkCell = function(obj) {
-    if(obj === undefined){
-        return true;
-    }
-    if(obj === null){
-        return true;
-    }
-    if(core_array_inArray( (typeof obj), ['number','string','function','boolean'])){
-        return true;
-    }
-    if(core_dom_isNode(obj)){
-        return true;
-    }
-    return false;
-};
-var core_object_deep = function(ret, key, coverItem) {
-    if(core_object_checkCell(coverItem)){
-        ret[key] = coverItem;
-        return;
-    }
-    if(core_array_isArray(coverItem)){
-        if(!core_array_isArray(ret[key])){
-            ret[key] = [];
-        }
-        for(var i = 0, len = coverItem.length; i < len; i += 1){
-            core_object_deep(ret[key], i, coverItem[i]);
-        }
-        return;
-    }
-    if(typeof coverItem === 'object'){
-        if(core_object_checkCell(ret[key]) || core_array_isArray(ret[key])){
-            ret[key] = {};
-        }
-        for(var k in coverItem){
-            core_object_deep(ret[key], k, coverItem[k]);
-        }
-        return;
-    }
-};
-
-var core_object_mergeBase = function(origin, cover, isDeep) {
-    var ret = {};
-    if(isDeep){
-        for(var k in origin){
-            core_object_deep(ret, k, origin[k]);
-        }
-        for(var k in cover){
-            core_object_deep(ret, k, cover[k]);
-        }
-    }else{
-        for(var k in origin){
-            ret[k] = origin[k];
-        }
-        for(var k in cover){
-            ret[k] = cover[k];
-        }
-    }
-    return ret;
-};
-
-function core_object_merge(origin, cover, opts) {
-    var conf = core_object_parseParam({
-        'isDeep' : false
-    }, opts);
-    
-    return core_object_mergeBase(origin, cover, conf.isDeep);
-};
-
-var router_getPath_hasStrip = /^#*/;
-
-function router_getPath(url){
-    var parseUrl, parsePath, subHref;
-    parseUrl = core_parseURL(url);
-    router_base_params = {};
-    //获取当前path
-    subHref = parseUrl.hash.replace(router_getPath_hasStrip, '').replace(/\/+/g, '/');
-    subHref = subHref.charAt(0) === '/' ? subHref : ('/' + subHref);
-    subHref = location.protocol + '//' + location.host + subHref
-
-    router_base_params = !isHTML5 && router_base_useHash ? core_parseURL(subHref) : parseUrl;
-    parsePath = router_base_params.path.replace(/\/+/g, '/');
-    router_base_params.path = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
-    router_base_params.search = router_base_params.query;
-    router_base_params.query = core_queryToJson(router_base_params.query);
-    router_base_params.type = router_base_routerType;
-    router_base_params.prev = router_base_prevHref;
-
-    return router_base_params.path;
-}
-
-//匹配路由表，返回匹配的controller
-function router_match_bak(url) {
-    url = url || location.toString();
-    var parsePath = core_parseURL(url).path.replace(/\/+/g, '/');
-    parsePath = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
-    for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
-        if (router_match_urlFix(router_base_routerTable[i][0]) === router_match_urlFix(parsePath)) {
-            return router_base_routerTable[i][1];
-        }
-    }
-    return false;
-}
-
-function router_match(url) {
-    url = url || location.toString();
-    var path = router_getPath(url);// store values
-    var m = [];//正则校验结果；
-
-    for (var i = 0, len = router_base_routerTableReg.length; i < len; i++) {
-        var obj = router_base_routerTableReg[i];
-        if ((m = obj['pathRegexp'].exec(path))) {
-            var keys = obj['keys'];
-            var params = router_base_params.params;
-            var prop;
-            var n = 0;
-            var key;
-            var val;
-
-            for (var j = 1, len = m.length; j < len; ++j) {
-                key = keys[j - 1];
-                prop = key
-                    ? key.name
-                    : n++;
-                val = router_match_decodeParam(m[j]);
-
-                if (val !== undefined || !(hasOwnProperty.call(params, prop))) {
-                    params[prop] = val;
-                }
-            }
-            return obj['controller'];
-        }
-    }
-
-    return false;
-}
-
-function router_match_decodeParam(val) {
-    if (typeof val !== 'string') {
-        return val;
-    }
-
-    try {
-        return decodeURIComponent(val);
-    } catch (e) {
-        throw new Error("Failed to decode param '" + val + "'");
-    }
-}
-
-/*
-//最后一个不区分大小写 例如"/v1/public/h5/custommenu/main" 与 "/v1/public/h5/custommenu/mAiN"
-function router_match_urlFix(url) {
-	var res = url.slice(url.lastIndexOf('/') + 1);
-	return url.replace(res, res.toLowerCase());
-}*//*
- * dom事件绑定
- * @method core_event_addEventListener
- * @private
- * @param {Element} el
- * @param {string} type
- * @param {string} fn
- */
-var core_event_addEventListener = isAddEventListener ? 
-	function( el, type, fn ) {
-		el.addEventListener( type, fn, false );
-	}
-	:
-	function( el, type, fn ) {
-		el.attachEvent( 'on' + type, fn );
-	};
-
-/*
- * dom ready
- * @method core_dom_ready
- * @private
- * @param {Function} handler
- */
-function core_dom_ready( handler ) {
-	
-	function DOMReady() {
-		if ( DOMReady !== emptyFunction ) {
-			DOMReady = emptyFunction;
-			handler();
-		}
-	}
-	
-	if ( /complete/.test( document.readyState ) ) {
-		handler();
-	} else {
-		if ( isAddEventListener ) {
-			core_event_addEventListener( document, 'DOMContentLoaded', DOMReady );
-		} else {
-			core_event_addEventListener( document, 'onreadystatechange', DOMReady );
-
-			//在跨域嵌套iframe时 IE8- 浏览器获取window.frameElement 会出现权限问题
-			try {
-				var _frameElement = window.frameElement;
-			} catch (e) {}
-
-			if ( _frameElement == null && docElem.doScroll ) {
-				(function doScrollCheck() {
-					try {
-						docElem.doScroll( 'left' );
-					} catch ( e ) {
-						return setTimeout( doScrollCheck, 25 );
-					}
-					DOMReady();
-				})();
-			}
-		}
-		core_event_addEventListener( window, 'load', DOMReady );
-	}
-	
-}
-/*
- * preventDefault
- * @method core_event_preventDefault
- * @private
- * @return {Event} e 
- */
-function core_event_preventDefault( event ) {
-	if ( event.preventDefault ) {
-		event.preventDefault();
-	} else {
-		event.returnValue = false;
-	}
-}
-
+}
 
 var router_listen_queryTime = 5;
 var router_listen_count;
@@ -2496,7 +1809,685 @@ function router_listen_crossDomainCheck(url) {
 }
 
 
-/**
+
+
+var router_api = {
+    set: router_listen_setRouter,
+    get: router_router_get
+};
+
+function router_router_get() {
+    return router_base_params;
+}
+
+function resource_fixUrl(url, type) {
+
+    switch(type) {
+        case 'js':
+            path = resource_jsPath;
+            break;
+        case 'css':
+            path = resource_cssPath;
+            break;
+        case 'ajax':
+            path = resource_ajaxPath;
+    }
+
+    var currentRouter = router_router_get();
+     
+    //匹配参数{id} -> ?id=2
+    // var urlMatch = url.match(/\{(.*?)\}/g);
+    if (type === 'ajax') {
+        var urlParams = {};
+        var hrefParams = currentRouter.query;
+        url = url.replace(/\{(.*?)\}/g, function(_, name) {
+            if (hrefParams[name]) {
+                urlParams[name] = hrefParams[name];
+            }
+            return '';
+        });
+        url = core_URL(url).setParams(urlParams).toString();
+        url = url.charAt(0) === '/' ? url.slice(1) : url;
+    }
+    return resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
+}
+
+function resource_fixUrl_handle(path, url, basePath, hrefPath) {
+    return core_fixUrl(path || basePath || hrefPath, url);
+}
+/** 
+ * 资源队列管理
+ * @params
+ * url 请求资源地址
+ * succ 
+ * err
+ * access 是否成功
+ * data 资源数据
+ */
+
+function resource_queue_create(url){
+    resource_queue_list[url] = [];
+}
+
+function resource_queue_push(url, succ, err){
+    resource_queue_list[url].push([succ, err]);
+}
+
+function resource_queue_run(url, access, data){
+	access = access ? 0 : 1;
+    for(var i = 0, len = resource_queue_list[url].length; i < len; i++) {
+        resource_queue_list[url][i][access](data, url);
+    }
+}
+
+function resource_queue_del(url) {
+    url in resource_queue_list && (delete resource_queue_list[url]);
+}
+
+/*
+ * 缓存管理
+ * @params
+ * obj
+ * {
+ *   data: data,// 资源数据
+ *   expire: null //过期时间
+ * }
+ */
+
+function resource_cache_create(url) {
+	resource_cache_list[url] = [];
+}
+
+function resource_cache_set(url, obj) {
+	resource_cache_list[url].data = obj.data;
+	resource_cache_list[url].expire = obj.expire;
+}
+
+function resource_cache_get(url) {
+	return resource_cache_list[url];
+}
+
+function resource_cache_del(url) {
+	if (url in resource_cache_list[url]) {
+		delete resource_cache_list[url];
+	}
+}/*版本号*/
+var loader_base_version;/*
+ * 创建节点
+ * @method core_dom_createElement
+ * @private
+ * @param {string} tagName
+ */
+function core_dom_createElement( tagName ) {
+	return document.createElement( tagName );
+}
+
+
+function loader_js(url, callback){
+    var entityList = {};
+    var opts = {
+        'charset': 'UTF-8',
+        'timeout': 30 * 1000,
+        'args': {},
+        'isEncode' : false
+    };
+    
+    var js, requestTimeout;
+    
+    if (url == '') {
+        throw 'scriptLoader: url is null';
+    }
+    url = /(\.js)$/.test(url) ? url : (url + '.js');
+    url = url + '?version=' + loader_base_version;
+    
+    var uniqueID = core_uniqueKey();
+    
+    
+    js = entityList[uniqueID];
+    if (js != null && !IE) {
+        core_dom_removeNode(js);
+        js = null;
+    }
+    if (js == null) {
+        js = entityList[uniqueID] = core_dom_createElement('script');
+    }
+    
+    js.charset = opts.charset;
+    js.id = 'scriptRequest_script_' + uniqueID;
+    js.type = 'text/javascript';
+    if (callback != null) {
+        if (IE) {
+            js['onreadystatechange'] = function(){
+                if (js.readyState.toLowerCase() == 'loaded' || js.readyState.toLowerCase() == 'complete') {
+                    try{
+                        clearTimeout(requestTimeout);
+                        getElementsByTagName("head")[0].removeChild(js);
+                        js['onreadystatechange'] = null;
+                    }catch(exp){
+                        
+                    }
+                    callback(true);
+                }
+            };
+        }
+        else {
+            js['onload'] = function(){
+                try{
+                    clearTimeout(requestTimeout);
+                    core_dom_removeNode(js);
+                }catch(exp){}
+                callback(true);
+            };
+            
+        }
+        
+    }
+    
+    js.src = core_URL(url,{
+        'isEncodeQuery' : opts['isEncode']
+    }).setParams(opts.args).toString();
+    
+    getElementsByTagName("head")[0].appendChild(js);
+    
+    if (opts.timeout > 0) {
+        requestTimeout = setTimeout(function(){
+            try{
+                getElementsByTagName("head")[0].removeChild(js);
+            }catch(exp){
+                
+            }
+            callback(false);
+        }, opts.timeout);
+    }
+    return js;
+}
+/*
+ * 给节点设置属性
+ * @method core_dom_setAttribute
+ * @private
+ * @param {string} name
+ * @param {string} value
+ */
+function core_dom_setAttribute( el, name, value ) {
+	return el.setAttribute( name, value );
+}
+
+var core_hideDiv_hideDiv;
+/*
+ * 向隐藏容器添加节点
+ * @method core_hideDiv_appendChild
+ * @private
+ * @param {Element} el 节点
+ */
+function core_hideDiv_appendChild( el ) {
+	if ( !core_hideDiv_hideDiv ) {
+		( core_hideDiv_hideDiv = core_dom_createElement( 'div' ) ).style.cssText = 'position:absolute;top:-9999px;';
+		head.appendChild( core_hideDiv_hideDiv );
+	}
+	core_hideDiv_hideDiv.appendChild( el );
+}
+
+/*
+ * 向隐藏容器添加节点
+ * @method core_hideDiv_removeChild
+ * @private
+ * @param {Element} el 节点
+ */
+function core_hideDiv_removeChild( el ) {
+	core_hideDiv_hideDiv && core_hideDiv_hideDiv.removeChild( el );
+}
+
+
+function loader_css( url, callback, load_ID ){
+    var link = core_dom_createElement('link');
+    var load_div = null;
+    var domID = core_uniqueKey();
+    var timer = null;
+    var _rTime = 300;//3000;
+    url = /(\.css)$/.test(url) ? url : (url + '.css');
+    url = url + '?version=' + loader_base_version;
+
+    core_dom_setAttribute(link, 'rel', 'Stylesheet');
+    core_dom_setAttribute(link, 'type', 'text/css');
+    core_dom_setAttribute(link, 'charset', 'utf-8');
+    core_dom_setAttribute(link, 'id', load_ID);
+    /*if(IE){
+        (link.Stylesheet || link.sheet).addImport(url);
+    }else {
+        core_dom_setAttribute(link, 'href', url);
+        head.appendChild(link);
+    }*/
+    core_dom_setAttribute(link, 'href', url);
+    head.appendChild(link);
+    load_div = core_dom_createElement('div');
+    core_dom_setAttribute(load_div, 'id', load_ID);
+    core_hideDiv_appendChild(load_div);
+
+    timer = function(){
+        if(parseInt(window.getComputedStyle ? getComputedStyle(load_div, null)['height'] : load_div.currentStyle && load_div.currentStyle['height']) === 42){
+            core_hideDiv_removeChild(load_div);
+            callback(true);
+            return;
+        }
+        if(--_rTime > 0){
+            setTimeout(timer, 10);
+        }else {
+            log(url + ' timeout!');
+            core_hideDiv_removeChild(load_div);
+            callback(false);
+        }
+    };
+    setTimeout(timer, 50);
+}/**
+ * make an ajax request
+ * @alias loader_ajax
+ * @param {Object}  {
+        'url': '',
+        'charset': 'UTF-8',
+        'timeout': 30 * 1000,
+        'args': {},
+        'onComplete': null,
+        'onTimeout': null,
+        
+        'onFail': null,
+        'method': 'get', // post or get
+        'asynchronous': true,
+        'contentType': 'application/x-www-form-urlencoded',
+        'responseType': 'text'// xml or text or json
+    };
+ * @return {Void} 
+ * @example
+ * loader_ajax(url, {//'url':'/ajax.php',
+    
+    'args':{'id':123,'test':'true'},
+    });
+ */
+
+
+function loader_ajax(url, onComplete){//(url, callback)
+    var opts = {
+        'charset': 'UTF-8',
+        'timeout': 30 * 1000,
+        'args': {},
+        'onComplete': onComplete || emptyFunction,
+        'onTimeout': emptyFunction,
+        'uniqueID': null,
+        
+        'onFail': emptyFunction,
+        'method': 'get', // post or get
+        'asynchronous': true,
+        'header' : {},
+        'isEncode' : false,
+        'responseType': 'json'// xml or text or json
+    };
+    
+    if (url == '') {
+        throw 'ajax need url in parameters object';
+    }
+    
+    var tm;
+    
+    var trans = getXHR();
+    
+    var cback = function(){
+        if (trans.readyState == 4) {
+            clearTimeout(tm);
+            var data = '';
+            if (opts['responseType'] === 'xml') {
+                    data = trans.responseXML;
+            }else if(opts['responseType'] === 'text'){
+                    data = trans.responseText;
+            }else {
+                try{
+                    if(trans.responseText && typeof trans.responseText === 'string'){
+                        
+                        // data = $.core.json.strToJson(trans.responseText);
+                        data = window['eval']('(' + trans.responseText + ')');
+                    }else{
+                        data = {};
+                    }
+                }catch(exp){
+                    data = url + 'return error : data error';
+                    // throw opts['url'] + 'return error : syntax error';
+                }
+            }
+            if (trans.status == 200) {
+                if (opts.onComplete != null) {
+                    opts.onComplete(data);
+                }
+            }else if(trans.status == 0){
+                //for abort;
+            } else {
+                if (opts.onFail != null) {
+                    opts.onFail(data, trans);
+                }
+            }
+        }
+        /*else {
+            if (opts['onTraning'] != null) {
+                opts['onTraning'](trans);
+            }
+        }*/
+    };
+    trans.onreadystatechange = cback;
+    
+    if(!opts['header']['Content-Type']){
+        opts['header']['Content-Type'] = 'application/x-www-form-urlencoded';
+    }
+    if(!opts['header']['X-Requested-With']){
+        opts['header']['X-Requested-With'] = 'XMLHttpRequest';
+    }
+    
+    if (opts['method'].toLocaleLowerCase() == 'get') {
+        var url = core_URL(url, {
+            'isEncodeQuery' : opts['isEncode']
+        });
+        url.setParams(opts['args']);
+        url.setParam('__rnd', new Date().valueOf());
+        trans.open(opts['method'], url.toString(), opts['asynchronous']);
+        try{
+            for(var k in opts['header']){
+                trans.setRequestHeader(k, opts['header'][k]);
+            }
+        }catch(exp){
+        
+        }
+        trans.send('');
+        
+    }
+    else {
+        trans.open(opts['method'], url, opts['asynchronous']);
+        try{
+            for(var k in opts['header']){
+                trans.setRequestHeader(k, opts['header'][k]);
+            }
+        }catch(exp){
+        
+        }
+        trans.send(core_jsonToQuery(opts['args'],opts['isEncode']));
+    }
+    if(opts['timeout']){
+        tm = setTimeout(function(){
+            try{
+                trans.abort();
+                opts['onTimeout']({}, trans);
+                callback(false, {}, trans);
+            }catch(exp){
+                
+            }
+        }, opts['timeout']);
+    }
+
+    function getXHR(){
+        var _XHR = false;
+        try {
+            _XHR = new XMLHttpRequest();
+        } 
+        catch (try_MS) {
+            try {
+                _XHR = new ActiveXObject("Msxml2.XMLHTTP");
+            } 
+            catch (other_MS) {
+                try {
+                    _XHR = new ActiveXObject("Microsoft.XMLHTTP");
+                } 
+                catch (failed) {
+                    _XHR = false;
+                }
+            }
+        }
+        return _XHR;
+    }
+    return trans;
+}
+
+function resource_request(url, callback) {
+    var apiRule = resource_define_apiRule || onComplete;
+
+    function onComplete(req, params, callback) {
+        if (req && req.code == '100000') {
+            callback(true, req);
+        }else {
+            log(url + ': The api error code is ' + (req && req.code) + '. The error reason is ' + (req && req.msg));
+            callback(false, req, params);
+        }
+    }
+    return loader_ajax(url, function(req, params) {
+        apiRule(req, params, callback);
+    });
+}
+
+var resource_res = {
+    js: function(name, succ, err) {
+        resource_res_handle(resource_fixUrl(name, 'js'), succ, err, loader_js);
+    },
+
+    css: function(name, succ, err, cssId) {
+        resource_res_handle(resource_fixUrl(name, 'css'), succ, err, loader_css, cssId);
+    },
+
+    get: function(name, succ, err) {
+        resource_res_handle(resource_fixUrl(name, 'ajax'), succ, err, resource_request);//loader_ajax);
+    }
+};
+
+function resource_res_handle(url, succ, err, loader, cssId) {
+    //check 缓存
+    var cache = resource_cache_get(url);
+    if(cache){
+        succ(cache.data);
+        return;
+    }
+
+    //check 队列    
+    if(resource_queue_list[url]){
+        resource_queue_push(url, succ, err);
+    }else {
+        resource_queue_create(url);
+        resource_queue_push(url, succ, err);
+        //loader
+        loader(url, function(access, data) {
+            // resource_cache_create(url);
+            // resource_cache_set(url, {
+            //     data: data,
+            //     expire: null
+            // });
+            resource_queue_run(url, access, data);
+            resource_queue_del(url);
+        }, cssId);
+    }
+}
+
+//外部异步调用require方法
+function require_global(deps, cb, errcb, curNs){
+    var ns;
+    var loaded = 0;
+    var errored = 0;
+    var basePath;
+    deps = [].concat(deps);
+    function call_cb() {
+        var runner_result = require_runner(deps);
+        cb && cb.apply(this, runner_result);
+    }
+    for(var i = 0, len = deps.length; i < len; i++){
+        ns = deps[i];
+        if (curNs) {
+            basePath = require_nameToPath(curNs);
+            ns = require_idFix(ns, basePath);
+            deps[i] = ns;
+        }
+        
+        if(!require_ismodule_defined(ns)){
+            resource_res.js(ns, function(){
+                loaded++;
+                check();
+            }, function() {
+                errored ++;
+            });
+        }else {
+            loaded++;
+        }
+    }
+    check();
+    function check() {
+        if (deps.length <= loaded) {
+            if (errored) {
+                errcb();
+            } else {
+                call_cb();
+            }
+        }
+    }
+}
+
+//内部同步调用require方法
+function require_runner_makeRequire(curNs) {
+    var basePath = require_nameToPath(curNs);
+    return require;
+
+    function require(ns){
+        if (toString.call(ns).toLowerCase().indexOf('array') != -1) {
+            var paramList = core_array_makeArray(arguments);
+            paramList[3] = paramList[3] || curNs;
+            return require_global.apply(this, paramList);
+        }
+        ns = require_idFix(ns, basePath);
+
+        if (!require_ismodule_defined(ns)) {
+            throw '[' + ns + '] 依赖未定义!';
+        }
+        return require_runList[ns];
+    }
+}
+
+//运行define列表，并返回实例集
+function require_runner(pkg, basePath) {
+    // log('%cpkg_runner', 'color:green;font-size:20px;');
+    pkg = [].concat(pkg);
+    var i, len;
+    var ns, nsConstructor, module;
+    var resultList = [];
+
+    for (i = 0, len = pkg.length; i < len; i++) {
+        ns = pkg[i];
+        ns = require_idFix(ns, basePath);
+        nsConstructor = require_defineConstrutors[ns];
+        if(!nsConstructor){
+            log('Exception: please take notice of your resource  "', ns, '"  is right or not.(especial the upper/lower case)');
+            resultList.push(undefined);
+        }else {
+            if (!require_ismodule_runed(ns)) {
+                if(require_defineDeps[ns]){
+                    require_runner(require_defineDeps[ns], require_nameToPath(ns));
+                }
+                module = {
+                    exports: {}
+                };
+                require_runList[ns] = nsConstructor.apply(window, [require_runner_makeRequire(ns), module.exports, module]) || module.exports;
+            }
+            resultList.push(require_runList[ns]);
+        }
+    }
+    return resultList;
+}
+
+//全局define
+function require_define(ns, deps, construtor) {
+    if(require_ismodule_defined[ns]){
+        return;
+    }
+    require_defineDeps[ns] = construtor ? deps : [];
+    require_defineConstrutors[ns] = construtor || deps;
+    /*//模块自执行
+    if(require_dataMainId === ns){
+        setTimeout(function(){
+            require_runner([ns]);
+        });
+    }*/
+    if((deps = require_defineDeps[ns]) && deps.length){
+        setTimeout(function(){
+            var loadList = [];
+            for(var i = 0, l = deps.length; i < l; i++){
+                var depNs = require_idFix(deps[i], require_nameToPath(ns));
+                if(!require_ismodule_defined(depNs)){
+                    loadList.push(depNs);
+                }
+            }
+            if(loadList.length){
+                require_global_loadingNum++;
+                require_global(loadList, function(){
+                    log(ns + ' deps loaded ok!', '');
+                    setTimeout(function(){
+                        require_global_loadingNum--;
+                        require_main();
+                    });
+                },function(){
+                    log(ns + ' deps loaded error!', '');
+                });
+            }else {
+                require_main();
+            }
+        });
+    }else {
+        require_main();
+    }
+    function require_main(){
+        clearTimeout(require_mainTimer);
+        if(require_global_loadingNum < 1){
+            // if(require_dataMainId === ns){
+                require_mainTimer = setTimeout(function(){
+                    if(require_dataMainId && require_ismodule_defined(require_dataMainId)){
+                       require_runner([ns]); 
+                    }
+                    
+                }, 10);
+            // }
+        }
+    }
+}
+
+//定义boot
+function require_boot(ns) {
+    require_runner([ns]);
+}
+
+//调用入口的获取
+function require_dataMain(){
+    var scripts = getElementsByTagName('script');
+    var lastScripts = scripts[scripts.length -1];
+    require_dataMainId = lastScripts && lastScripts.getAttribute('data-main') || require_dataMainId;
+}
+ 
+
+function loader_config(parseParamFn) {
+  loader_base_version = parseParamFn('version', loader_base_version);
+}
+
+config_push(loader_config);//暂不做
+ 
+
+var resource_config_slash = '/';
+function resource_config(parseParamFn) {
+    resource_jsPath = parseParamFn('jsPath', resource_jsPath);
+    resource_cssPath = parseParamFn('cssPath', resource_cssPath);
+    resource_ajaxPath = parseParamFn('ajaxPath', resource_ajaxPath);
+    resource_basePath = parseParamFn('basePath', resource_config_slash);
+    resource_define_apiRule = parseParamFn('defApiRule', resource_define_apiRule);
+}
+
+config_push(resource_config);
+ 
+ /**
+ * 路由配置
+ */
+
+config_push(router_config);
+
+function router_config(parseParamFn, config) {
+  router_base_routerTable = parseParamFn('router', router_base_routerTable);
+  router_base_useHash = parseParamFn('useHash', router_base_useHash);
+  router_base_singlePage = parseParamFn('singlePage', router_base_singlePage);
+}/**
  * 路由启动接口
  * 1、设置侦听
  * 2、主动响应第一次的url(第一次是由后端渲染的，如果没有真实文件，无法启动页面)
@@ -2759,17 +2750,7 @@ function router_boot(){
     //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
     isHTML5 && router_base_singlePage && router_listen();
 }
-//router资源
-
-
-var router_api = {
-    set: router_listen_setRouter,
-    get: router_get
-};
-
-function router_get() {
-    return router_base_params;
-}
+
  
 
   config_push(function(parseParamFn) {
