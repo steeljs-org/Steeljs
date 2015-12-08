@@ -40,7 +40,7 @@ function render_run(box, controller) {
         controllerLoadFn = render_run_controllerLoadFn[boxId] = function(controller){
             if (controllerLoadFn === render_run_controllerLoadFn[boxId] && controller) {
                 endTime = new Date;
-                core_notice_fire('ctrlTime', {
+                core_notice_trigger('ctrlTime', {
                     startTime: startTime,
                     ctrlTime: (endTime - startTime) || 0,
                     ctrlNS: controllerNs

@@ -24,7 +24,7 @@ function render_control_setLogic(resContainer) {
             var cb = logicCallbackFn = function(fn) {
                 if(cb === logicCallbackFn){
                     endTime = new Date;
-                    core_notice_fire('logicTime', {
+                    core_notice_trigger('logicTime', {
                         startTime: startTime,
                         logicTime: endTime - startTime || 0,
                         ctrlNS: controllerNs

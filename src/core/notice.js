@@ -31,7 +31,7 @@ function core_notice_on( type, fn ) {
 function core_notice_off( type, fn ) {
 	var typeArray = core_notice_find( type ),
 		index,
-		spliceLength;
+		spliceLength = 0;
 	if ( fn ) {
 		if ( ( index = core_array_indexOf( fn, typeArray ) ) > -1 ) {
 			spliceLength = 1;
@@ -45,18 +45,18 @@ function core_notice_off( type, fn ) {
 
 /*
  * 事件触发
- * @method core_notice_fire
+ * @method core_notice_trigger
  * @param {string} type
  * @param {Array} args
  */
-function core_notice_fire( type, args ) {
+function core_notice_trigger( type, args ) {
 	var typeArray = core_notice_find( type );
 	args = [].concat( args || [] );
 	for ( var i = typeArray.length - 1; i > -1; i-- ) {
 		try {
 			typeArray[ i ] && typeArray[ i ].apply( undefined, args );
 		} catch ( e ) {
-			type != logNotice && core_notice_fire( logNotice, ['[error][notice][' + type + ']', e] );
+			type != logNotice && core_notice_trigger( logNotice, ['[error][notice][' + type + ']', e] );
 		}
 	}
 }

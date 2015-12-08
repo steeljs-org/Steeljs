@@ -31,7 +31,7 @@ function render_control_setData(resContainer) {
             if (cb === dataCallbackFn) {
                 //拿到ajax数据
                 endTime = new Date;
-                core_notice_fire('ajaxTime', {
+                core_notice_trigger('ajaxTime', {
                     startTime: startTime,
                     ajaxTime: (endTime - startTime) || 0,
                     ctrlNS: controllerNs

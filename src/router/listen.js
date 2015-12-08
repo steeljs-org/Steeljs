@@ -102,7 +102,7 @@ function router_listen_setRouter(url, replace) {
 
 //派发routerChange事件，返回router变化数据 @shaobo3
 function router_listen_fireRouterChange(controller) {
-    core_notice_fire('routerChange', {
+    core_notice_trigger('routerChange', {
         controller: controller,
         changeType: router_base_routerType
     });

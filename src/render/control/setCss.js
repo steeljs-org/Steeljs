@@ -26,7 +26,7 @@ function render_control_setCss(resContainer) {
         cssCache.cur = linkId;
         if(cb === cssCallbackFn) {
             endTime = new Date;
-            core_notice_fire('cssTime', {
+            core_notice_trigger('cssTime', {
                 startTime: startTime,
                 cssTime: (endTime - startTime) || 0,
                 ctrlNS: controllerNs

@@ -67,7 +67,7 @@ function render_control_render(resContainer) {
         }
         childWaitingCache = render_control_render_childWaitingCache[boxId] = [];
         if (render_base_count <= 0) {
-            core_notice_fire('allDomReady');
+            core_notice_trigger('allDomReady');
         }
     } else {
         var parentId = resContainer.parentId;

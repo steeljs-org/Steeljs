@@ -23,7 +23,7 @@ function render_control_setTpl(resContainer) {
         var cb = tplCallbackFn = function(jadefn){
             if(cb === tplCallbackFn){
                 endTime = new Date;
-                core_notice_fire('tplTime', {
+                core_notice_trigger('tplTime', {
                     startTime: startTime,
                     tplTime: endTime - startTime || 0,
                     ctrlNS: controllerNs

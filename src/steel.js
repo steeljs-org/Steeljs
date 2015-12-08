@@ -34,7 +34,7 @@
         var controller = router_match(location.toString());
         if (controller !== false) {
           render_run(mainBox, controller);
-          core_notice_fire('stageChange', mainBox);
+          core_notice_trigger('stageChange', mainBox);
         }
       }
     });
@@ -54,7 +54,7 @@
     var changeType = res.changeType;
     window.scrollTo(0, 0);
     render_run(mainBox, controller);
-    core_notice_fire('stageChange', mainBox);
+    core_notice_trigger('stageChange', mainBox);
     log("Debug: routerChange", mainBox, controller, changeType);
   });
 
