@@ -459,286 +459,7 @@ function core_fixUrl_handleTwoDots(url) {
     url = url.charAt(url.length - 1) === '/' ? (url.slice(0, url.length - 1)) : url;
     return url.slice(0, url.lastIndexOf('/') + 1);
 }//router资源
-/**
- * 路由变量定义区
- *
- */
-//收集用户路由配置信息
-var router_base_routerTable = [];
-
-//处理后的路由集合，[{pathRegexp:RegExp, controller:'controllerFn', keys:{}}]
-var router_base_routerTableReg = [];
-
-//项目是否使用hash
-var router_base_useHash = false;
-
-//应用是否支持单页面（跳转与否），默认应用是单页面
-var router_base_singlePage = true;
-
-//当前访问path的变量集合,以及location相关的解析结果
-var router_base_params = {
-    params:{}, 
-    query:{}
-};
-
-var router_base_routerType = 'init';
-var router_base_prevHref;
-var router_base_currentHref = location.toString();
-/*
- * dom事件绑定
- * @method core_event_addEventListener
- * @private
- * @param {Element} el
- * @param {string} type
- * @param {string} fn
- */
-var core_event_addEventListener = isAddEventListener ? 
-	function( el, type, fn ) {
-		el.addEventListener( type, fn, false );
-	}
-	:
-	function( el, type, fn ) {
-		el.attachEvent( 'on' + type, fn );
-	};
-
-/*
- * dom ready
- * @method core_dom_ready
- * @private
- * @param {Function} handler
- */
-function core_dom_ready( handler ) {
-	
-	function DOMReady() {
-		if ( DOMReady !== emptyFunction ) {
-			DOMReady = emptyFunction;
-			handler();
-		}
-	}
-	
-	if ( /complete/.test( document.readyState ) ) {
-		handler();
-	} else {
-		if ( isAddEventListener ) {
-			core_event_addEventListener( document, 'DOMContentLoaded', DOMReady );
-		} else {
-			core_event_addEventListener( document, 'onreadystatechange', DOMReady );
-
-			//在跨域嵌套iframe时 IE8- 浏览器获取window.frameElement 会出现权限问题
-			try {
-				var _frameElement = window.frameElement;
-			} catch (e) {}
-
-			if ( _frameElement == null && docElem.doScroll ) {
-				(function doScrollCheck() {
-					try {
-						docElem.doScroll( 'left' );
-					} catch ( e ) {
-						return setTimeout( doScrollCheck, 25 );
-					}
-					DOMReady();
-				})();
-			}
-		}
-		core_event_addEventListener( window, 'load', DOMReady );
-	}
-	
-}
-/*
- * preventDefault
- * @method core_event_preventDefault
- * @private
- * @return {Event} e 
- */
-function core_event_preventDefault( event ) {
-	if ( event.preventDefault ) {
-		event.preventDefault();
-	} else {
-		event.returnValue = false;
-	}
-}
-/**
- * router.getPath
- * 获取当前路由path，支持H5的history和非H5的hash两种方式
- * @return path String
- * @author shaobo3@staff.sina.com.cn
- * @create 15-2-3 上午12:19
- * @example
- *      var path = router_getPath();
- */
-
-/**
- * @id core_object_merge
- * @param {Object} origin
- * @param {Object} cover
- * @return {Object} opts{isDeep:true/false}
- * @example
- * var j1 = {'a':1,'b':2,'c':3};
- * var j2 = {'a':2,'d':4};
- * var mJson = core_object_merge(j1, j2);
- */
-
-// import("core.array.inArray");
-// import("core.array.isArray");
-// import("core.dom.isNode");
-// import("core.object.parseParam");
-
-var core_object_checkCell = function(obj) {
-    if(obj === undefined){
-        return true;
-    }
-    if(obj === null){
-        return true;
-    }
-    if(core_array_inArray( (typeof obj), ['number','string','function','boolean'])){
-        return true;
-    }
-    if(core_dom_isNode(obj)){
-        return true;
-    }
-    return false;
-};
-var core_object_deep = function(ret, key, coverItem) {
-    if(core_object_checkCell(coverItem)){
-        ret[key] = coverItem;
-        return;
-    }
-    if(core_array_isArray(coverItem)){
-        if(!core_array_isArray(ret[key])){
-            ret[key] = [];
-        }
-        for(var i = 0, len = coverItem.length; i < len; i += 1){
-            core_object_deep(ret[key], i, coverItem[i]);
-        }
-        return;
-    }
-    if(typeof coverItem === 'object'){
-        if(core_object_checkCell(ret[key]) || core_array_isArray(ret[key])){
-            ret[key] = {};
-        }
-        for(var k in coverItem){
-            core_object_deep(ret[key], k, coverItem[k]);
-        }
-        return;
-    }
-};
-
-var core_object_mergeBase = function(origin, cover, isDeep) {
-    var ret = {};
-    if(isDeep){
-        for(var k in origin){
-            core_object_deep(ret, k, origin[k]);
-        }
-        for(var k in cover){
-            core_object_deep(ret, k, cover[k]);
-        }
-    }else{
-        for(var k in origin){
-            ret[k] = origin[k];
-        }
-        for(var k in cover){
-            ret[k] = cover[k];
-        }
-    }
-    return ret;
-};
-
-function core_object_merge(origin, cover, opts) {
-    var conf = core_object_parseParam({
-        'isDeep' : false
-    }, opts);
-    
-    return core_object_mergeBase(origin, cover, conf.isDeep);
-};
-
-var router_getPath_hasStrip = /^#*/;
-
-function router_getPath(url){
-    var parseUrl, parsePath, subHref;
-    parseUrl = core_parseURL(url);
-    router_base_params = {};
-    //获取当前path
-    subHref = parseUrl.hash.replace(router_getPath_hasStrip, '').replace(/\/+/g, '/');
-    subHref = subHref.charAt(0) === '/' ? subHref : ('/' + subHref);
-    subHref = location.protocol + '//' + location.host + subHref
-
-    router_base_params = !isHTML5 && router_base_useHash ? core_parseURL(subHref) : parseUrl;
-    parsePath = router_base_params.path.replace(/\/+/g, '/');
-    router_base_params.path = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
-    router_base_params.search = router_base_params.query;
-    router_base_params.query = core_queryToJson(router_base_params.query);
-    router_base_params.type = router_base_routerType;
-    router_base_params.prev = router_base_prevHref;
-
-    return router_base_params.path;
-}
-
-//匹配路由表，返回匹配的controller
-function router_match_bak(url) {
-    url = url || location.toString();
-    var parsePath = core_parseURL(url).path.replace(/\/+/g, '/');
-    parsePath = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
-    for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
-        if (router_match_urlFix(router_base_routerTable[i][0]) === router_match_urlFix(parsePath)) {
-            return router_base_routerTable[i][1];
-        }
-    }
-    return false;
-}
-
-function router_match(url) {
-    url = url || location.toString();
-    var path = router_getPath(url);// store values
-    var m = [];//正则校验结果；
-
-    for (var i = 0, len = router_base_routerTableReg.length; i < len; i++) {
-        var obj = router_base_routerTableReg[i];
-        if ((m = obj['pathRegexp'].exec(path))) {
-            var keys = obj['keys'];
-            var params = router_base_params.params;
-            var prop;
-            var n = 0;
-            var key;
-            var val;
-
-            for (var j = 1, len = m.length; j < len; ++j) {
-                key = keys[j - 1];
-                prop = key
-                    ? key.name
-                    : n++;
-                val = router_match_decodeParam(m[j]);
-
-                if (val !== undefined || !(hasOwnProperty.call(params, prop))) {
-                    params[prop] = val;
-                }
-            }
-            return obj['controller'];
-        }
-    }
-
-    return false;
-}
-
-function router_match_decodeParam(val) {
-    if (typeof val !== 'string') {
-        return val;
-    }
-
-    try {
-        return decodeURIComponent(val);
-    } catch (e) {
-        throw new Error("Failed to decode param '" + val + "'");
-    }
-}
-
-/*
-//最后一个不区分大小写 例如"/v1/public/h5/custommenu/main" 与 "/v1/public/h5/custommenu/mAiN"
-function router_match_urlFix(url) {
-	var res = url.slice(url.lastIndexOf('/') + 1);
-	return url.replace(res, res.toLowerCase());
-}*//**
- * 公共对象方法定义文件
- */var core_uniqueKey_index = 1;
+var core_uniqueKey_index = 1;
 var core_uniqueKey_prefix = 'SL_' + now();
 
 /*
@@ -751,21 +472,6 @@ function core_uniqueKey() {
 	return core_uniqueKey_prefix + core_uniqueKey_index++;
 }
 
-
-//control容器
-var render_base_controlCache = {};
-//controllerNs容器
-var render_base_controllerNs = {};
-//资源容器
-var render_base_resContainer = {};
-//render数量
-var render_base_count = 0;
-
-//id生成器
-function render_base_idMaker(){
-    return core_uniqueKey();
-}
-
 //污染到对象上的属性定义
 var core_uniqueID_attr = '__SL_ID';
 /*
@@ -859,7 +565,214 @@ function core_notice_fire( type, args ) {
 		}
 	}
 }
-/*
+/**
+ * 路由变量定义区
+ *
+ */
+//收集用户路由配置信息
+var router_base_routerTable = [];
+
+//处理后的路由集合，[{pathRegexp:RegExp, controller:'controllerFn', keys:{}}]
+var router_base_routerTableReg = [];
+
+//项目是否使用hash
+var router_base_useHash = false;
+
+//应用是否支持单页面（跳转与否），默认应用是单页面
+var router_base_singlePage = true;
+
+//当前访问path的变量集合,以及location相关的解析结果
+var router_base_params;
+// init/new/forward/bak/refresh/replace
+var router_base_routerType = 'init';
+var router_base_prevHref;
+var router_base_currentHref = location.toString();
+/*
+ * dom事件绑定
+ * @method core_event_addEventListener
+ * @private
+ * @param {Element} el
+ * @param {string} type
+ * @param {string} fn
+ */
+var core_event_addEventListener = isAddEventListener ? 
+	function( el, type, fn ) {
+		el.addEventListener( type, fn, false );
+	}
+	:
+	function( el, type, fn ) {
+		el.attachEvent( 'on' + type, fn );
+	};
+
+/*
+ * dom ready
+ * @method core_dom_ready
+ * @private
+ * @param {Function} handler
+ */
+function core_dom_ready( handler ) {
+	
+	function DOMReady() {
+		if ( DOMReady !== emptyFunction ) {
+			DOMReady = emptyFunction;
+			handler();
+		}
+	}
+	
+	if ( /complete/.test( document.readyState ) ) {
+		handler();
+	} else {
+		if ( isAddEventListener ) {
+			core_event_addEventListener( document, 'DOMContentLoaded', DOMReady );
+		} else {
+			core_event_addEventListener( document, 'onreadystatechange', DOMReady );
+
+			//在跨域嵌套iframe时 IE8- 浏览器获取window.frameElement 会出现权限问题
+			try {
+				var _frameElement = window.frameElement;
+			} catch (e) {}
+
+			if ( _frameElement == null && docElem.doScroll ) {
+				(function doScrollCheck() {
+					try {
+						docElem.doScroll( 'left' );
+					} catch ( e ) {
+						return setTimeout( doScrollCheck, 25 );
+					}
+					DOMReady();
+				})();
+			}
+		}
+		core_event_addEventListener( window, 'load', DOMReady );
+	}
+	
+}
+/*
+ * preventDefault
+ * @method core_event_preventDefault
+ * @private
+ * @return {Event} e 
+ */
+function core_event_preventDefault( event ) {
+	if ( event.preventDefault ) {
+		event.preventDefault();
+	} else {
+		event.returnValue = false;
+	}
+}
+/**
+ * 生成路由结果
+ */
+
+
+var router_makeParams_hasStrip = /^#*/;
+function router_makeParams(url) {
+    var parseUrl = core_parseURL(url);
+    var subHref;
+    var params;
+    var path;
+
+    if (router_base_useHash) {
+        //获取当前 hash后的 path
+        subHref = parseUrl.hash.replace(router_makeParams_hasStrip, '');
+        params = core_fixUrl(url, subHref);
+    } else {
+        params = parseUrl;
+    }
+    path = params.path;
+    params.path = isDebug ? path.replace(/\.(jade)$/g, '') : path;
+    params.search = params.query;
+    params.query = core_queryToJson(params.query);
+    params.type = router_base_routerType;
+    params.prev = router_base_prevHref;
+
+    return params;
+}
+
+
+//匹配路由表，返回匹配的controller
+// @Finrila 没有用到的方法代码
+// function router_match_bak(url) {
+//     url = url || location.toString();
+//     var parsePath = core_parseURL(url).path.replace(/\/+/g, '/');
+//     parsePath = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
+//     for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
+//         if (router_match_urlFix(router_base_routerTable[i][0]) === router_match_urlFix(parsePath)) {
+//             return router_base_routerTable[i][1];
+//         }
+//     }
+//     return false;
+// }
+
+function router_match(url) {
+    url = url || location.toString();
+    var routerParams = router_makeParams(url);
+    var path = routerParams.path;// store values
+    var m = [];//正则校验结果；
+
+    for (var i = 0, len = router_base_routerTableReg.length; i < len; i++) {
+        var obj = router_base_routerTableReg[i];
+        if ((m = obj['pathRegexp'].exec(path))) {
+            var keys = obj['keys'];
+            var params = routerParams.params;
+            var prop;
+            var n = 0;
+            var key;
+            var val;
+
+            for (var j = 1, len = m.length; j < len; ++j) {
+                key = keys[j - 1];
+                prop = key
+                    ? key.name
+                    : n++;
+                val = router_match_decodeParam(m[j]);
+
+                if (val !== undefined || !(hasOwnProperty.call(params, prop))) {
+                    params[prop] = val;
+                }
+            }
+            return obj['controller'];
+        }
+    }
+
+    return false;
+}
+
+function router_match_decodeParam(val) {
+    if (typeof val !== 'string') {
+        return val;
+    }
+
+    try {
+        return decodeURIComponent(val);
+    } catch (e) {
+        throw new Error("Failed to decode param '" + val + "'");
+    }
+}
+
+/*
+//最后一个不区分大小写 例如"/v1/public/h5/custommenu/main" 与 "/v1/public/h5/custommenu/mAiN"
+function router_match_urlFix(url) {
+	var res = url.slice(url.lastIndexOf('/') + 1);
+	return url.replace(res, res.toLowerCase());
+}*//**
+ * 公共对象方法定义文件
+ */
+
+//control容器
+var render_base_controlCache = {};
+//controllerNs容器
+var render_base_controllerNs = {};
+//资源容器
+var render_base_resContainer = {};
+//render数量
+var render_base_count = 0;
+
+//id生成器
+function render_base_idMaker(){
+    return core_uniqueKey();
+}
+/*
  * 把类数组改变成数组
  * @method core_array_makeArray
  * @private
@@ -1703,7 +1616,16 @@ function render_run(box, controller) {
         control._controller = controller;
         controller(control, render_run_rootScope);
     }
-}
+}
+
+function core_crossDomainCheck(url) {
+    var urlPreReg = /^[^:]+:\/\/[^\/]+\//;
+    var locationMatch = location.href.match(urlPreReg);
+    var urlMatch = url.match(urlPreReg);
+    return (locationMatch && locationMatch[0]) === (urlMatch && urlMatch[0]);
+}
+
+//@Finrila 未处理hashchange事件
 
 var router_listen_queryTime = 5;
 var router_listen_count;
@@ -1719,12 +1641,9 @@ function router_listen() {
         router_listen_count = 1;
         var hrefNode = router_listen_getHrefNode(el);
         var href = hrefNode && hrefNode.href;
-        if (!href) {
-            return;
-        }
         //如果A连接有target=_blank或者用户同时按下command(新tab打开)、ctrl(新tab打开)、alt(下载)、shift(新窗口打开)键时，直接跳链。
         //@shaobo3  （此处可以优化性能@Finrila）
-        if (hrefNode.getAttribute("target") === "_blank" || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
+        if (!href || href.indexOf('javascript:') === 0 || hrefNode.getAttribute("target") === "_blank" || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
             return;
         }
         core_event_preventDefault(e);
@@ -1751,9 +1670,9 @@ function router_listen() {
 }
 
 function router_listen_getHrefNode(el) {
-    if(el && router_listen_count < router_listen_queryTime) {
+    if (el && router_listen_count < router_listen_queryTime) {
         router_listen_count++;
-        if (el.tagName && el.tagName.toLowerCase() === 'a' && /^http/.test(el.href)) {
+        if (el.tagName && el.tagName.toLowerCase() === 'a') {
             return el;
         }
         return router_listen_getHrefNode(el.parentNode);
@@ -1763,13 +1682,10 @@ function router_listen_getHrefNode(el) {
 function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
     router_base_currentHref = url;
+    router_base_params = router_makeParams(url);
     var controller = router_match(url);
     if (controller !== false) {
-        //派发routerChange事件，返回router变化数据 @shaobo3
-        core_notice_fire('routerChange', {
-            matchResult: controller,
-            changeType:router_base_routerType
-        });
+        router_listen_fireRouterChange(controller);
     } else {
         location.reload();
     }
@@ -1779,7 +1695,7 @@ function router_listen_setRouter(url, replace) {
     var basePath = location.href;
     url = core_fixUrl(basePath, url);
     
-    if (android && history.length === 1 || !router_listen_crossDomainCheck(url)) {
+    if (android && history.length === 1 || !core_crossDomainCheck(url)) {
         if (replace) {
             location.replace(url);
         } else {
@@ -1787,7 +1703,7 @@ function router_listen_setRouter(url, replace) {
         }
     } else {
         if (replace) {
-            outer_base_routerType = 'replace';
+            router_base_routerType = 'replace';
             history.replaceState(router_listen_lastStateData, null, url);
         } else {
             if (router_base_currentHref !== url) {
@@ -1801,24 +1717,26 @@ function router_listen_setRouter(url, replace) {
     }
 }
 
-function router_listen_crossDomainCheck(url) {
-    var urlPreReg = /^[^:]+:\/\/[^\/]+\//;
-    var locationMatch = location.href.match(urlPreReg);
-    var urlMatch = url.match(urlPreReg);
-    return (locationMatch && locationMatch[0]) === (urlMatch && urlMatch[0]);
-}
+//派发routerChange事件，返回router变化数据 @shaobo3
+function router_listen_fireRouterChange(controller) {
+    core_notice_fire('routerChange', {
+        controller: controller,
+        changeType: router_base_routerType
+    });
+}
 
-
-
-
-var router_api = {
+var router_router = {
     set: router_listen_setRouter,
     get: router_router_get
 };
 
 function router_router_get() {
+    if (!router_base_params) {
+        router_base_params = router_makeParams(location.toString());
+    }
     return router_base_params;
 }
+
 
 function resource_fixUrl(url, type) {
 
@@ -2763,8 +2681,7 @@ function router_boot(){
   steel.d = require_define;
   steel.res = resource_res;
   steel.run = render_run;
-  steel.router = router_api;
-  steel.setRouter = steel.router.set;
+  steel.router = router_router;
   steel.on = core_notice_on;
   steel.off = core_notice_off;
   steel.setExtTplData = render_control_setExtTplData;
@@ -2779,7 +2696,7 @@ function router_boot(){
         if (controller !== false) {
           render_run(mainBox, controller);
           core_notice_fire('stageChange', mainBox);
-        } 
+        }
       }
     });
   };
@@ -2793,7 +2710,7 @@ function router_boot(){
     }
   };
   core_notice_on('routerChange', function(res) {
-    var controller = res.matchResult;
+    var controller = res.controller;
     var changeType = res.changeType;
     window.scrollTo(0, 0);
     render_run(mainBox, controller);
