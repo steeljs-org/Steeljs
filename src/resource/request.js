@@ -8,7 +8,7 @@ function resource_request(url, callback) {
         if (req && req.code == '100000') {
             callback(true, req);
         }else {
-            log(url + ': The api error code is ' + (req && req.code) + '. The error reason is ' + (req && req.msg));
+            log('Error: res data url("' + url + '") : The api error code is ' + (req && req.code) + '. The error reason is ' + (req && req.msg));
             callback(false, req, params);
         }
     }
