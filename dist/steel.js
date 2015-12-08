@@ -2284,7 +2284,7 @@ function require_define(ns, deps, construtor) {
     function doDefine() {
         require_base_module_defined[ns] = true;
         core_notice_trigger(require_base_event_defined, ns);
-        log('Debug: ns("' + ns + '") deps loaded ok!', '');
+        log('Debug: define ns("' + ns + '")');
     }
 
 }
