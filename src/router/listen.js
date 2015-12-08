@@ -6,7 +6,9 @@
 //import render/run
 //import core/notice
 //import core/fixUrl
-//import core/parseURL
+//import core/crossDomainCheck
+
+//@Finrila 未处理hashchange事件
 
 var router_listen_queryTime = 5;
 var router_listen_count;
@@ -22,12 +24,9 @@ function router_listen() {
         router_listen_count = 1;
         var hrefNode = router_listen_getHrefNode(el);
         var href = hrefNode && hrefNode.href;
-        if (!href) {
-            return;
-        }
         //如果A连接有target=_blank或者用户同时按下command(新tab打开)、ctrl(新tab打开)、alt(下载)、shift(新窗口打开)键时，直接跳链。
         //@shaobo3  （此处可以优化性能@Finrila）
-        if (hrefNode.getAttribute("target") === "_blank" || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
+        if (!href || href.indexOf('javascript:') === 0 || hrefNode.getAttribute("target") === "_blank" || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
             return;
         }
         core_event_preventDefault(e);
@@ -54,9 +53,9 @@ function router_listen() {
 }
 
 function router_listen_getHrefNode(el) {
-    if(el && router_listen_count < router_listen_queryTime) {
+    if (el && router_listen_count < router_listen_queryTime) {
         router_listen_count++;
-        if (el.tagName && el.tagName.toLowerCase() === 'a' && /^http/.test(el.href)) {
+        if (el.tagName && el.tagName.toLowerCase() === 'a') {
             return el;
         }
         return router_listen_getHrefNode(el.parentNode);
@@ -66,13 +65,10 @@ function router_listen_getHrefNode(el) {
 function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
     router_base_currentHref = url;
+    router_base_params = router_makeParams(url);
     var controller = router_match(url);
     if (controller !== false) {
-        //派发routerChange事件，返回router变化数据 @shaobo3
-        core_notice_fire('routerChange', {
-            matchResult: controller,
-            changeType:router_base_routerType
-        });
+        router_listen_fireRouterChange(controller);
     } else {
         location.reload();
     }
@@ -82,7 +78,7 @@ function router_listen_setRouter(url, replace) {
     var basePath = location.href;
     url = core_fixUrl(basePath, url);
     
-    if (android && history.length === 1 || !router_listen_crossDomainCheck(url)) {
+    if (android && history.length === 1 || !core_crossDomainCheck(url)) {
         if (replace) {
             location.replace(url);
         } else {
@@ -90,7 +86,7 @@ function router_listen_setRouter(url, replace) {
         }
     } else {
         if (replace) {
-            outer_base_routerType = 'replace';
+            router_base_routerType = 'replace';
             history.replaceState(router_listen_lastStateData, null, url);
         } else {
             if (router_base_currentHref !== url) {
@@ -104,11 +100,10 @@ function router_listen_setRouter(url, replace) {
     }
 }
 
-function router_listen_crossDomainCheck(url) {
-    var urlPreReg = /^[^:]+:\/\/[^\/]+\//;
-    var locationMatch = location.href.match(urlPreReg);
-    var urlMatch = url.match(urlPreReg);
-    return (locationMatch && locationMatch[0]) === (urlMatch && urlMatch[0]);
+//派发routerChange事件，返回router变化数据 @shaobo3
+function router_listen_fireRouterChange(controller) {
+    core_notice_fire('routerChange', {
+        controller: controller,
+        changeType: router_base_routerType
+    });
 }
-
-

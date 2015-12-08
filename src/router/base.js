@@ -15,11 +15,8 @@ var router_base_useHash = false;
 var router_base_singlePage = true;
 
 //当前访问path的变量集合,以及location相关的解析结果
-var router_base_params = {
-    params:{}, 
-    query:{}
-};
-
+var router_base_params;
+// init/new/forward/bak/refresh/replace
 var router_base_routerType = 'init';
 var router_base_prevHref;
 var router_base_currentHref = location.toString();

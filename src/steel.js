@@ -23,8 +23,7 @@
   steel.d = require_define;
   steel.res = resource_res;
   steel.run = render_run;
-  steel.router = router_api;
-  steel.setRouter = steel.router.set;
+  steel.router = router_router;
   steel.on = core_notice_on;
   steel.off = core_notice_off;
   steel.setExtTplData = render_control_setExtTplData;
@@ -39,7 +38,7 @@
         if (controller !== false) {
           render_run(mainBox, controller);
           core_notice_fire('stageChange', mainBox);
-        } 
+        }
       }
     });
   };
@@ -53,7 +52,7 @@
     }
   };
   core_notice_on('routerChange', function(res) {
-    var controller = res.matchResult;
+    var controller = res.controller;
     var changeType = res.changeType;
     window.scrollTo(0, 0);
     render_run(mainBox, controller);

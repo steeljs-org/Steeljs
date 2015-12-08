@@ -1,30 +1,33 @@
 //import ./base
 //import core/parseURL
-//import ./getPath
+//import ./router
+//import ./makeParams
 
 //匹配路由表，返回匹配的controller
-function router_match_bak(url) {
-    url = url || location.toString();
-    var parsePath = core_parseURL(url).path.replace(/\/+/g, '/');
-    parsePath = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
-    for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
-        if (router_match_urlFix(router_base_routerTable[i][0]) === router_match_urlFix(parsePath)) {
-            return router_base_routerTable[i][1];
-        }
-    }
-    return false;
-}
+// @Finrila 没有用到的方法代码
+// function router_match_bak(url) {
+//     url = url || location.toString();
+//     var parsePath = core_parseURL(url).path.replace(/\/+/g, '/');
+//     parsePath = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
+//     for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
+//         if (router_match_urlFix(router_base_routerTable[i][0]) === router_match_urlFix(parsePath)) {
+//             return router_base_routerTable[i][1];
+//         }
+//     }
+//     return false;
+// }
 
 function router_match(url) {
     url = url || location.toString();
-    var path = router_getPath(url);// store values
+    var routerParams = router_makeParams(url);
+    var path = routerParams.path;// store values
     var m = [];//正则校验结果；
 
     for (var i = 0, len = router_base_routerTableReg.length; i < len; i++) {
         var obj = router_base_routerTableReg[i];
         if ((m = obj['pathRegexp'].exec(path))) {
             var keys = obj['keys'];
-            var params = router_base_params.params;
+            var params = routerParams.params;
             var prop;
             var n = 0;
             var key;
