@@ -100,40 +100,28 @@ function config_parseParamFn(config) {
     return defaultValue;
   };
 }
- //已定义的模块容器
-var require_defineDeps = {};
-var require_defineConstrutors = {};
+ //模块相关全局变量
+var require_base_module_deps = {};
+var require_base_module_fn = {};
+var require_base_module_loaded = {};
+var require_base_module_defined = {};
+var require_base_module_runed = {};
 
-
-//已运行的模块容器
-var require_runList = {};
-
-//自执行的ns
-var require_dataMainId;
-var require_mainTimer;
+//事件
+var require_base_event_defined = '-require-defined';
 var require_global_loadingNum = 0;
 
-//是否定义
-function require_ismodule_defined(ns) {
-    return !!require_defineDeps[ns];
-}
-
-//是否运行过
-function require_ismodule_runed(ns) {
-    return ns in require_runList;
-}
-
-function require_idFix(id, basePath) {
-    if (id.indexOf('.') == 0) {
+function require_base_idFix(id, basePath) {
+    if (id.indexOf('.') === 0) {
         id = basePath ? (basePath + id).replace(/\/\.\//, '/') : id.replace(/^\.\//, '');
     }
-    while (id.indexOf('../') != -1) {
+    while (id.indexOf('../') !== -1) {
         id = id.replace(/\w+\/\.\.\//, '');
     }
     return id;
 }
 
-function require_nameToPath(name){
+function require_base_nameToPath(name){
     return name.substr(0, name.lastIndexOf('/') + 1);
 }/*
  * parse URL
@@ -391,9 +379,7 @@ var resource_define_apiRule;
 
 //资源列表{url->[[access_cb, fail_cb],....]}
 var resource_queue_list = {};
-
-//加载完成的资源列表
-var resource_cache_list = {};/*
+/*
  * 根据相对路径得到绝对路径
  * @method core_fixUrl
  * @private
@@ -536,7 +522,7 @@ function core_notice_on( type, fn ) {
 function core_notice_off( type, fn ) {
 	var typeArray = core_notice_find( type ),
 		index,
-		spliceLength;
+		spliceLength = 0;
 	if ( fn ) {
 		if ( ( index = core_array_indexOf( fn, typeArray ) ) > -1 ) {
 			spliceLength = 1;
@@ -550,18 +536,18 @@ function core_notice_off( type, fn ) {
 
 /*
  * 事件触发
- * @method core_notice_fire
+ * @method core_notice_trigger
  * @param {string} type
  * @param {Array} args
  */
-function core_notice_fire( type, args ) {
+function core_notice_trigger( type, args ) {
 	var typeArray = core_notice_find( type );
 	args = [].concat( args || [] );
 	for ( var i = typeArray.length - 1; i > -1; i-- ) {
 		try {
 			typeArray[ i ] && typeArray[ i ].apply( undefined, args );
 		} catch ( e ) {
-			type != logNotice && core_notice_fire( logNotice, ['[error][notice][' + type + ']', e] );
+			type != logNotice && core_notice_trigger( logNotice, ['[error][notice][' + type + ']', e] );
 		}
 	}
 }
@@ -795,7 +781,7 @@ function core_array_makeArray( obj ) {
 
 function render_error() {
 	log(arguments);
-    core_notice_fire('renderError', core_array_makeArray(arguments));
+    core_notice_trigger('renderError', core_array_makeArray(arguments));
 }/*
  * control核心逻辑
 *//*
@@ -906,20 +892,17 @@ function render_parse(jadeFunStr){
     var result = [];
     var ret = [];
     var reg = /<[a-z]+([^>]*?s-(child)[^>]*?)>/g;//|tpl|data|css|logic
-    // var reg_child = /(s-child=[^ ]*)/g;
     
     while (g = reg.exec(jadeFunStr)){
         var ele = g[1].replace(/\\\"/g, '"');
         var oEle = ele.replace(/\"/g, '').replace(/ /g, '&');
         var eleObj = core_queryToJson(oEle);
-        // var idKey = ele.match(reg_child).join();
         var id = render_base_idMaker();
         
         eleObj['s-id'] = id;
         eleObj['s-all'] = ele;
         result.push(eleObj);
     }
-    // console.log(result);
     return result;
 }/*
  * 处理子模块
@@ -985,7 +968,7 @@ function render_control_setLogic(resContainer) {
             var cb = logicCallbackFn = function(fn) {
                 if(cb === logicCallbackFn){
                     endTime = new Date;
-                    core_notice_fire('logicTime', {
+                    core_notice_trigger('logicTime', {
                         startTime: startTime,
                         logicTime: endTime - startTime || 0,
                         ctrlNS: controllerNs
@@ -1017,7 +1000,7 @@ function render_control_startLogic(resContainer) {
             try {
                 logicResult = resContainer.logicFn(box, real_data) || {};
             } catch(e) {
-                log('run logic error:', resContainer.logic, e);
+                log('Error: run logic error:', resContainer.logic, e);
             }
         }
         resContainer.logicResult = logicResult;
@@ -1038,7 +1021,7 @@ function render_control_destroyLogic(resContainer) {
             try {
                 logicResult.destroy && logicResult.destroy();
             } catch(e) {
-                log('destroy logic error:', resContainer.logic, e);
+                log('Error: destroy logic error:', resContainer.logic, e);
             }
         }
       resContainer.logicResult = undefined;
@@ -1118,7 +1101,7 @@ function render_control_render(resContainer) {
         }
         childWaitingCache = render_control_render_childWaitingCache[boxId] = [];
         if (render_base_count <= 0) {
-            core_notice_fire('allDomReady');
+            core_notice_trigger('allDomReady');
         }
     } else {
         var parentId = resContainer.parentId;
@@ -1148,7 +1131,7 @@ function render_control_setCss(resContainer) {
         cssCache.cur = linkId;
         if(cb === cssCallbackFn) {
             endTime = new Date;
-            core_notice_fire('cssTime', {
+            core_notice_trigger('cssTime', {
                 startTime: startTime,
                 cssTime: (endTime - startTime) || 0,
                 ctrlNS: controllerNs
@@ -1209,7 +1192,7 @@ function render_control_setTpl(resContainer) {
         var cb = tplCallbackFn = function(jadefn){
             if(cb === tplCallbackFn){
                 endTime = new Date;
-                core_notice_fire('tplTime', {
+                core_notice_trigger('tplTime', {
                     startTime: startTime,
                     tplTime: endTime - startTime || 0,
                     ctrlNS: controllerNs
@@ -1219,6 +1202,7 @@ function render_control_setTpl(resContainer) {
             }
         }
         startTime = new Date;
+        
         require_global(tpl, cb, render_error, controllerNs);
     }
 }
@@ -1326,7 +1310,7 @@ function render_control_setData(resContainer) {
             if (cb === dataCallbackFn) {
                 //拿到ajax数据
                 endTime = new Date;
-                core_notice_fire('ajaxTime', {
+                core_notice_trigger('ajaxTime', {
                     startTime: startTime,
                     ajaxTime: (endTime - startTime) || 0,
                     ctrlNS: controllerNs
@@ -1395,7 +1379,7 @@ var render_control_main_realTypeMap = {
 function render_control_main(boxId, controllerNs) {
     render_base_count++;
     //资源容器
-    var resContainer = render_base_resContainer[boxId] =  render_base_resContainer[boxId] || {
+    var resContainer = render_base_resContainer[boxId] = render_base_resContainer[boxId] || {
         boxId: boxId,
         controllerNs: controllerNs,
         childrenid: {},
@@ -1495,7 +1479,7 @@ function render_control_main(boxId, controllerNs) {
                 if (resContainer[type]) {
                     changeResList[type] = true;
                 }
-            }          
+            }
         }
 
         toDoSets();
@@ -1584,7 +1568,7 @@ function render_run(box, controller) {
         controllerLoadFn = render_run_controllerLoadFn[boxId] = function(controller){
             if (controllerLoadFn === render_run_controllerLoadFn[boxId] && controller) {
                 endTime = new Date;
-                core_notice_fire('ctrlTime', {
+                core_notice_trigger('ctrlTime', {
                     startTime: startTime,
                     ctrlTime: (endTime - startTime) || 0,
                     ctrlNS: controllerNs
@@ -1719,7 +1703,7 @@ function router_listen_setRouter(url, replace) {
 
 //派发routerChange事件，返回router变化数据 @shaobo3
 function router_listen_fireRouterChange(controller) {
-    core_notice_fire('routerChange', {
+    core_notice_trigger('routerChange', {
         controller: controller,
         changeType: router_base_routerType
     });
@@ -1800,35 +1784,6 @@ function resource_queue_run(url, access, data){
 
 function resource_queue_del(url) {
     url in resource_queue_list && (delete resource_queue_list[url]);
-}
-
-/*
- * 缓存管理
- * @params
- * obj
- * {
- *   data: data,// 资源数据
- *   expire: null //过期时间
- * }
- */
-
-function resource_cache_create(url) {
-	resource_cache_list[url] = [];
-}
-
-function resource_cache_set(url, obj) {
-	resource_cache_list[url].data = obj.data;
-	resource_cache_list[url].expire = obj.expire;
-}
-
-function resource_cache_get(url) {
-	return resource_cache_list[url];
-}
-
-function resource_cache_del(url) {
-	if (url in resource_cache_list[url]) {
-		delete resource_cache_list[url];
-	}
 }/*版本号*/
 var loader_base_version;/*
  * 创建节点
@@ -1990,7 +1945,7 @@ function loader_css( url, callback, load_ID ){
         if(--_rTime > 0){
             setTimeout(timer, 10);
         }else {
-            log(url + ' timeout!');
+            log('Error: css("' + url + '" timeout!');
             core_hideDiv_removeChild(load_div);
             callback(false);
         }
@@ -2166,7 +2121,7 @@ function resource_request(url, callback) {
         if (req && req.code == '100000') {
             callback(true, req);
         }else {
-            log(url + ': The api error code is ' + (req && req.code) + '. The error reason is ' + (req && req.msg));
+            log('Error: res data url("' + url + '") : The api error code is ' + (req && req.code) + '. The error reason is ' + (req && req.msg));
             callback(false, req, params);
         }
     }
@@ -2190,12 +2145,6 @@ var resource_res = {
 };
 
 function resource_res_handle(url, succ, err, loader, cssId) {
-    //check 缓存
-    var cache = resource_cache_get(url);
-    if(cache){
-        succ(cache.data);
-        return;
-    }
 
     //check 队列    
     if(resource_queue_list[url]){
@@ -2205,176 +2154,146 @@ function resource_res_handle(url, succ, err, loader, cssId) {
         resource_queue_push(url, succ, err);
         //loader
         loader(url, function(access, data) {
-            // resource_cache_create(url);
-            // resource_cache_set(url, {
-            //     data: data,
-            //     expire: null
-            // });
             resource_queue_run(url, access, data);
             resource_queue_del(url);
         }, cssId);
     }
-}
+}
 
 //外部异步调用require方法
-function require_global(deps, cb, errcb, curNs){
-    var ns;
-    var loaded = 0;
+function require_global(deps, complete, errcb, currNs, runDeps) {
+    var depNs;
+    var depDefined = 0;
     var errored = 0;
-    var basePath;
+    var baseModulePath = currNs && require_base_nameToPath(currNs);
     deps = [].concat(deps);
-    function call_cb() {
-        var runner_result = require_runner(deps);
-        cb && cb.apply(this, runner_result);
-    }
-    for(var i = 0, len = deps.length; i < len; i++){
-        ns = deps[i];
-        if (curNs) {
-            basePath = require_nameToPath(curNs);
-            ns = require_idFix(ns, basePath);
-            deps[i] = ns;
-        }
-        
-        if(!require_ismodule_defined(ns)){
-            resource_res.js(ns, function(){
-                loaded++;
-                check();
-            }, function() {
-                errored ++;
-            });
-        }else {
-            loaded++;
+    for (var i = 0, len = deps.length; i < len; i++) {
+        depNs = deps[i] = require_base_idFix(deps[i], baseModulePath);
+        if (require_base_module_loaded[depNs]) {
+            checkDepDefined(depNs);
+        } else {
+            ! function(depNs) {
+                resource_res.js(depNs, function() {
+                    checkDepDefined(depNs);
+                }, function() {
+                    errored++;
+                });
+            }(depNs);
         }
     }
-    check();
+
     function check() {
-        if (deps.length <= loaded) {
+        if (deps.length <= depDefined) {
             if (errored) {
                 errcb();
             } else {
-                call_cb();
+                var runner_result;
+                if (runDeps === undefined || runDeps === true) {
+                    runner_result = require_runner(deps);
+                }
+                complete && complete.apply(window, runner_result);
             }
         }
     }
-}
 
+    function checkDepDefined(depNs) {
+        if (require_base_module_defined[depNs]) {
+            depDefined++;
+            check();
+        } else {
+            core_notice_on(require_base_event_defined, function definedFn(ns) {
+                if (depNs === ns) {
+                    core_notice_off(require_base_event_defined, definedFn);
+                    depDefined++;
+                    check();
+                }
+            });
+        }
+    }
+}
 //内部同步调用require方法
-function require_runner_makeRequire(curNs) {
-    var basePath = require_nameToPath(curNs);
+function require_runner_makeRequire(currNs) {
+    var basePath = require_base_nameToPath(currNs);
     return require;
 
-    function require(ns){
-        if (toString.call(ns).toLowerCase().indexOf('array') != -1) {
+    function require(ns) {
+        if (core_object_typeof(ns) === 'array') {
             var paramList = core_array_makeArray(arguments);
-            paramList[3] = paramList[3] || curNs;
-            return require_global.apply(this, paramList);
+            paramList[3] = paramList[3] || currNs;
+            return require_global.apply(window, paramList);
         }
-        ns = require_idFix(ns, basePath);
+        ns = require_base_idFix(ns, basePath);
 
-        if (!require_ismodule_defined(ns)) {
-            throw '[' + ns + '] 依赖未定义!';
+        if (!require_base_module_defined[ns]) {
+            throw 'Error: ns("' + ns + '") is undefined!';
         }
-        return require_runList[ns];
+        return require_base_module_runed[ns];
     }
 }
 
 //运行define列表，并返回实例集
 function require_runner(pkg, basePath) {
-    // log('%cpkg_runner', 'color:green;font-size:20px;');
     pkg = [].concat(pkg);
     var i, len;
     var ns, nsConstructor, module;
     var resultList = [];
 
     for (i = 0, len = pkg.length; i < len; i++) {
-        ns = pkg[i];
-        ns = require_idFix(ns, basePath);
-        nsConstructor = require_defineConstrutors[ns];
-        if(!nsConstructor){
-            log('Exception: please take notice of your resource  "', ns, '"  is right or not.(especial the upper/lower case)');
+        ns = require_base_idFix(pkg[i], basePath);
+        nsConstructor = require_base_module_fn[ns];
+        if (!nsConstructor) {
+            log('Warning: ns("' + ns + '") has not constructor!');
             resultList.push(undefined);
-        }else {
-            if (!require_ismodule_runed(ns)) {
-                if(require_defineDeps[ns]){
-                    require_runner(require_defineDeps[ns], require_nameToPath(ns));
+        } else {
+            if (!require_base_module_runed[ns]) {
+                if (require_base_module_deps[ns]) {
+                    require_runner(require_base_module_deps[ns], require_base_nameToPath(ns));
                 }
                 module = {
                     exports: {}
                 };
-                require_runList[ns] = nsConstructor.apply(window, [require_runner_makeRequire(ns), module.exports, module]) || module.exports;
+                require_base_module_runed[ns] = nsConstructor.apply(window, [require_runner_makeRequire(ns), module.exports, module]) || module.exports;
             }
-            resultList.push(require_runList[ns]);
+            resultList.push(require_base_module_runed[ns]);
         }
     }
     return resultList;
-}
+}
 
 //全局define
 function require_define(ns, deps, construtor) {
-    if(require_ismodule_defined[ns]){
+    if (require_base_module_defined[ns]) {
         return;
     }
-    require_defineDeps[ns] = construtor ? deps : [];
-    require_defineConstrutors[ns] = construtor || deps;
-    /*//模块自执行
-    if(require_dataMainId === ns){
-        setTimeout(function(){
-            require_runner([ns]);
+    require_base_module_loaded[ns] = true;
+    require_base_module_deps[ns] = construtor ? (deps || []) : [];
+    require_base_module_fn[ns] = construtor || deps;
+    deps = require_base_module_deps[ns];
+    
+    if (deps.length > 0) {
+        setTimeout(function() {
+            require_global(deps, doDefine, function() {
+                log('Error: ns("' + ns + '") deps loaded error!', '');
+            }, ns, false);
         });
-    }*/
-    if((deps = require_defineDeps[ns]) && deps.length){
-        setTimeout(function(){
-            var loadList = [];
-            for(var i = 0, l = deps.length; i < l; i++){
-                var depNs = require_idFix(deps[i], require_nameToPath(ns));
-                if(!require_ismodule_defined(depNs)){
-                    loadList.push(depNs);
-                }
-            }
-            if(loadList.length){
-                require_global_loadingNum++;
-                require_global(loadList, function(){
-                    log(ns + ' deps loaded ok!', '');
-                    setTimeout(function(){
-                        require_global_loadingNum--;
-                        require_main();
-                    });
-                },function(){
-                    log(ns + ' deps loaded error!', '');
-                });
-            }else {
-                require_main();
-            }
-        });
-    }else {
-        require_main();
+    } else {
+        doDefine();
     }
-    function require_main(){
-        clearTimeout(require_mainTimer);
-        if(require_global_loadingNum < 1){
-            // if(require_dataMainId === ns){
-                require_mainTimer = setTimeout(function(){
-                    if(require_dataMainId && require_ismodule_defined(require_dataMainId)){
-                       require_runner([ns]); 
-                    }
-                    
-                }, 10);
-            // }
-        }
+    
+
+    function doDefine() {
+        require_base_module_defined[ns] = true;
+        core_notice_trigger(require_base_event_defined, ns);
+        log('Debug: ns("' + ns + '") deps loaded ok!', '');
     }
+
 }
 
 //定义boot
 function require_boot(ns) {
-    require_runner([ns]);
-}
-
-//调用入口的获取
-function require_dataMain(){
-    var scripts = getElementsByTagName('script');
-    var lastScripts = scripts[scripts.length -1];
-    require_dataMainId = lastScripts && lastScripts.getAttribute('data-main') || require_dataMainId;
+    require_global([ns]);
 }
+
  
 
 function loader_config(parseParamFn) {
@@ -2676,8 +2595,6 @@ function router_boot(){
     mainBox = parseParamFn('mainBox', mainBox);
   });
 
-  //初始化data-main
-  require_dataMain();
   steel.d = require_define;
   steel.res = resource_res;
   steel.run = render_run;
@@ -2688,14 +2605,13 @@ function router_boot(){
 
   steel.boot = function(ns) {
     steel.isDebug = isDebug;
-    setTimeout(function() {
-      require_boot(ns);
+    require_global(ns, function() {
       router_boot();
       if (mainBox) {
         var controller = router_match(location.toString());
         if (controller !== false) {
           render_run(mainBox, controller);
-          core_notice_fire('stageChange', mainBox);
+          core_notice_trigger('stageChange', mainBox);
         }
       }
     });
@@ -2709,16 +2625,16 @@ function router_boot(){
       render_control_destroyChildren(resContainer.toDestroyChildrenid);
     }
   };
+  
   core_notice_on('routerChange', function(res) {
     var controller = res.controller;
     var changeType = res.changeType;
     window.scrollTo(0, 0);
     render_run(mainBox, controller);
-    core_notice_fire('stageChange', mainBox);
-    log("routerChange", mainBox, controller, changeType);
+    core_notice_trigger('stageChange', mainBox);
+    log("Debug: routerChange", mainBox, controller, changeType);
   });
 
   window.steel = steel;
-
 
 }(window);
