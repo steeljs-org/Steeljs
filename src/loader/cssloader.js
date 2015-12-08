@@ -39,7 +39,7 @@ function loader_css( url, callback, load_ID ){
         if(--_rTime > 0){
             setTimeout(timer, 10);
         }else {
-            log(url + ' timeout!');
+            log('Error: css("' + url + '" timeout!');
             core_hideDiv_removeChild(load_div);
             callback(false);
         }

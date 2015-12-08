@@ -56,7 +56,7 @@ function render_control_startLogic(resContainer) {
             try {
                 logicResult = resContainer.logicFn(box, real_data) || {};
             } catch(e) {
-                log('run logic error:', resContainer.logic, e);
+                log('Error: run logic error:', resContainer.logic, e);
             }
         }
         resContainer.logicResult = logicResult;
@@ -77,7 +77,7 @@ function render_control_destroyLogic(resContainer) {
             try {
                 logicResult.destroy && logicResult.destroy();
             } catch(e) {
-                log('destroy logic error:', resContainer.logic, e);
+                log('Error: destroy logic error:', resContainer.logic, e);
             }
         }
       resContainer.logicResult = undefined;

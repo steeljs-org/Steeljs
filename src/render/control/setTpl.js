@@ -33,6 +33,7 @@ function render_control_setTpl(resContainer) {
             }
         }
         startTime = new Date;
+        
         require_global(tpl, cb, render_error, controllerNs);
     }
 }

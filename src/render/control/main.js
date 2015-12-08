@@ -26,7 +26,7 @@ var render_control_main_realTypeMap = {
 function render_control_main(boxId, controllerNs) {
     render_base_count++;
     //资源容器
-    var resContainer = render_base_resContainer[boxId] =  render_base_resContainer[boxId] || {
+    var resContainer = render_base_resContainer[boxId] = render_base_resContainer[boxId] || {
         boxId: boxId,
         controllerNs: controllerNs,
         childrenid: {},
@@ -126,7 +126,7 @@ function render_control_main(boxId, controllerNs) {
                 if (resContainer[type]) {
                     changeResList[type] = true;
                 }
-            }          
+            }
         }
 
         toDoSets();
