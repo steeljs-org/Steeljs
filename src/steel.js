@@ -18,8 +18,6 @@
     mainBox = parseParamFn('mainBox', mainBox);
   });
 
-  //初始化data-main
-  require_dataMain();
   steel.d = require_define;
   steel.res = resource_res;
   steel.run = render_run;
@@ -30,8 +28,7 @@
 
   steel.boot = function(ns) {
     steel.isDebug = isDebug;
-    setTimeout(function() {
-      require_boot(ns);
+    require_global(ns, function() {
       router_boot();
       if (mainBox) {
         var controller = router_match(location.toString());
@@ -51,16 +48,16 @@
       render_control_destroyChildren(resContainer.toDestroyChildrenid);
     }
   };
+  
   core_notice_on('routerChange', function(res) {
     var controller = res.controller;
     var changeType = res.changeType;
     window.scrollTo(0, 0);
     render_run(mainBox, controller);
     core_notice_fire('stageChange', mainBox);
-    log("routerChange", mainBox, controller, changeType);
+    log("Debug: routerChange", mainBox, controller, changeType);
   });
 
   window.steel = steel;
-
 
 }(window);

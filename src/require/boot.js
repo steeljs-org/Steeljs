@@ -1,6 +1,6 @@
-//import ./runner
+//import ./global
 
 //定义boot
 function require_boot(ns) {
-    require_runner([ns]);
+    require_global([ns]);
 }

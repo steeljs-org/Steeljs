@@ -1,53 +1,51 @@
 //import ./base
 //import ./global
 //import core/array/makeArray
-
+//import core/object/typeof
 //内部同步调用require方法
-function require_runner_makeRequire(curNs) {
-    var basePath = require_nameToPath(curNs);
+function require_runner_makeRequire(currNs) {
+    var basePath = require_base_nameToPath(currNs);
     return require;
 
-    function require(ns){
-        if (toString.call(ns).toLowerCase().indexOf('array') != -1) {
+    function require(ns) {
+        if (core_object_typeof(ns) === 'array') {
             var paramList = core_array_makeArray(arguments);
-            paramList[3] = paramList[3] || curNs;
-            return require_global.apply(this, paramList);
+            paramList[3] = paramList[3] || currNs;
+            return require_global.apply(window, paramList);
         }
-        ns = require_idFix(ns, basePath);
+        ns = require_base_idFix(ns, basePath);
 
-        if (!require_ismodule_defined(ns)) {
-            throw '[' + ns + '] 依赖未定义!';
+        if (!require_base_module_defined[ns]) {
+            throw 'Error: ns("' + ns + '") is undefined!';
         }
-        return require_runList[ns];
+        return require_base_module_runed[ns];
     }
 }
 
 //运行define列表，并返回实例集
 function require_runner(pkg, basePath) {
-    // log('%cpkg_runner', 'color:green;font-size:20px;');
     pkg = [].concat(pkg);
     var i, len;
     var ns, nsConstructor, module;
     var resultList = [];
 
     for (i = 0, len = pkg.length; i < len; i++) {
-        ns = pkg[i];
-        ns = require_idFix(ns, basePath);
-        nsConstructor = require_defineConstrutors[ns];
-        if(!nsConstructor){
-            log('Exception: please take notice of your resource  "', ns, '"  is right or not.(especial the upper/lower case)');
+        ns = require_base_idFix(pkg[i], basePath);
+        nsConstructor = require_base_module_fn[ns];
+        if (!nsConstructor) {
+            log('Warning: ns("' + ns + '") has not constructor!');
             resultList.push(undefined);
-        }else {
-            if (!require_ismodule_runed(ns)) {
-                if(require_defineDeps[ns]){
-                    require_runner(require_defineDeps[ns], require_nameToPath(ns));
+        } else {
+            if (!require_base_module_runed[ns]) {
+                if (require_base_module_deps[ns]) {
+                    require_runner(require_base_module_deps[ns], require_base_nameToPath(ns));
                 }
                 module = {
                     exports: {}
                 };
-                require_runList[ns] = nsConstructor.apply(window, [require_runner_makeRequire(ns), module.exports, module]) || module.exports;
+                require_base_module_runed[ns] = nsConstructor.apply(window, [require_runner_makeRequire(ns), module.exports, module]) || module.exports;
             }
-            resultList.push(require_runList[ns]);
+            resultList.push(require_base_module_runed[ns]);
         }
     }
     return resultList;
