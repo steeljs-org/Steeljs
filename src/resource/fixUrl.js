@@ -36,7 +36,7 @@ function resource_fixUrl(url, type) {
     }
 
     var result = resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
-    if ((type === 'js' || type === 'css') && !new RegExp('(\\.' + type + ')$').test(url)) {
+    if ((type === 'js' || type === 'css') && !RegExp('(\\.' + type + ')$').test(url)) {
         result += '.' + type;
     }
     return result;
