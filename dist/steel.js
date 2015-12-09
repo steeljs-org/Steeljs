@@ -1037,7 +1037,7 @@ var render_control_render_childWaitingCache = {};//渲染列表
 
 function render_control_render(resContainer) {
     var boxId = resContainer.boxId;
-    var childWaitingCache = render_control_render_childWaitingCache[boxId] = [];
+    var childWaitingCache = render_control_render_childWaitingCache[boxId] = render_control_render_childWaitingCache[boxId] || [];
     if(!resContainer.dataReady || !resContainer.tplReady || resContainer.rendered) {
         return;
     }
@@ -1088,16 +1088,16 @@ function render_control_render(resContainer) {
         resContainer.rendered = true;
         render_control_startLogic(resContainer);
         for(var i = 0, l = childWaitingCache.length; i < l; ++i) {
-            childWaitingCache[i]();
+            childWaitingCache[i][0](childWaitingCache[i][1]);
         }
-        childWaitingCache = render_control_render_childWaitingCache[boxId] = [];
+        render_control_render_childWaitingCache[boxId] = [];
         if (render_base_count <= 0) {
             core_notice_trigger('allDomReady');
         }
     } else {
         var parentId = resContainer.parentId;
-        if (parentId && render_control_render_childWaitingCache[parentId]) {
-            render_control_render_childWaitingCache[parentId].push(render_control_render);
+        if (parentId) {
+            render_control_render_childWaitingCache[parentId].push([render_control_render, resContainer]);
         }
     }
 }/**
