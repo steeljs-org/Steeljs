@@ -3,20 +3,6 @@
 //import ./router
 //import ./makeParams
 
-//匹配路由表，返回匹配的controller
-// @Finrila 没有用到的方法代码
-// function router_match_bak(url) {
-//     url = url || location.toString();
-//     var parsePath = core_parseURL(url).path.replace(/\/+/g, '/');
-//     parsePath = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
-//     for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
-//         if (router_match_urlFix(router_base_routerTable[i][0]) === router_match_urlFix(parsePath)) {
-//             return router_base_routerTable[i][1];
-//         }
-//     }
-//     return false;
-// }
-
 function router_match(url) {
     url = url || location.toString();
     var routerParams = router_makeParams(url);
@@ -62,10 +48,3 @@ function router_match_decodeParam(val) {
         throw new Error("Failed to decode param '" + val + "'");
     }
 }
-
-/*
-//最后一个不区分大小写 例如"/v1/public/h5/custommenu/main" 与 "/v1/public/h5/custommenu/mAiN"
-function router_match_urlFix(url) {
-	var res = url.slice(url.lastIndexOf('/') + 1);
-	return url.replace(res, res.toLowerCase());
-}*/
