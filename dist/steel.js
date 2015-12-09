@@ -942,14 +942,13 @@ function render_control_handleChild(boxId, tplParseResult) {
             } else {
                 s_controller = parseResultEle['s-controller']
             }
-            childResContainer.controllerNs = s_controller;
             render_run(s_id, s_controller);//渲染提前
         }
     }
 }
 
 function render_control_setLogic(resContainer) {
-    var controllerNs = resContainer.controllerNs;
+    var controllerNs = render_base_controllerNs[resContainer.boxId];
     var logic = resContainer.logic;
     var startTime = null;
     var endTime = null;
@@ -1119,9 +1118,9 @@ function render_control_setCss(resContainer) {
     var cssCallbackFn;
     var startTime = null;
     var endTime = null;
-    var controllerNs = resContainer.controllerNs;
     var css = resContainer.css;
     var boxId = resContainer.boxId;
+    var controllerNs = render_base_controllerNs[boxId];
     var linkId = render_control_getLinkId(css);//render_control_setCss_cssPrefix + resContainer.css.replace(/\//g, '_');
     var cssCache = render_control_setCss_cssCache[boxId] = render_control_setCss_cssCache[boxId] || {
         last: null,
@@ -1175,7 +1174,7 @@ function render_control_getLinkId(path) {
 }
 
 function render_control_setTpl(resContainer) {
-    var controllerNs = resContainer.controllerNs;
+    var controllerNs = render_base_controllerNs[resContainer.boxId];
     var tplCallbackFn;
     var startTime = null;
     var endTime = null;
@@ -1289,7 +1288,7 @@ function render_control_setData(resContainer) {
     
     var dataCallbackFn;
     var data = resContainer.data;
-    var controllerNs = resContainer.controllerNs;
+    var controllerNs = render_base_controllerNs[resContainer.boxId];
     var startTime = null;
     var endTime = null;
     // var ajaxRunTime = 10;//计算ajax时间时，运行时间假定需要10ms（实际在10ms内）
@@ -1376,12 +1375,11 @@ var render_control_main_realTypeMap = {
     logic: 'logicFn'
 }
 
-function render_control_main(boxId, controllerNs) {
+function render_control_main(boxId) {
     render_base_count++;
     //资源容器
     var resContainer = render_base_resContainer[boxId] = render_base_resContainer[boxId] || {
         boxId: boxId,
-        controllerNs: controllerNs,
         childrenid: {},
         s_childMap: {},
         needToTriggerChildren: false,
@@ -1583,7 +1581,6 @@ function render_run(box, controller) {
     }
 
     control = render_base_controlCache[boxId];
-    controllerNs = render_base_controllerNs[boxId];
 
     if (control) {
         if (control._controller) {
@@ -1594,7 +1591,7 @@ function render_run(box, controller) {
             return;
         }
     }
-    render_base_controlCache[boxId] = control = control || render_control_main(boxId, controllerNs);
+    render_base_controlCache[boxId] = control = control || render_control_main(boxId);
 
     if (controller) {
         control._controller = controller;
