@@ -3,6 +3,7 @@
 //import core/event/addEventListener
 //import core/event/preventDefault
 //import ./match
+//import ./history
 //import render/run
 //import core/notice
 //import core/fixUrl
@@ -12,10 +13,10 @@
 
 var router_listen_queryTime = 5;
 var router_listen_count;
-var router_listen_lastStateData = undefined;
+var router_listen_lastStateIndex = undefined;
 
 function router_listen() {
-    router_listen_lastStateData = history.state || 0;
+    router_listen_lastStateIndex = router_history_getStateIndex();
     //绑定link
     core_event_addEventListener(document, 'click', function(e) {
         //e.target 是a 有.href　下一步，或者不是a e.target.parentNode
@@ -34,12 +35,13 @@ function router_listen() {
     });
     var popstateTime = 0;
     core_event_addEventListener(window, 'popstate', function() {
-        if (router_listen_lastStateData > (history.state || 0)) {
+        var currentStateIndex = router_history_getStateIndex();
+        if (router_listen_lastStateIndex > currentStateIndex) {
             router_base_routerType = 'back';
         } else {
             router_base_routerType = 'forward';
         }
-        router_listen_lastStateData = history.state || 0;
+        router_listen_lastStateIndex = currentStateIndex;
         var href = location.href;
         if (popstateTime === 0 && router_base_currentHref === href) {
             return;
@@ -87,11 +89,12 @@ function router_listen_setRouter(url, replace) {
     } else {
         if (replace) {
             router_base_routerType = 'replace';
-            history.replaceState(router_listen_lastStateData, null, url);
+            router_history_replaceState(url);
         } else {
             if (router_base_currentHref !== url) {
                 router_base_routerType = 'new';
-                history.pushState(++router_listen_lastStateData, null, url);
+                router_history_pushState(url);
+                router_listen_lastStateIndex = router_history_getStateIndex();
             } else {
                 router_base_routerType = 'refresh';
             }

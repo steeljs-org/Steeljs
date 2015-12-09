@@ -15,6 +15,7 @@
 
   config_push(function(parseParamFn) {
     isDebug = parseParamFn('debug', isDebug);
+    logLevel = parseParamFn('logLevel', logLevel);
     mainBox = parseParamFn('mainBox', mainBox);
   });
 
@@ -25,19 +26,11 @@
   steel.on = core_notice_on;
   steel.off = core_notice_off;
   steel.setExtTplData = render_control_setExtTplData;
+  steel.require = require_global;
 
   steel.boot = function(ns) {
     steel.isDebug = isDebug;
-    require_global(ns, function() {
-      router_boot();
-      if (mainBox) {
-        var controller = router_match(location.toString());
-        if (controller !== false) {
-          render_run(mainBox, controller);
-          core_notice_trigger('stageChange', mainBox);
-        }
-      }
-    });
+    require_global(ns, router_boot);
   };
 
   steel._destroyByNode = function(node) {
@@ -51,11 +44,9 @@
   
   core_notice_on('routerChange', function(res) {
     var controller = res.controller;
-    var changeType = res.changeType;
-    window.scrollTo(0, 0);
     render_run(mainBox, controller);
     core_notice_trigger('stageChange', mainBox);
-    log("Debug: routerChange", mainBox, controller, changeType);
+    log("Info: routerChange", mainBox, controller, router_base_routerType);
   });
 
   window.steel = steel;
