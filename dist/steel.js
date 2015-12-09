@@ -25,6 +25,8 @@ var userAgent = navigator.userAgent,
     android = userAgent.match(/(Android);?[\s\/]+([\d.]+)?/),
     isAddEventListener = document.addEventListener,
     isDebug,
+    logLevels = 'Debug|Info|Warn|Error|Fatal',
+    logLevel = 'Info',
     logNotice = 'logNotice',
     IE = /msie (\d+\.\d+)/i.test( userAgent ) ? ( document.documentMode || + RegExp[ '$1' ] ) : 0;
 
@@ -35,15 +37,21 @@ var mainBox;
  */
 function log() {
     var console = window.console;
+    //只有debug模式打日志
     if (!isDebug || !console) {
         return;
     }
+    var args = arguments;
+    if (!RegExp('^(' + logLevels.slice(logLevels.indexOf(logLevel)) + ')').test(args[0])) {
+        return;
+    }
     var evalString = [];
-    for (var i = 0, l = arguments.length; i < l; ++i) {
+    for (var i = 0, l = args.length; i < l; ++i) {
         evalString.push('arguments[' + i + ']');
     }
-    new Function('console.log(' + evalString.join(',') + ')').apply(this, arguments);
+    new Function('console.log(' + evalString.join(',') + ')').apply(this, args);
 }
+
 /*
  * 空白方法
  */
@@ -76,6 +84,10 @@ function getElementsByTagName( tagName, el ) {
  */
 function now() {
     return Date.now ? Date.now() : +new Date();
+}
+
+function RegExp(pattern, attributes) {
+    return new window.RegExp(pattern, attributes);
 }
  
 
@@ -556,8 +568,8 @@ var router_base_routerTableReg = [];
 //项目是否使用hash
 var router_base_useHash = false;
 
-//应用是否支持单页面（跳转与否），默认应用是单页面
-var router_base_singlePage = true;
+//应用是否支持单页面（跳转与否）
+var router_base_singlePage = false;
 
 //当前访问path的变量集合,以及location相关的解析结果
 var router_base_params;
@@ -668,20 +680,6 @@ function router_makeParams(url) {
 }
 
 
-//匹配路由表，返回匹配的controller
-// @Finrila 没有用到的方法代码
-// function router_match_bak(url) {
-//     url = url || location.toString();
-//     var parsePath = core_parseURL(url).path.replace(/\/+/g, '/');
-//     parsePath = isDebug ? parsePath.replace(/\.(jade|html)$/g, '') : parsePath;
-//     for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
-//         if (router_match_urlFix(router_base_routerTable[i][0]) === router_match_urlFix(parsePath)) {
-//             return router_base_routerTable[i][1];
-//         }
-//     }
-//     return false;
-// }
-
 function router_match(url) {
     url = url || location.toString();
     var routerParams = router_makeParams(url);
@@ -727,13 +725,72 @@ function router_match_decodeParam(val) {
         throw new Error("Failed to decode param '" + val + "'");
     }
 }
+/**
+ * 地址管理，负责管理state的数据和当面页面在state历史中的索引位置
+ */
 
-/*
-//最后一个不区分大小写 例如"/v1/public/h5/custommenu/main" 与 "/v1/public/h5/custommenu/mAiN"
-function router_match_urlFix(url) {
-	var res = url.slice(url.lastIndexOf('/') + 1);
-	return url.replace(res, res.toLowerCase());
-}*//**
+// 当前页面在整个单页面跳转中的索引位置
+var router_history_stateIndex_key = 'stateIndex';
+var router_history_state_data;
+var router_history_state_dataForPush;
+
+router_history_state_init();
+
+core_notice_on('routerChange', router_history_state_init);
+
+//history pushState 及一些处理
+function router_history_pushState(url) {
+    router_history_state_setPush(router_history_stateIndex_key, router_history_getStateIndex() + 1);
+    history.pushState(router_history_stateForPush(), undefined, url);
+    router_history_state_init();
+}
+//history repaceState 及一些处理
+function router_history_replaceState(url) {
+    history.replaceState(router_history_state(), undefined, url);
+}
+//获取当前页面在整个单页面跳转中的索引位置
+function router_history_getStateIndex() {
+    return router_history_state_get(router_history_stateIndex_key, 0);
+}
+//初始化state数据
+function router_history_state_init() {
+    router_history_state_dataForPush = {};
+    router_history_state_data = router_history_state();
+}
+//获取当前的state
+function router_history_state() {
+    return history.state || {};
+}
+//获取下一个将要push页面的state数据
+function router_history_stateForPush() {
+    return router_history_state_dataForPush;
+}
+//获取当前state上的某值
+function router_history_state_get(key, defaultValue) {
+    router_history_state_data = router_history_state();
+    if (key in router_history_state_data) {
+        return router_history_state_data[key];
+    } else if (defaultValue !== undefined) {
+        router_history_state_set(key, defaultValue);
+        return defaultValue;
+    }
+}
+//设置值到缓存中，并不能真正更改history.state
+function router_history_state_set(key, value) {
+    router_history_state_data = {};
+    var state = history.state;
+    if (state) {
+        for (var state_key in state) {
+            router_history_state_data[state_key] = state[state_key];
+        }
+    }
+    router_history_state_data[key] = value;
+    router_history_replaceState(location.href);
+}
+//向下一个state的缓存区域添加数据项 并返回新的数据
+function router_history_state_setPush(key, value) {
+    router_history_state_dataForPush[key] = value;
+}/**
  * 公共对象方法定义文件
  */
 
@@ -1622,10 +1679,10 @@ function core_crossDomainCheck(url) {
 
 var router_listen_queryTime = 5;
 var router_listen_count;
-var router_listen_lastStateData = undefined;
+var router_listen_lastStateIndex = undefined;
 
 function router_listen() {
-    router_listen_lastStateData = history.state || 0;
+    router_listen_lastStateIndex = router_history_getStateIndex();
     //绑定link
     core_event_addEventListener(document, 'click', function(e) {
         //e.target 是a 有.href　下一步，或者不是a e.target.parentNode
@@ -1644,12 +1701,13 @@ function router_listen() {
     });
     var popstateTime = 0;
     core_event_addEventListener(window, 'popstate', function() {
-        if (router_listen_lastStateData > (history.state || 0)) {
+        var currentStateIndex = router_history_getStateIndex();
+        if (router_listen_lastStateIndex > currentStateIndex) {
             router_base_routerType = 'back';
         } else {
             router_base_routerType = 'forward';
         }
-        router_listen_lastStateData = history.state || 0;
+        router_listen_lastStateIndex = currentStateIndex;
         var href = location.href;
         if (popstateTime === 0 && router_base_currentHref === href) {
             return;
@@ -1697,11 +1755,12 @@ function router_listen_setRouter(url, replace) {
     } else {
         if (replace) {
             router_base_routerType = 'replace';
-            history.replaceState(router_listen_lastStateData, null, url);
+            router_history_replaceState(url);
         } else {
             if (router_base_currentHref !== url) {
                 router_base_routerType = 'new';
-                history.pushState(++router_listen_lastStateData, null, url);
+                router_history_pushState(url);
+                router_listen_lastStateIndex = router_history_getStateIndex();
             } else {
                 router_base_routerType = 'refresh';
             }
@@ -1762,7 +1821,7 @@ function resource_fixUrl(url, type) {
     }
 
     var result = resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
-    if ((type === 'js' || type === 'css') && !new RegExp('(\\.' + type + ')$').test(url)) {
+    if ((type === 'js' || type === 'css') && !RegExp('(\\.' + type + ')$').test(url)) {
         result += '.' + type;
     }
     return result;
@@ -2372,7 +2431,7 @@ var core_array_isArray = Array.isArray ? function(arr) {
  *
  * @type {RegExp}
  */
-var router_pathToRegexp_PATH_REGEXP = new RegExp([
+var router_pathToRegexp_PATH_REGEXP = RegExp([
     // Match escaped characters that would otherwise appear in future matches.
     // This allows the user to escape special characters that won't transform.
     '(\\\\.)',
@@ -2458,7 +2517,7 @@ function router_pathToRegexp_arrayToRegexp(path, keys, options) {
         parts.push(router_pathToRegexp(path[i], keys, options).source);
     }
 
-    var regexp = new RegExp('(?:' + parts.join('|') + ')', router_pathToRegexp_flags(options));
+    var regexp = RegExp('(?:' + parts.join('|') + ')', router_pathToRegexp_flags(options));
     return router_pathToRegexp_attachKeys(regexp, keys);
 }
 
@@ -2560,7 +2619,7 @@ function router_pathToRegexp(path, keys, options) {
         route += strict && endsWithSlash ? '' : '(?=\\/|$)';
     }
 
-    return router_pathToRegexp_attachKeys(new RegExp('^' + route, router_pathToRegexp_flags(options)), keys);
+    return router_pathToRegexp_attachKeys(RegExp('^' + route, router_pathToRegexp_flags(options)), keys);
 }
 
 function router_use(path, controller) {
@@ -2587,19 +2646,23 @@ function router_use(path, controller) {
 
 
 
-function router_boot(){
-    for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
-        var items = router_base_routerTable[i];
-        router_use(items[0], items[1]);
-    }
-    //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
-    isHTML5 && router_base_singlePage && router_listen();
-}
-
+function router_boot() {
+  for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
+    var items = router_base_routerTable[i];
+    router_use(items[0], items[1]);
+  }
+  var controller = router_match();
+  if (controller) {
+    router_listen_fireRouterChange(controller);
+  }
+  //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
+  isHTML5 && router_base_singlePage && router_listen();
+}
  
 
   config_push(function(parseParamFn) {
     isDebug = parseParamFn('debug', isDebug);
+    logLevel = parseParamFn('logLevel', logLevel);
     mainBox = parseParamFn('mainBox', mainBox);
   });
 
@@ -2610,19 +2673,11 @@ function router_boot(){
   steel.on = core_notice_on;
   steel.off = core_notice_off;
   steel.setExtTplData = render_control_setExtTplData;
+  steel.require = require_global;
 
   steel.boot = function(ns) {
     steel.isDebug = isDebug;
-    require_global(ns, function() {
-      router_boot();
-      if (mainBox) {
-        var controller = router_match(location.toString());
-        if (controller !== false) {
-          render_run(mainBox, controller);
-          core_notice_trigger('stageChange', mainBox);
-        }
-      }
-    });
+    require_global(ns, router_boot);
   };
 
   steel._destroyByNode = function(node) {
@@ -2636,11 +2691,9 @@ function router_boot(){
   
   core_notice_on('routerChange', function(res) {
     var controller = res.controller;
-    var changeType = res.changeType;
-    window.scrollTo(0, 0);
     render_run(mainBox, controller);
     core_notice_trigger('stageChange', mainBox);
-    log("Debug: routerChange", mainBox, controller, changeType);
+    log("Info: routerChange", mainBox, controller, router_base_routerType);
   });
 
   window.steel = steel;
