@@ -110,20 +110,13 @@ var require_base_module_runed = {};
 //事件
 var require_base_event_defined = '-require-defined';
 var require_global_loadingNum = 0;
-
-function require_base_idFix(id, basePath) {
-    if (id.indexOf('.') === 0) {
-        id = basePath ? (basePath + id).replace(/\/\.\//, '/') : id.replace(/^\.\//, '');
-    }
-    while (id.indexOf('../') !== -1) {
-        id = id.replace(/\w+\/\.\.\//, '');
-    }
-    return id;
-}
-
-function require_base_nameToPath(name){
-    return name.substr(0, name.lastIndexOf('/') + 1);
-}/*
+/*
+ * 根据相对路径得到绝对路径
+ * @method core_fixUrl
+ * @private
+ * @return {String}
+ */
+/*
  * parse URL
  * @method core_parseURL
  * @private
@@ -162,7 +155,69 @@ function core_parseURL(url) {
     }
     retJson.path = retJson.path || '/';
     return retJson;
-}/*
+}
+
+function core_fixUrl(baseUrl, path) {
+    baseUrl = baseUrl || '.';
+    var baseUrlJson = core_parseURL(baseUrl);
+    var origin;
+    if (baseUrlJson.path.indexOf('/') !== 0) {
+        baseUrl = core_fixUrl(location.href, baseUrl);
+        baseUrlJson = core_parseURL(baseUrl);
+    }
+    if (baseUrlJson.protocol) {
+        origin = baseUrlJson.protocol + '//' + baseUrlJson.host + (baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port));
+    } else {
+        origin = location.origin;
+        baseUrl = origin + baseUrl;
+    }
+    var originPath = origin + '/';
+    var basePath = baseUrlJson.path;
+    basePath = origin + (basePath.indexOf('/') === 0 ? '' : '/') + basePath.slice(0, basePath.lastIndexOf('/') + 1);
+    if (core_fixUrl_hasProtocol(path)) {
+        return path;
+    }
+    if (path === '/') {
+        return originPath;
+    }
+    if (path === '.' || path === '') {
+        return baseUrl;
+    }
+    if (path.indexOf('./') === 0) {
+        path = path.replace(/^\.\//, '');
+        return basePath + path;
+    }
+    if (path === '..') {
+        path = path.replace(/\.\./, '');
+        basePath = core_fixUrl_handleTwoDots(basePath);
+        return basePath + path;
+    }
+    if (/^\?/.test(path)) {
+        return origin + baseUrlJson.path + path;
+    }
+    if (/^\/[^\/]+/.test(path)) {
+        return origin + path;
+    }
+    while (path.indexOf('../') === 0) {
+        if (originPath === basePath) {
+            path = path.replace(/(\.\.\/)/g, '');
+            basePath = originPath;
+            break;
+        }
+        path = path.replace(/^\.\.\//, '');
+        basePath = core_fixUrl_handleTwoDots(basePath);
+    }
+    return basePath + path;
+}
+
+function core_fixUrl_handleTwoDots(url) {
+    url = url.charAt(url.length - 1) === '/' ? (url.slice(0, url.length - 1)) : url;
+    return url.slice(0, url.lastIndexOf('/') + 1);
+}
+
+function core_fixUrl_hasProtocol(url) {
+    return /^([a-z]+:)?\/\/\w+/i.test(url);
+}/*
  * query to json
  * @method core_queryToJson
  * @private
@@ -376,75 +431,12 @@ var resource_cssPath;
 var resource_ajaxPath;
 var resource_basePath;
 var resource_define_apiRule;
+var resource_base_version;
 
 //资源列表{url->[[access_cb, fail_cb],....]}
 var resource_queue_list = {};
-/*
- * 根据相对路径得到绝对路径
- * @method core_fixUrl
- * @private
- * @return {String}
- */
-
 
-function core_fixUrl(baseUrl, path) {
-    baseUrl = baseUrl || '.';
-    var baseUrlJson = core_parseURL(baseUrl);
-    var origin;
-    if (baseUrlJson.path.indexOf('/') !== 0) {
-        baseUrl = core_fixUrl(location.href, baseUrl);
-        baseUrlJson = core_parseURL(baseUrl);
-    }
-    if (baseUrlJson.protocol) {
-        origin = baseUrlJson.protocol + '//' + baseUrlJson.host + (baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port));
-    } else {
-        origin = location.origin;
-        baseUrl = origin + baseUrl;
-    }
-    var originPath = origin + '/';
-    var basePath = baseUrlJson.path;
-    basePath = origin + (basePath.indexOf('/') === 0 ? '' : '/') + basePath.slice(0, basePath.lastIndexOf('/') + 1);
-
-    if (/^([a-z]+:)?\/\/\w+/i.test(path)) {
-        return path;
-    }
-    if (path === '/') {
-        return originPath;
-    }
-    if (path === '.' || path === '') {
-        return baseUrl;
-    }
-    if (path.indexOf('./') === 0) {
-        path = path.replace(/^\.\//, '');
-        return basePath + path;
-    }
-    if (path === '..') {
-        path = path.replace(/\.\./, '');
-        basePath = core_fixUrl_handleTwoDots(basePath);
-        return basePath + path;
-    }
-    if (/^\?/.test(path)) {
-        return origin + baseUrlJson.path + path;
-    }
-    if (/^\/[^\/]+/.test(path)) {
-        return origin + path;
-    }
-    while (path.indexOf('../') === 0) {
-        if (originPath === basePath) {
-            path = path.replace(/(\.\.\/)/g, '');
-            basePath = originPath;
-            break;
-        }
-        path = path.replace(/^\.\.\//, '');
-        basePath = core_fixUrl_handleTwoDots(basePath);
-    }
-    return basePath + path;
-}
-
-function core_fixUrl_handleTwoDots(url) {
-    url = url.charAt(url.length - 1) === '/' ? (url.slice(0, url.length - 1)) : url;
-    return url.slice(0, url.lastIndexOf('/') + 1);
-}//router资源
+//router资源
 var core_uniqueKey_index = 1;
 var core_uniqueKey_prefix = 'SL_' + now();
 
@@ -1108,7 +1100,27 @@ function render_control_render(resContainer) {
             render_control_render_childWaitingCache[parentId].push(render_control_render);
         }
     }
-}
+}/**
+ * 命名空间的适应
+ */
+/**
+ * 获取 url 的目录地址
+ */
+
+function core_urlFolder(url){
+    return url.substr(0, url.lastIndexOf('/') + 1);
+}
+
+function core_nameSpaceFix(id, basePath) {
+    basePath = basePath && core_urlFolder(basePath);
+    if (id.indexOf('.') === 0) {
+        id = basePath ? (basePath + id).replace(/\/\.\//, '/') : id.replace(/^\.\//, '');
+    }
+    while (id.indexOf('../') !== -1) {
+        id = id.replace(/\w+\/\.\.\//, '');
+    }
+    return id;
+}
 
 var render_control_setCss_cssPrefix = 'S_CSS_';
 var render_control_setCss_cssCache = {};//css容器
@@ -1118,9 +1130,9 @@ function render_control_setCss(resContainer) {
     var cssCallbackFn;
     var startTime = null;
     var endTime = null;
-    var css = resContainer.css;
     var boxId = resContainer.boxId;
     var controllerNs = render_base_controllerNs[boxId];
+    var css = resContainer.css && core_nameSpaceFix(resContainer.css, controllerNs);
     var linkId = render_control_getLinkId(css);//render_control_setCss_cssPrefix + resContainer.css.replace(/\//g, '_');
     var cssCache = render_control_setCss_cssCache[boxId] = render_control_setCss_cssCache[boxId] || {
         last: null,
@@ -1748,7 +1760,12 @@ function resource_fixUrl(url, type) {
         url = core_URL(url).setParams(urlParams).toString();
         url = url.charAt(0) === '/' ? url.slice(1) : url;
     }
-    return resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
+
+    var result = resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
+    if ((type === 'js' || type === 'css') && !new RegExp('(\\.' + type + ')$').test(url)) {
+        result += '.' + type;
+    }
+    return result;
 }
 
 function resource_fixUrl_handle(path, url, basePath, hrefPath) {
@@ -1781,8 +1798,7 @@ function resource_queue_run(url, access, data){
 
 function resource_queue_del(url) {
     url in resource_queue_list && (delete resource_queue_list[url]);
-}/*版本号*/
-var loader_base_version;/*
+}/*
  * 创建节点
  * @method core_dom_createElement
  * @private
@@ -1804,14 +1820,7 @@ function loader_js(url, callback){
     
     var js, requestTimeout;
     
-    if (url == '') {
-        throw 'scriptLoader: url is null';
-    }
-    url = /(\.js)$/.test(url) ? url : (url + '.js');
-    url = url + '?version=' + loader_base_version;
-    
     var uniqueID = core_uniqueKey();
-    
     
     js = entityList[uniqueID];
     if (js != null && !IE) {
@@ -1871,7 +1880,7 @@ function loader_js(url, callback){
     }
     return js;
 }
-/*
+/*
  * 给节点设置属性
  * @method core_dom_setAttribute
  * @private
@@ -1913,20 +1922,12 @@ function loader_css( url, callback, load_ID ){
     var load_div = null;
     var domID = core_uniqueKey();
     var timer = null;
-    var _rTime = 300;//3000;
-    url = /(\.css)$/.test(url) ? url : (url + '.css');
-    url = url + '?version=' + loader_base_version;
+    var _rTime = 3000;
 
     core_dom_setAttribute(link, 'rel', 'Stylesheet');
     core_dom_setAttribute(link, 'type', 'text/css');
     core_dom_setAttribute(link, 'charset', 'utf-8');
     core_dom_setAttribute(link, 'id', load_ID);
-    /*if(IE){
-        (link.Stylesheet || link.sheet).addImport(url);
-    }else {
-        core_dom_setAttribute(link, 'href', url);
-        head.appendChild(link);
-    }*/
     core_dom_setAttribute(link, 'href', url);
     head.appendChild(link);
     load_div = core_dom_createElement('div');
@@ -2129,43 +2130,57 @@ function resource_request(url, callback) {
 
 var resource_res = {
     js: function(name, succ, err) {
-        resource_res_handle(resource_fixUrl(name, 'js'), succ, err, loader_js);
+        resource_res_handle('js', name, succ, err);
     },
-
     css: function(name, succ, err, cssId) {
-        resource_res_handle(resource_fixUrl(name, 'css'), succ, err, loader_css, cssId);
+        resource_res_handle('css', name, succ, err, cssId);
     },
-
     get: function(name, succ, err) {
-        resource_res_handle(resource_fixUrl(name, 'ajax'), succ, err, resource_request);//loader_ajax);
+        resource_res_handle('ajax', name, succ, err);
     }
 };
 
-function resource_res_handle(url, succ, err, loader, cssId) {
-
-    //check 队列    
-    if(resource_queue_list[url]){
+function resource_res_handle(type, name, succ, err, cssId) {
+    var hasProtocol = core_fixUrl_hasProtocol(name);
+    var url = name, loader;
+    if (!hasProtocol) {
+        url = resource_fixUrl(name, type);
+        if (type !== 'ajax' && resource_base_version) {
+            url += '?version=' + resource_base_version;
+        }
+    }
+    if(resource_queue_list[url]) {
         resource_queue_push(url, succ, err);
-    }else {
+    } else {
         resource_queue_create(url);
         resource_queue_push(url, succ, err);
-        //loader
-        loader(url, function(access, data) {
-            resource_queue_run(url, access, data);
-            resource_queue_del(url);
-        }, cssId);
+        switch(type) {
+            case 'js':
+                loader_js(url, callback);
+                break;
+            case 'css':
+                loader_css(url, callback, cssId);
+                break;
+            case 'ajax':
+                resource_request(url, callback);
+                break;
+        }
     }
-}
+    function callback(access, data) {
+        resource_queue_run(url, access, data);
+        resource_queue_del(url);
+    }
+}
 
 //外部异步调用require方法
 function require_global(deps, complete, errcb, currNs, runDeps) {
     var depNs;
     var depDefined = 0;
     var errored = 0;
-    var baseModulePath = currNs && require_base_nameToPath(currNs);
+    var baseModulePath = currNs && core_urlFolder(currNs);
     deps = [].concat(deps);
     for (var i = 0, len = deps.length; i < len; i++) {
-        depNs = deps[i] = require_base_idFix(deps[i], baseModulePath);
+        depNs = deps[i] = core_nameSpaceFix(deps[i], baseModulePath);
         if (require_base_module_loaded[depNs]) {
             checkDepDefined(depNs);
         } else {
@@ -2207,10 +2222,11 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
             });
         }
     }
-}
+}
+
 //内部同步调用require方法
 function require_runner_makeRequire(currNs) {
-    var basePath = require_base_nameToPath(currNs);
+    var basePath = core_urlFolder(currNs);
     return require;
 
     function require(ns) {
@@ -2219,7 +2235,7 @@ function require_runner_makeRequire(currNs) {
             paramList[3] = paramList[3] || currNs;
             return require_global.apply(window, paramList);
         }
-        ns = require_base_idFix(ns, basePath);
+        ns = core_nameSpaceFix(ns, basePath);
 
         if (!require_base_module_defined[ns]) {
             throw 'Error: ns("' + ns + '") is undefined!';
@@ -2236,7 +2252,7 @@ function require_runner(pkg, basePath) {
     var resultList = [];
 
     for (i = 0, len = pkg.length; i < len; i++) {
-        ns = require_base_idFix(pkg[i], basePath);
+        ns = core_nameSpaceFix(pkg[i], basePath);
         nsConstructor = require_base_module_fn[ns];
         if (!nsConstructor) {
             log('Warning: ns("' + ns + '") has not constructor!');
@@ -2244,7 +2260,7 @@ function require_runner(pkg, basePath) {
         } else {
             if (!require_base_module_runed[ns]) {
                 if (require_base_module_deps[ns]) {
-                    require_runner(require_base_module_deps[ns], require_base_nameToPath(ns));
+                    require_runner(require_base_module_deps[ns], core_urlFolder(ns));
                 }
                 module = {
                     exports: {}
@@ -2291,13 +2307,7 @@ function require_boot(ns) {
     require_global([ns]);
 }
 
- 
-
-function loader_config(parseParamFn) {
-  loader_base_version = parseParamFn('version', loader_base_version);
-}
-
-config_push(loader_config);//暂不做
+ //暂不做
  
 
 var resource_config_slash = '/';
@@ -2307,6 +2317,7 @@ function resource_config(parseParamFn) {
     resource_ajaxPath = parseParamFn('ajaxPath', resource_ajaxPath);
     resource_basePath = parseParamFn('basePath', resource_config_slash);
     resource_define_apiRule = parseParamFn('defApiRule', resource_define_apiRule);
+    resource_base_version = parseParamFn('version', resource_base_version);
 }
 
 config_push(resource_config);
