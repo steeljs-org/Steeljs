@@ -19,6 +19,8 @@ var userAgent = navigator.userAgent,
     android = userAgent.match(/(Android);?[\s\/]+([\d.]+)?/),
     isAddEventListener = document.addEventListener,
     isDebug,
+    logLevels = 'Debug|Info|Warn|Error|Fatal',
+    logLevel = 'Info',
     logNotice = 'logNotice',
     IE = /msie (\d+\.\d+)/i.test( userAgent ) ? ( document.documentMode || + RegExp[ '$1' ] ) : 0;
 
@@ -29,15 +31,21 @@ var mainBox;
  */
 function log() {
     var console = window.console;
+    //只有debug模式打日志
     if (!isDebug || !console) {
         return;
     }
+    var args = arguments;
+    if (!RegExp('^(' + logLevels.slice(logLevels.indexOf(logLevel)) + ')').test(args[0])) {
+        return;
+    }
     var evalString = [];
-    for (var i = 0, l = arguments.length; i < l; ++i) {
+    for (var i = 0, l = args.length; i < l; ++i) {
         evalString.push('arguments[' + i + ']');
     }
-    new Function('console.log(' + evalString.join(',') + ')').apply(this, arguments);
+    new Function('console.log(' + evalString.join(',') + ')').apply(this, args);
 }
+
 /*
  * 空白方法
  */
@@ -70,4 +78,8 @@ function getElementsByTagName( tagName, el ) {
  */
 function now() {
     return Date.now ? Date.now() : +new Date();
+}
+
+function RegExp(pattern, attributes) {
+    return new window.RegExp(pattern, attributes);
 }
