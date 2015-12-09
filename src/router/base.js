@@ -11,8 +11,8 @@ var router_base_routerTableReg = [];
 //项目是否使用hash
 var router_base_useHash = false;
 
-//应用是否支持单页面（跳转与否），默认应用是单页面
-var router_base_singlePage = true;
+//应用是否支持单页面（跳转与否）
+var router_base_singlePage = false;
 
 //当前访问path的变量集合,以及location相关的解析结果
 var router_base_params;
