@@ -1,4 +1,3 @@
-//import ./base
 //import core/dom/createElement
 //import core/uniqueKey
 //import core/dom/removeNode
@@ -15,14 +14,7 @@ function loader_js(url, callback){
     
     var js, requestTimeout;
     
-    if (url == '') {
-        throw 'scriptLoader: url is null';
-    }
-    url = /(\.js)$/.test(url) ? url : (url + '.js');
-    url = url + '?version=' + loader_base_version;
-    
     var uniqueID = core_uniqueKey();
-    
     
     js = entityList[uniqueID];
     if (js != null && !IE) {

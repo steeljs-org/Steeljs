@@ -1,3 +1,4 @@
+//import core/fixUrl
 //import ./fixUrl
 //import ./queue
 //import loader/jsloader
@@ -6,30 +7,44 @@
 
 var resource_res = {
     js: function(name, succ, err) {
-        resource_res_handle(resource_fixUrl(name, 'js'), succ, err, loader_js);
+        resource_res_handle('js', name, succ, err);
     },
-
     css: function(name, succ, err, cssId) {
-        resource_res_handle(resource_fixUrl(name, 'css'), succ, err, loader_css, cssId);
+        resource_res_handle('css', name, succ, err, cssId);
     },
-
     get: function(name, succ, err) {
-        resource_res_handle(resource_fixUrl(name, 'ajax'), succ, err, resource_request);//loader_ajax);
+        resource_res_handle('ajax', name, succ, err);
     }
 };
 
-function resource_res_handle(url, succ, err, loader, cssId) {
-
-    //check 队列    
-    if(resource_queue_list[url]){
+function resource_res_handle(type, name, succ, err, cssId) {
+    var hasProtocol = core_fixUrl_hasProtocol(name);
+    var url = name, loader;
+    if (!hasProtocol) {
+        url = resource_fixUrl(name, type);
+        if (type !== 'ajax' && resource_base_version) {
+            url += '?version=' + resource_base_version;
+        }
+    }
+    if(resource_queue_list[url]) {
         resource_queue_push(url, succ, err);
-    }else {
+    } else {
         resource_queue_create(url);
         resource_queue_push(url, succ, err);
-        //loader
-        loader(url, function(access, data) {
-            resource_queue_run(url, access, data);
-            resource_queue_del(url);
-        }, cssId);
+        switch(type) {
+            case 'js':
+                loader_js(url, callback);
+                break;
+            case 'css':
+                loader_css(url, callback, cssId);
+                break;
+            case 'ajax':
+                resource_request(url, callback);
+                break;
+        }
+    }
+    function callback(access, data) {
+        resource_queue_run(url, access, data);
+        resource_queue_del(url);
     }
 }

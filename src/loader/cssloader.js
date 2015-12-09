@@ -1,4 +1,3 @@
-//import base
 //import core/dom/createElement
 //import core/dom/setAttribute
 //import core/uniqueKey
@@ -10,20 +9,12 @@ function loader_css( url, callback, load_ID ){
     var load_div = null;
     var domID = core_uniqueKey();
     var timer = null;
-    var _rTime = 300;//3000;
-    url = /(\.css)$/.test(url) ? url : (url + '.css');
-    url = url + '?version=' + loader_base_version;
+    var _rTime = 3000;
 
     core_dom_setAttribute(link, 'rel', 'Stylesheet');
     core_dom_setAttribute(link, 'type', 'text/css');
     core_dom_setAttribute(link, 'charset', 'utf-8');
     core_dom_setAttribute(link, 'id', load_ID);
-    /*if(IE){
-        (link.Stylesheet || link.sheet).addImport(url);
-    }else {
-        core_dom_setAttribute(link, 'href', url);
-        head.appendChild(link);
-    }*/
     core_dom_setAttribute(link, 'href', url);
     head.appendChild(link);
     load_div = core_dom_createElement('div');

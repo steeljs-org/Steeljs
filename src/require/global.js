@@ -2,16 +2,18 @@
 //import ./runner
 //import resource/res
 //import core/notice
+//import core/nameSpaceFix
+//import core/urlFolder
 
 //外部异步调用require方法
 function require_global(deps, complete, errcb, currNs, runDeps) {
     var depNs;
     var depDefined = 0;
     var errored = 0;
-    var baseModulePath = currNs && require_base_nameToPath(currNs);
+    var baseModulePath = currNs && core_urlFolder(currNs);
     deps = [].concat(deps);
     for (var i = 0, len = deps.length; i < len; i++) {
-        depNs = deps[i] = require_base_idFix(deps[i], baseModulePath);
+        depNs = deps[i] = core_nameSpaceFix(deps[i], baseModulePath);
         if (require_base_module_loaded[depNs]) {
             checkDepDefined(depNs);
         } else {

@@ -2,9 +2,12 @@
 //import ./global
 //import core/array/makeArray
 //import core/object/typeof
+//import core/nameSpaceFix
+//import core/urlFolder
+
 //内部同步调用require方法
 function require_runner_makeRequire(currNs) {
-    var basePath = require_base_nameToPath(currNs);
+    var basePath = core_urlFolder(currNs);
     return require;
 
     function require(ns) {
@@ -13,7 +16,7 @@ function require_runner_makeRequire(currNs) {
             paramList[3] = paramList[3] || currNs;
             return require_global.apply(window, paramList);
         }
-        ns = require_base_idFix(ns, basePath);
+        ns = core_nameSpaceFix(ns, basePath);
 
         if (!require_base_module_defined[ns]) {
             throw 'Error: ns("' + ns + '") is undefined!';
@@ -30,7 +33,7 @@ function require_runner(pkg, basePath) {
     var resultList = [];
 
     for (i = 0, len = pkg.length; i < len; i++) {
-        ns = require_base_idFix(pkg[i], basePath);
+        ns = core_nameSpaceFix(pkg[i], basePath);
         nsConstructor = require_base_module_fn[ns];
         if (!nsConstructor) {
             log('Warning: ns("' + ns + '") has not constructor!');
@@ -38,7 +41,7 @@ function require_runner(pkg, basePath) {
         } else {
             if (!require_base_module_runed[ns]) {
                 if (require_base_module_deps[ns]) {
-                    require_runner(require_base_module_deps[ns], require_base_nameToPath(ns));
+                    require_runner(require_base_module_deps[ns], core_urlFolder(ns));
                 }
                 module = {
                     exports: {}

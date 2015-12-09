@@ -5,6 +5,7 @@
 //import ../error
 //import ./render
 //import core/notice
+//import core/nameSpaceFix
 
 var render_control_setCss_cssPrefix = 'S_CSS_';
 var render_control_setCss_cssCache = {};//css容器
@@ -14,9 +15,9 @@ function render_control_setCss(resContainer) {
     var cssCallbackFn;
     var startTime = null;
     var endTime = null;
-    var css = resContainer.css;
     var boxId = resContainer.boxId;
     var controllerNs = render_base_controllerNs[boxId];
+    var css = resContainer.css && core_nameSpaceFix(resContainer.css, controllerNs);
     var linkId = render_control_getLinkId(css);//render_control_setCss_cssPrefix + resContainer.css.replace(/\//g, '_');
     var cssCache = render_control_setCss_cssCache[boxId] = render_control_setCss_cssCache[boxId] || {
         last: null,

@@ -34,7 +34,12 @@ function resource_fixUrl(url, type) {
         url = core_URL(url).setParams(urlParams).toString();
         url = url.charAt(0) === '/' ? url.slice(1) : url;
     }
-    return resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
+
+    var result = resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
+    if ((type === 'js' || type === 'css') && !new RegExp('(\\.' + type + ')$').test(url)) {
+        result += '.' + type;
+    }
+    return result;
 }
 
 function resource_fixUrl_handle(path, url, basePath, hrefPath) {
