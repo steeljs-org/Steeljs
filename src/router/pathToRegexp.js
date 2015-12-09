@@ -11,7 +11,7 @@
  *
  * @type {RegExp}
  */
-var router_pathToRegexp_PATH_REGEXP = new RegExp([
+var router_pathToRegexp_PATH_REGEXP = RegExp([
     // Match escaped characters that would otherwise appear in future matches.
     // This allows the user to escape special characters that won't transform.
     '(\\\\.)',
@@ -97,7 +97,7 @@ function router_pathToRegexp_arrayToRegexp(path, keys, options) {
         parts.push(router_pathToRegexp(path[i], keys, options).source);
     }
 
-    var regexp = new RegExp('(?:' + parts.join('|') + ')', router_pathToRegexp_flags(options));
+    var regexp = RegExp('(?:' + parts.join('|') + ')', router_pathToRegexp_flags(options));
     return router_pathToRegexp_attachKeys(regexp, keys);
 }
 
@@ -199,5 +199,5 @@ function router_pathToRegexp(path, keys, options) {
         route += strict && endsWithSlash ? '' : '(?=\\/|$)';
     }
 
-    return router_pathToRegexp_attachKeys(new RegExp('^' + route, router_pathToRegexp_flags(options)), keys);
+    return router_pathToRegexp_attachKeys(RegExp('^' + route, router_pathToRegexp_flags(options)), keys);
 }
