@@ -38,7 +38,6 @@ function render_control_handleChild(boxId, tplParseResult) {
             } else {
                 s_controller = parseResultEle['s-controller']
             }
-            childResContainer.controllerNs = s_controller;
             render_run(s_id, s_controller);//渲染提前
         }
     }

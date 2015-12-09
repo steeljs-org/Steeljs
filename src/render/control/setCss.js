@@ -14,9 +14,9 @@ function render_control_setCss(resContainer) {
     var cssCallbackFn;
     var startTime = null;
     var endTime = null;
-    var controllerNs = resContainer.controllerNs;
     var css = resContainer.css;
     var boxId = resContainer.boxId;
+    var controllerNs = render_base_controllerNs[boxId];
     var linkId = render_control_getLinkId(css);//render_control_setCss_cssPrefix + resContainer.css.replace(/\//g, '_');
     var cssCache = render_control_setCss_cssCache[boxId] = render_control_setCss_cssCache[boxId] || {
         last: null,

@@ -10,7 +10,7 @@ function render_control_setData(resContainer) {
     
     var dataCallbackFn;
     var data = resContainer.data;
-    var controllerNs = resContainer.controllerNs;
+    var controllerNs = render_base_controllerNs[resContainer.boxId];
     var startTime = null;
     var endTime = null;
     // var ajaxRunTime = 10;//计算ajax时间时，运行时间假定需要10ms（实际在10ms内）

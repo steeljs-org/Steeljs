@@ -5,7 +5,7 @@
 //import core/notice
 
 function render_control_setLogic(resContainer) {
-    var controllerNs = resContainer.controllerNs;
+    var controllerNs = render_base_controllerNs[resContainer.boxId];
     var logic = resContainer.logic;
     var startTime = null;
     var endTime = null;

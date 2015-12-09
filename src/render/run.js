@@ -55,7 +55,6 @@ function render_run(box, controller) {
     }
 
     control = render_base_controlCache[boxId];
-    controllerNs = render_base_controllerNs[boxId];
 
     if (control) {
         if (control._controller) {
@@ -66,7 +65,7 @@ function render_run(box, controller) {
             return;
         }
     }
-    render_base_controlCache[boxId] = control = control || render_control_main(boxId, controllerNs);
+    render_base_controlCache[boxId] = control = control || render_control_main(boxId);
 
     if (controller) {
         control._controller = controller;

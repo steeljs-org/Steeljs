@@ -6,7 +6,7 @@
 //import core/notice
 
 function render_control_setTpl(resContainer) {
-    var controllerNs = resContainer.controllerNs;
+    var controllerNs = render_base_controllerNs[resContainer.boxId];
     var tplCallbackFn;
     var startTime = null;
     var endTime = null;
