@@ -42,11 +42,12 @@
     }
   };
   
-  core_notice_on('routerChange', function(res) {
-    var controller = res.controller;
+  core_notice_on('routerChange', function(routerValue) {
+    var config = routerValue.config;
+    var controller = config[1];
     render_run(mainBox, controller);
     core_notice_trigger('stageChange', mainBox);
-    log("Info: routerChange", mainBox, controller, router_base_routerType);
+    log("Info: routerChange", mainBox, controller, routerValue.type);
   });
 
   window.steel = steel;

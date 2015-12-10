@@ -4,6 +4,7 @@
 //import core/event/preventDefault
 //import ./match
 //import ./history
+//import ./router
 //import render/run
 //import core/notice
 //import core/fixUrl
@@ -31,10 +32,11 @@ function router_listen() {
             return;
         }
         core_event_preventDefault(e);
-        router_listen_setRouter(href);
+        router_router_set(href);
     });
     var popstateTime = 0;
     core_event_addEventListener(window, 'popstate', function() {
+        core_notice_trigger('popstate');
         var currentStateIndex = router_history_getStateIndex();
         if (router_listen_lastStateIndex > currentStateIndex) {
             router_base_routerType = 'back';
@@ -67,46 +69,14 @@ function router_listen_getHrefNode(el) {
 function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
     router_base_currentHref = url;
-    router_base_params = router_makeParams(url);
-    var controller = router_match(url);
-    if (controller !== false) {
-        router_listen_fireRouterChange(controller);
+    if (router_router_refreshValue().config) {
+        router_listen_fireRouterChange();
     } else {
         location.reload();
     }
 }
 
-function router_listen_setRouter(url, replace) {
-    var basePath = location.href;
-    url = core_fixUrl(basePath, url);
-    
-    if (android && history.length === 1 || !core_crossDomainCheck(url)) {
-        if (replace) {
-            location.replace(url);
-        } else {
-            location.href = url;
-        }
-    } else {
-        if (replace) {
-            router_base_routerType = 'replace';
-            router_history_replaceState(url);
-        } else {
-            if (router_base_currentHref !== url) {
-                router_base_routerType = 'new';
-                router_history_pushState(url);
-                router_listen_lastStateIndex = router_history_getStateIndex();
-            } else {
-                router_base_routerType = 'refresh';
-            }
-        }
-        router_listen_handleHrefChenged(url);
-    }
-}
-
 //派发routerChange事件，返回router变化数据 @shaobo3
-function router_listen_fireRouterChange(controller) {
-    core_notice_trigger('routerChange', {
-        controller: controller,
-        changeType: router_base_routerType
-    });
+function router_listen_fireRouterChange() {
+    core_notice_trigger('routerChange', router_router_get());
 }

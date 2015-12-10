@@ -1,50 +1,33 @@
+//import core/object/isObject
 //import ./base
-//import core/parseURL
-//import ./router
-//import ./makeParams
+//import ./parseURL
 
 function router_match(url) {
-    url = url || location.toString();
-    var routerParams = router_makeParams(url);
-    var path = routerParams.path;// store values
-    var m = [];//正则校验结果；
+    var routerUrl = core_object_isObject(url) ? url : router_parseURL(url);
+    var path = routerUrl.path;// store values
 
     for (var i = 0, len = router_base_routerTableReg.length; i < len; i++) {
         var obj = router_base_routerTableReg[i];
-        if ((m = obj['pathRegexp'].exec(path))) {
+        var pathMatchResult;//正则校验结果；
+        if (pathMatchResult = obj['pathRegexp'].exec(path)) {
             var keys = obj['keys'];
-            var params = routerParams.params;
+            var param = {};
             var prop;
             var n = 0;
             var key;
             var val;
 
-            for (var j = 1, len = m.length; j < len; ++j) {
+            for (var j = 1, len = pathMatchResult.length; j < len; ++j) {
                 key = keys[j - 1];
-                prop = key
-                    ? key.name
-                    : n++;
-                val = router_match_decodeParam(m[j]);
-
-                if (val !== undefined || !(hasOwnProperty.call(params, prop))) {
-                    params[prop] = val;
-                }
+                prop = key ? key.name : n++;
+                val = decodeURIComponent(pathMatchResult[j]);
+                param[prop] = val;
             }
-            return obj['controller'];
+
+            return {
+                config: obj['config'],
+                param: param
+            };
         }
-    }
-
-    return false;
-}
-
-function router_match_decodeParam(val) {
-    if (typeof val !== 'string') {
-        return val;
-    }
-
-    try {
-        return decodeURIComponent(val);
-    } catch (e) {
-        throw new Error("Failed to decode param '" + val + "'");
     }
 }

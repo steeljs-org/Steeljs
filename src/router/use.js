@@ -10,9 +10,9 @@
 //import ./base
 //import ./pathToRegexp
 
-function router_use(path, controller) {
+function router_use(path, config) {
     var key, value, _results;
-    if (typeof path === 'object' && !(path instanceof RegExp)) {
+    if (typeof path === 'object' && !(path instanceof window.RegExp)) {
         //批量设置
         _results = [];
         for (key in path) {
@@ -26,7 +26,7 @@ function router_use(path, controller) {
         var pathRegexp = router_pathToRegexp(path, keys);
         return router_base_routerTableReg.push({
             pathRegexp: pathRegexp,
-            controller: controller,
+            config: config,
             keys: keys
         });
     }

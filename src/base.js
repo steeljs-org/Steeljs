@@ -4,8 +4,6 @@ var steel = window.steel || {
     t : now()
 };
 
-
-
 var userAgent = navigator.userAgent,
     document = window.document,
     docElem = document.documentElement,
