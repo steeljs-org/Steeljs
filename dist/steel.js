@@ -10,8 +10,6 @@ var steel = window.steel || {
     t : now()
 };
 
-
-
 var userAgent = navigator.userAgent,
     document = window.document,
     docElem = document.documentElement,
@@ -555,7 +553,21 @@ function core_notice_trigger( type, args ) {
 		}
 	}
 }
-/**
+/**
+ * is Number
+ */
+
+
+function core_object_isNumber(value) {
+    return core_object_typeof(value) === 'number';
+}
+
+function core_crossDomainCheck(url) {
+    var urlPreReg = /^[^:]+:\/\/[^\/]+\//;
+    var locationMatch = location.href.match(urlPreReg);
+    var urlMatch = url.match(urlPreReg);
+    return (locationMatch && locationMatch[0]) === (urlMatch && urlMatch[0]);
+}/**
  * 路由变量定义区
  *
  */
@@ -571,8 +583,6 @@ var router_base_useHash = false;
 //应用是否支持单页面（跳转与否）
 var router_base_singlePage = false;
 
-//当前访问path的变量集合,以及location相关的解析结果
-var router_base_params;
 // init/new/forward/bak/refresh/replace
 var router_base_routerType = 'init';
 var router_base_prevHref;
@@ -650,79 +660,53 @@ function core_event_preventDefault( event ) {
 		event.returnValue = false;
 	}
 }
-/**
- * 生成路由结果
+/**
+ * is Object
  */
 
 
-var router_makeParams_hasStrip = /^#*/;
-function router_makeParams(url) {
-    var parseUrl = core_parseURL(url);
-    var subHref;
-    var params;
-    var path;
+function core_object_isObject(value) {
+    return core_object_typeof(value) === 'object';
+}
 
-    if (router_base_useHash) {
+function router_parseURL(url) {
+    url = url || location.toString();
+    var result = core_parseURL(url);
+    var hash = result.hash;
+    if (router_base_useHash && hash) {
         //获取当前 hash后的 path
-        subHref = parseUrl.hash.replace(router_makeParams_hasStrip, '');
-        params = core_fixUrl(url, subHref);
-    } else {
-        params = parseUrl;
+        result = core_parseURL(core_fixUrl(url, hash));
     }
-    path = params.path;
-    params.path = isDebug ? path.replace(/\.(jade)$/g, '') : path;
-    params.search = params.query;
-    params.query = core_queryToJson(params.query);
-    params.type = router_base_routerType;
-    params.prev = router_base_prevHref;
-
-    return params;
+    return result;
 }
 
-
 function router_match(url) {
-    url = url || location.toString();
-    var routerParams = router_makeParams(url);
-    var path = routerParams.path;// store values
-    var m = [];//正则校验结果；
+    var routerUrl = core_object_isObject(url) ? url : router_parseURL(url);
+    var path = routerUrl.path;// store values
 
     for (var i = 0, len = router_base_routerTableReg.length; i < len; i++) {
         var obj = router_base_routerTableReg[i];
-        if ((m = obj['pathRegexp'].exec(path))) {
+        var pathMatchResult;//正则校验结果；
+        if (pathMatchResult = obj['pathRegexp'].exec(path)) {
             var keys = obj['keys'];
-            var params = routerParams.params;
+            var param = {};
             var prop;
             var n = 0;
             var key;
             var val;
 
-            for (var j = 1, len = m.length; j < len; ++j) {
+            for (var j = 1, len = pathMatchResult.length; j < len; ++j) {
                 key = keys[j - 1];
-                prop = key
-                    ? key.name
-                    : n++;
-                val = router_match_decodeParam(m[j]);
-
-                if (val !== undefined || !(hasOwnProperty.call(params, prop))) {
-                    params[prop] = val;
-                }
+                prop = key ? key.name : n++;
+                val = decodeURIComponent(pathMatchResult[j]);
+                param[prop] = val;
             }
-            return obj['controller'];
+
+            return {
+                config: obj['config'],
+                param: param
+            };
         }
-    }
-
-    return false;
-}
-
-function router_match_decodeParam(val) {
-    if (typeof val !== 'string') {
-        return val;
-    }
-
-    try {
-        return decodeURIComponent(val);
-    } catch (e) {
-        throw new Error("Failed to decode param '" + val + "'");
     }
 }
 /**
@@ -790,7 +774,7 @@ function router_history_state_set(key, value) {
 //向下一个state的缓存区域添加数据项 并返回新的数据
 function router_history_state_setPush(key, value) {
     router_history_state_dataForPush[key] = value;
-}/**
+}/**
  * 公共对象方法定义文件
  */
 
@@ -1666,14 +1650,7 @@ function render_run(box, controller) {
         control._controller = controller;
         controller(control, render_run_rootScope);
     }
-}
-
-function core_crossDomainCheck(url) {
-    var urlPreReg = /^[^:]+:\/\/[^\/]+\//;
-    var locationMatch = location.href.match(urlPreReg);
-    var urlMatch = url.match(urlPreReg);
-    return (locationMatch && locationMatch[0]) === (urlMatch && urlMatch[0]);
-}
+}
 
 //@Finrila 未处理hashchange事件
 
@@ -1697,10 +1674,11 @@ function router_listen() {
             return;
         }
         core_event_preventDefault(e);
-        router_listen_setRouter(href);
+        router_router_set(href);
     });
     var popstateTime = 0;
     core_event_addEventListener(window, 'popstate', function() {
+        core_notice_trigger('popstate');
         var currentStateIndex = router_history_getStateIndex();
         if (router_listen_lastStateIndex > currentStateIndex) {
             router_base_routerType = 'back';
@@ -1733,16 +1711,40 @@ function router_listen_getHrefNode(el) {
 function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
     router_base_currentHref = url;
-    router_base_params = router_makeParams(url);
-    var controller = router_match(url);
-    if (controller !== false) {
-        router_listen_fireRouterChange(controller);
+    if (router_router_refreshValue().config) {
+        router_listen_fireRouterChange();
     } else {
         location.reload();
     }
 }
 
-function router_listen_setRouter(url, replace) {
+//派发routerChange事件，返回router变化数据 @shaobo3
+function router_listen_fireRouterChange() {
+    core_notice_trigger('routerChange', router_router_get());
+}
+
+//当前访问path的变量集合,以及location相关的解析结果
+var router_router_value;
+
+var router_router = {
+    set: router_router_set,
+    get: router_router_get,
+    back: router_router_back
+};
+/**
+ * 获取当前路由信息
+ * @return {object} 路由信息对象
+ */
+function router_router_get() {
+    return (router_router_value = router_router_value || router_router_refreshValue());
+}
+/**
+ * 设置路由
+ * @param  {string} url     地址
+ * @param  {boolean} replace 是否替换当前页面 不产生历史
+ * @return {undefined} 
+ */
+function router_router_set(url, replace) {
     var basePath = location.href;
     url = core_fixUrl(basePath, url);
     
@@ -1768,25 +1770,44 @@ function router_listen_setRouter(url, replace) {
         router_listen_handleHrefChenged(url);
     }
 }
-
-//派发routerChange事件，返回router变化数据 @shaobo3
-function router_listen_fireRouterChange(controller) {
-    core_notice_trigger('routerChange', {
-        controller: controller,
-        changeType: router_base_routerType
-    });
-}
-
-var router_router = {
-    set: router_listen_setRouter,
-    get: router_router_get
-};
-
-function router_router_get() {
-    if (!router_base_params) {
-        router_base_params = router_makeParams(location.toString());
+/**
+ * 路由后退
+ * @param  {string} url 后退后替换的地址 可以为空
+ * @param  {number} num 后退的步数 默认为1步 必须为大于0的正整数
+ * @return {undefined}
+ */
+function router_router_back(url, num) {
+    log('Info', 123131);
+    if (url && core_crossDomainCheck(url)) {
+        core_notice_on('popstate', function popstate() {
+            core_notice_off('popstate', popstate);
+            router_history_replaceState(core_fixUrl(router_router_get().url, url));
+        });
     }
-    return router_base_params;
+    if (core_object_isNumber(num) && num > 0) {
+        history.go(-num);
+    } else {
+        history.back();
+    }
+}
+/**
+ * 内部使用的路由信息刷新方法
+ * @return {object} 路由信息对象
+ */
+function router_router_refreshValue() {
+    router_router_value = router_parseURL();
+    var path = router_router_value.path;
+    router_router_value.path = isDebug ? path.replace(/\.(jade)$/g, '') : path;
+    router_router_value.search = router_router_value.query;
+    router_router_value.query = core_queryToJson(router_router_value.query);
+    router_router_value.type = router_base_routerType;
+    router_router_value.prev = router_base_prevHref;
+    var matchResult = router_match(router_router_value);
+    if (matchResult) {
+        router_router_value.config = matchResult.config;
+        router_router_value.param = matchResult.param;
+    }
+    return router_router_value;
 }
 
 
@@ -2622,9 +2643,9 @@ function router_pathToRegexp(path, keys, options) {
     return router_pathToRegexp_attachKeys(RegExp('^' + route, router_pathToRegexp_flags(options)), keys);
 }
 
-function router_use(path, controller) {
+function router_use(path, config) {
     var key, value, _results;
-    if (typeof path === 'object' && !(path instanceof RegExp)) {
+    if (typeof path === 'object' && !(path instanceof window.RegExp)) {
         //批量设置
         _results = [];
         for (key in path) {
@@ -2638,25 +2659,24 @@ function router_use(path, controller) {
         var pathRegexp = router_pathToRegexp(path, keys);
         return router_base_routerTableReg.push({
             pathRegexp: pathRegexp,
-            controller: controller,
+            config: config,
             keys: keys
         });
     }
 }
 
-
+
 
 function router_boot() {
-  for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
-    var items = router_base_routerTable[i];
-    router_use(items[0], items[1]);
-  }
-  var controller = router_match();
-  if (controller) {
-    router_listen_fireRouterChange(controller);
-  }
-  //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
-  isHTML5 && router_base_singlePage && router_listen();
+    for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
+        var items = router_base_routerTable[i];
+        router_use(items[0], items);
+    }
+    if (router_router_get().config) {
+        router_listen_fireRouterChange();
+    }
+    //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
+    isHTML5 && router_base_singlePage && router_listen();
 }
  
 
@@ -2689,11 +2709,12 @@ function router_boot() {
     }
   };
   
-  core_notice_on('routerChange', function(res) {
-    var controller = res.controller;
+  core_notice_on('routerChange', function(routerValue) {
+    var config = routerValue.config;
+    var controller = config[1];
     render_run(mainBox, controller);
     core_notice_trigger('stageChange', mainBox);
-    log("Info: routerChange", mainBox, controller, router_base_routerType);
+    log("Info: routerChange", mainBox, controller, routerValue.type);
   });
 
   window.steel = steel;
