@@ -6,7 +6,7 @@
 //import ./toTiggerChildren
 //import core/notice
 
-function render_control_setData(resContainer) {
+function render_control_setData(resContainer, tplChanged) {
     
     var dataCallbackFn;
     var data = resContainer.data;
@@ -25,7 +25,7 @@ function render_control_setData(resContainer) {
     var dataType = core_object_typeof(data);
     
     if (dataType === 'object') {
-        render_control_setData_toRender(data, resContainer);
+        render_control_setData_toRender(data, resContainer, tplChanged);
     } else if (dataType === 'string') {
         var cb = dataCallbackFn = function(ret) {
             if (cb === dataCallbackFn) {
@@ -37,7 +37,7 @@ function render_control_setData(resContainer) {
                     ctrlNS: controllerNs
                 });
                 // toRender(ret.data);//||
-                render_control_setData_toRender(ret.data, resContainer);
+                render_control_setData_toRender(ret.data, resContainer, tplChanged);
             }
         };
         // resource_res.get(data, cb, render_error);
@@ -51,9 +51,10 @@ function render_control_setData(resContainer) {
     }
 }
 
-function render_control_setData_toRender(data, resContainer) {
+function render_control_setData_toRender(data, resContainer, tplChanged) {
     resContainer.dataReady = true;
-    if (resContainer.forceRender || !core_object_equals(data, resContainer.real_data)) {
+
+    if (resContainer.forceRender || tplChanged || !core_object_equals(data, resContainer.real_data)) {
         resContainer.real_data = data;
         render_control_render(resContainer);
     } else {

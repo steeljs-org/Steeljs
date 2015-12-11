@@ -78,7 +78,6 @@ function render_control_main(boxId) {
             toDoSets();
         },
         _destroy: function() {
-            resContainer.real_data = undefined;
             boxId = control._controller = resContainer = box = toDoSetsTimer = undefined;
         }
     };
@@ -169,7 +168,7 @@ function render_control_main(boxId) {
             !resContainer.logic && delete resContainer.logicFn;
 
             tplChanged && render_control_setTpl(resContainer);
-            dataChanged && render_control_setData(resContainer);
+            dataChanged && render_control_setData(resContainer, tplChanged);
             cssChanged && render_control_setCss(resContainer);
             logicChanged && render_control_setLogic(resContainer);
             resContainer.childrenChanged && render_control_setChildren(resContainer);
