@@ -3,7 +3,7 @@
  */
 
 // 当前页面在整个单页面跳转中的索引位置
-var router_history_stateIndex_key = 'stateIndex';
+var router_history_stateIndex_key = '--steel-stateIndex';
 var router_history_state_data;
 var router_history_state_dataForPush;
 
