@@ -46,6 +46,7 @@
     var config = routerValue.config;
     var controller = config[1];
     render_run(mainBox, controller);
+    window.scrollTo(0, 0);
     core_notice_trigger('stageChange', mainBox);
     log("Info: routerChange", mainBox, controller, routerValue.type);
   });
