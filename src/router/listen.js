@@ -33,6 +33,7 @@ function router_listen() {
         }
         core_event_preventDefault(e);
         router_router_set(href);
+        router_listen_lastStateIndex = router_history_getStateIndex();
     });
     var popstateTime = 0;
     core_event_addEventListener(window, 'popstate', function() {

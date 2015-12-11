@@ -68,7 +68,6 @@ function router_router_set(url, replace) {
             if (router_base_currentHref !== url) {
                 router_base_routerType = 'new';
                 router_history_pushState(url);
-                router_listen_lastStateIndex = router_history_getStateIndex();
             } else {
                 router_base_routerType = 'refresh';
             }
