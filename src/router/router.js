@@ -15,8 +15,10 @@
 var router_router_value;
 
 var router_router = {
-    set: router_router_set,
     get: router_router_get,
+    push: router_router_push,
+    replace: router_router_replace,
+    set: router_router_set,
     back: router_router_back
 };
 /**
@@ -27,6 +29,22 @@ function router_router_get() {
     return (router_router_value = router_router_value || router_router_refreshValue());
 }
 /**
+ * 路由前进到某个地址
+ * @param  {string} url 页面地址
+ * @return {undefined} 
+ */
+function router_router_push(url) {
+    router_router_set(url);
+}
+/**
+ * 将路由替换成某个地址
+ * @param  {string} url 页面地址
+ * @return {undefined}
+ */
+function router_router_replace(url) {
+    router_router_set(url, true);
+}
+/**
  * 设置路由
  * @param  {string} url     地址
  * @param  {boolean} replace 是否替换当前页面 不产生历史
@@ -34,7 +52,7 @@ function router_router_get() {
  */
 function router_router_set(url, replace) {
     var basePath = location.href;
-    url = core_fixUrl(basePath, url);
+    url = core_fixUrl(basePath, url || '');
     
     if (android && history.length === 1 || !core_crossDomainCheck(url)) {
         if (replace) {
