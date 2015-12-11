@@ -577,8 +577,9 @@ var router_base_routerTable = [];
 //处理后的路由集合，[{pathRegexp:RegExp, controller:'controllerFn', keys:{}}]
 var router_base_routerTableReg = [];
 
-//项目是否使用hash
-var router_base_useHash = false;
+// @Finrila hash模式处理不可用状态，先下掉
+// //项目是否使用hash
+// var router_base_useHash = false;
 
 //应用是否支持单页面（跳转与否）
 var router_base_singlePage = false;
@@ -672,11 +673,12 @@ function core_object_isObject(value) {
 function router_parseURL(url) {
     url = url || location.toString();
     var result = core_parseURL(url);
-    var hash = result.hash;
-    if (router_base_useHash && hash) {
-        //获取当前 hash后的 path
-        result = core_parseURL(core_fixUrl(url, hash));
-    }
+    // @Finrila hash模式处理不可用状态，先下掉
+    // var hash = result.hash;
+    // if (router_base_useHash && hash) {
+    //     //获取当前 hash后的 path
+    //     result = core_parseURL(core_fixUrl(url, hash));
+    // }
     return result;
 }
 
@@ -2428,7 +2430,8 @@ config_push(router_config);
 
 function router_config(parseParamFn, config) {
   router_base_routerTable = parseParamFn('router', router_base_routerTable);
-  router_base_useHash = parseParamFn('useHash', router_base_useHash);
+  // @Finrila hash模式处理不可用状态，先下掉
+  // router_base_useHash = parseParamFn('useHash', router_base_useHash);
   router_base_singlePage = parseParamFn('singlePage', router_base_singlePage);
 }/**
  * 路由启动接口
