@@ -8,8 +8,9 @@ var router_base_routerTable = [];
 //处理后的路由集合，[{pathRegexp:RegExp, controller:'controllerFn', keys:{}}]
 var router_base_routerTableReg = [];
 
-//项目是否使用hash
-var router_base_useHash = false;
+// @Finrila hash模式处理不可用状态，先下掉
+// //项目是否使用hash
+// var router_base_useHash = false;
 
 //应用是否支持单页面（跳转与否）
 var router_base_singlePage = false;
