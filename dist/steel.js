@@ -714,7 +714,7 @@ function router_match(url) {
  */
 
 // 当前页面在整个单页面跳转中的索引位置
-var router_history_stateIndex_key = 'stateIndex';
+var router_history_stateIndex_key = '--steel-stateIndex';
 var router_history_state_data;
 var router_history_state_dataForPush;
 
@@ -1337,7 +1337,7 @@ function render_contorl_toTiggerChildren(resContainer) {
     resContainer.needToTriggerChildren = false;
 }
 
-function render_control_setData(resContainer) {
+function render_control_setData(resContainer, tplChanged) {
     
     var dataCallbackFn;
     var data = resContainer.data;
@@ -1356,7 +1356,7 @@ function render_control_setData(resContainer) {
     var dataType = core_object_typeof(data);
     
     if (dataType === 'object') {
-        render_control_setData_toRender(data, resContainer);
+        render_control_setData_toRender(data, resContainer, tplChanged);
     } else if (dataType === 'string') {
         var cb = dataCallbackFn = function(ret) {
             if (cb === dataCallbackFn) {
@@ -1368,7 +1368,7 @@ function render_control_setData(resContainer) {
                     ctrlNS: controllerNs
                 });
                 // toRender(ret.data);//||
-                render_control_setData_toRender(ret.data, resContainer);
+                render_control_setData_toRender(ret.data, resContainer, tplChanged);
             }
         };
         // resource_res.get(data, cb, render_error);
@@ -1382,9 +1382,10 @@ function render_control_setData(resContainer) {
     }
 }
 
-function render_control_setData_toRender(data, resContainer) {
+function render_control_setData_toRender(data, resContainer, tplChanged) {
     resContainer.dataReady = true;
-    if (resContainer.forceRender || !core_object_equals(data, resContainer.real_data)) {
+
+    if (resContainer.forceRender || tplChanged || !core_object_equals(data, resContainer.real_data)) {
         resContainer.real_data = data;
         render_control_render(resContainer);
     } else {
@@ -1483,7 +1484,6 @@ function render_control_main(boxId) {
             toDoSets();
         },
         _destroy: function() {
-            resContainer.real_data = undefined;
             boxId = control._controller = resContainer = box = toDoSetsTimer = undefined;
         }
     };
@@ -1574,7 +1574,7 @@ function render_control_main(boxId) {
             !resContainer.logic && delete resContainer.logicFn;
 
             tplChanged && render_control_setTpl(resContainer);
-            dataChanged && render_control_setData(resContainer);
+            dataChanged && render_control_setData(resContainer, tplChanged);
             cssChanged && render_control_setCss(resContainer);
             logicChanged && render_control_setLogic(resContainer);
             resContainer.childrenChanged && render_control_setChildren(resContainer);
@@ -1727,8 +1727,10 @@ function router_listen_fireRouterChange() {
 var router_router_value;
 
 var router_router = {
-    set: router_router_set,
     get: router_router_get,
+    push: router_router_push,
+    replace: router_router_replace,
+    set: router_router_set,
     back: router_router_back
 };
 /**
@@ -1739,6 +1741,22 @@ function router_router_get() {
     return (router_router_value = router_router_value || router_router_refreshValue());
 }
 /**
+ * 路由前进到某个地址
+ * @param  {string} url 页面地址
+ * @return {undefined} 
+ */
+function router_router_push(url) {
+    router_router_set(url);
+}
+/**
+ * 将路由替换成某个地址
+ * @param  {string} url 页面地址
+ * @return {undefined}
+ */
+function router_router_replace(url) {
+    router_router_set(url, true);
+}
+/**
  * 设置路由
  * @param  {string} url     地址
  * @param  {boolean} replace 是否替换当前页面 不产生历史
@@ -1746,7 +1764,7 @@ function router_router_get() {
  */
 function router_router_set(url, replace) {
     var basePath = location.href;
-    url = core_fixUrl(basePath, url);
+    url = core_fixUrl(basePath, url || '');
     
     if (android && history.length === 1 || !core_crossDomainCheck(url)) {
         if (replace) {
@@ -2713,6 +2731,7 @@ function router_boot() {
     var config = routerValue.config;
     var controller = config[1];
     render_run(mainBox, controller);
+    window.scrollTo(0, 0);
     core_notice_trigger('stageChange', mainBox);
     log("Info: routerChange", mainBox, controller, routerValue.type);
   });
