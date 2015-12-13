@@ -70,7 +70,7 @@ function router_listen_getHrefNode(el) {
 function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
     router_base_currentHref = url;
-    if (router_router_refreshValue().config) {
+    if (router_router_get(true).config) {
         router_listen_fireRouterChange();
     } else {
         location.reload();

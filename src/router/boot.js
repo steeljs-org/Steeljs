@@ -15,7 +15,7 @@ function router_boot() {
         var items = router_base_routerTable[i];
         router_use(items[0], items);
     }
-    if (router_router_get().config) {
+    if (router_router_get(true).config) {
         router_listen_fireRouterChange();
     }
     //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
