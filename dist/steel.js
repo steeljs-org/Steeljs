@@ -81,7 +81,7 @@ function getElementsByTagName( tagName, el ) {
  * @return {number} now time
  */
 function now() {
-    return Date.now ? Date.now() : +new Date();
+    return Date.now ? Date.now() : +new Date;
 }
 
 function RegExp(pattern, attributes) {
@@ -91,12 +91,12 @@ function RegExp(pattern, attributes) {
 
 var config_list = [];
 
-steel.config = function(config) {
+function config(config) {
   var parseParamFn = config_parseParamFn(config);
   for (var i = 0, l = config_list.length; i < l; ++i) {
     config_list[i](parseParamFn, config);
   }
-};
+}
 
 function config_push(fn) {
   config_list.push(fn);
@@ -1024,7 +1024,7 @@ function render_control_setLogic(resContainer) {
         } else {
             var cb = logicCallbackFn = function(fn) {
                 if(cb === logicCallbackFn){
-                    endTime = new Date;
+                    endTime = now();
                     core_notice_trigger('logicTime', {
                         startTime: startTime,
                         logicTime: endTime - startTime || 0,
@@ -1035,7 +1035,7 @@ function render_control_setLogic(resContainer) {
                 }
                 //抛出js加载完成事件
             }
-            startTime = new Date;
+            startTime = now();
             require_global(logic, cb, render_error, controllerNs);
         }
     }
@@ -1207,7 +1207,7 @@ function render_control_setCss(resContainer) {
     var cb = cssCallbackFn = function(){
         cssCache.cur = linkId;
         if(cb === cssCallbackFn) {
-            endTime = new Date;
+            endTime = now();
             core_notice_trigger('cssTime', {
                 startTime: startTime,
                 cssTime: (endTime - startTime) || 0,
@@ -1218,7 +1218,7 @@ function render_control_setCss(resContainer) {
             //抛出css加载完成事件
         }
     }
-    startTime = new Date;
+    startTime = now();
     css && resource_res.css(css, cb, function(){
         resContainer.cssReady = true;
         render_control_destroyCss(boxId);
@@ -1268,7 +1268,7 @@ function render_control_setTpl(resContainer) {
         }
         var cb = tplCallbackFn = function(jadefn){
             if(cb === tplCallbackFn){
-                endTime = new Date;
+                endTime = now();
                 core_notice_trigger('tplTime', {
                     startTime: startTime,
                     tplTime: endTime - startTime || 0,
@@ -1386,7 +1386,7 @@ function render_control_setData(resContainer, tplChanged) {
         var cb = dataCallbackFn = function(ret) {
             if (cb === dataCallbackFn) {
                 //拿到ajax数据
-                endTime = new Date;
+                endTime = now();
                 core_notice_trigger('ajaxTime', {
                     startTime: startTime,
                     ajaxTime: (endTime - startTime) || 0,
@@ -1398,7 +1398,7 @@ function render_control_setData(resContainer, tplChanged) {
         };
         // resource_res.get(data, cb, render_error);
         //开始拿模块数据
-        startTime = new Date;
+        startTime = now();
         resource_res.get(data, cb, function(ret){
             resContainer.data = ret || null;
             resContainer.real_data = resContainer.data;
@@ -1643,7 +1643,7 @@ function render_run(box, controller) {
         render_base_controllerNs[boxId] = controller;
         controllerLoadFn = render_run_controllerLoadFn[boxId] = function(controller){
             if (controllerLoadFn === render_run_controllerLoadFn[boxId] && controller) {
-                endTime = new Date;
+                endTime = now();
                 core_notice_trigger('ctrlTime', {
                     startTime: startTime,
                     ctrlTime: (endTime - startTime) || 0,
@@ -1653,7 +1653,7 @@ function render_run(box, controller) {
                 render_run(boxId, controller);
             }
         };
-        startTime = new Date;
+        startTime = now();
         require_global(controller, controllerLoadFn, render_error);
         return;
     }
@@ -1737,7 +1737,7 @@ function router_listen_getHrefNode(el) {
 function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
     router_base_currentHref = url;
-    if (router_router_refreshValue().config) {
+    if (router_router_get(true).config) {
         router_listen_fireRouterChange();
     } else {
         location.reload();
@@ -1763,8 +1763,11 @@ var router_router = {
  * 获取当前路由信息
  * @return {object} 路由信息对象
  */
-function router_router_get() {
-    return (router_router_value = router_router_value || router_router_refreshValue());
+function router_router_get(refresh) {
+    if (refresh || !router_router_value) {
+        router_router_refreshValue();
+    }
+    return router_router_value;
 }
 /**
  * 路由前进到某个地址
@@ -2177,7 +2180,7 @@ function loader_ajax(url, onComplete){//(url, callback)
             'isEncodeQuery' : opts['isEncode']
         });
         url.setParams(opts['args']);
-        url.setParam('__rnd', new Date().valueOf());
+        url.setParam('__rnd', now());
         trans.open(opts['method'], url.toString(), opts['asynchronous']);
         try{
             for(var k in opts['header']){
@@ -2716,7 +2719,7 @@ function router_boot() {
         var items = router_base_routerTable[i];
         router_use(items[0], items);
     }
-    if (router_router_get().config) {
+    if (router_router_get(true).config) {
         router_listen_fireRouterChange();
     }
     //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
@@ -2738,6 +2741,7 @@ function router_boot() {
   steel.off = core_notice_off;
   steel.setExtTplData = render_control_setExtTplData;
   steel.require = require_global;
+  steel.config = config;
 
   steel.boot = function(ns) {
     steel.isDebug = isDebug;
