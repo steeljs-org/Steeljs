@@ -27,6 +27,7 @@
   steel.off = core_notice_off;
   steel.setExtTplData = render_control_setExtTplData;
   steel.require = require_global;
+  steel.config = config;
 
   steel.boot = function(ns) {
     steel.isDebug = isDebug;
