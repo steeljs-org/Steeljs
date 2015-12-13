@@ -75,7 +75,7 @@ function getElementsByTagName( tagName, el ) {
  * @return {number} now time
  */
 function now() {
-    return Date.now ? Date.now() : +new Date();
+    return Date.now ? Date.now() : +new Date;
 }
 
 function RegExp(pattern, attributes) {

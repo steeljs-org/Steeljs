@@ -30,7 +30,7 @@ function render_control_setData(resContainer, tplChanged) {
         var cb = dataCallbackFn = function(ret) {
             if (cb === dataCallbackFn) {
                 //拿到ajax数据
-                endTime = new Date;
+                endTime = now();
                 core_notice_trigger('ajaxTime', {
                     startTime: startTime,
                     ajaxTime: (endTime - startTime) || 0,
@@ -42,7 +42,7 @@ function render_control_setData(resContainer, tplChanged) {
         };
         // resource_res.get(data, cb, render_error);
         //开始拿模块数据
-        startTime = new Date;
+        startTime = now();
         resource_res.get(data, cb, function(ret){
             resContainer.data = ret || null;
             resContainer.real_data = resContainer.data;

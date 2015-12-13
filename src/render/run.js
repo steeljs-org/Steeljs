@@ -39,7 +39,7 @@ function render_run(box, controller) {
         render_base_controllerNs[boxId] = controller;
         controllerLoadFn = render_run_controllerLoadFn[boxId] = function(controller){
             if (controllerLoadFn === render_run_controllerLoadFn[boxId] && controller) {
-                endTime = new Date;
+                endTime = now();
                 core_notice_trigger('ctrlTime', {
                     startTime: startTime,
                     ctrlTime: (endTime - startTime) || 0,
@@ -49,7 +49,7 @@ function render_run(box, controller) {
                 render_run(boxId, controller);
             }
         };
-        startTime = new Date;
+        startTime = now();
         require_global(controller, controllerLoadFn, render_error);
         return;
     }

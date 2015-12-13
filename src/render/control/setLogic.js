@@ -23,7 +23,7 @@ function render_control_setLogic(resContainer) {
         } else {
             var cb = logicCallbackFn = function(fn) {
                 if(cb === logicCallbackFn){
-                    endTime = new Date;
+                    endTime = now();
                     core_notice_trigger('logicTime', {
                         startTime: startTime,
                         logicTime: endTime - startTime || 0,
@@ -34,7 +34,7 @@ function render_control_setLogic(resContainer) {
                 }
                 //抛出js加载完成事件
             }
-            startTime = new Date;
+            startTime = now();
             require_global(logic, cb, render_error, controllerNs);
         }
     }

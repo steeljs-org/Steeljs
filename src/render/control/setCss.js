@@ -26,7 +26,7 @@ function render_control_setCss(resContainer) {
     var cb = cssCallbackFn = function(){
         cssCache.cur = linkId;
         if(cb === cssCallbackFn) {
-            endTime = new Date;
+            endTime = now();
             core_notice_trigger('cssTime', {
                 startTime: startTime,
                 cssTime: (endTime - startTime) || 0,
@@ -37,7 +37,7 @@ function render_control_setCss(resContainer) {
             //抛出css加载完成事件
         }
     }
-    startTime = new Date;
+    startTime = now();
     css && resource_res.css(css, cb, function(){
         resContainer.cssReady = true;
         render_control_destroyCss(boxId);
