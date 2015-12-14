@@ -16,7 +16,7 @@ function render_control_setData(resContainer, tplChanged) {
     // var ajaxRunTime = 10;//计算ajax时间时，运行时间假定需要10ms（实际在10ms内）
 
     if (data === null || data === 'null') {
-        render_control_setData_toRender({}, resContainer);
+        render_control_setData_toRender({}, resContainer, tplChanged);
         return;
     }
     if (!data) {
