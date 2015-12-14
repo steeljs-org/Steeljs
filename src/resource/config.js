@@ -1,6 +1,7 @@
 //import ./base
 
 var resource_config_slash = '/';
+var resource_config_ajaxExpries = 3600 * 1000;
 function resource_config(config) {
     resource_jsPath = config.jsPath || resource_jsPath;
     resource_cssPath = config.cssPath || resource_jsPath;
