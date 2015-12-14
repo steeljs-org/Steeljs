@@ -10,21 +10,30 @@
 var render_control_setCss_cssPrefix = 'S_CSS_';
 var render_control_setCss_cssCache = {};//css容器
 
-
 function render_control_setCss(resContainer) {
     var cssCallbackFn;
     var startTime = null;
     var endTime = null;
+    var css = resContainer.css;
+
+    if (!css) {
+        render_control_destroyCss(resContainer);
+    }
     var boxId = resContainer.boxId;
     var controllerNs = render_base_controllerNs[boxId];
-    var css = resContainer.css && core_nameSpaceFix(resContainer.css, controllerNs);
-    var linkId = render_control_getLinkId(css);//render_control_setCss_cssPrefix + resContainer.css.replace(/\//g, '_');
-    var cssCache = render_control_setCss_cssCache[boxId] = render_control_setCss_cssCache[boxId] || {
-        last: null,
-        cur: null
-    };
+    var css = core_nameSpaceFix(resContainer.css, controllerNs);
+    var cssId = render_control_getCssId(css);
+    var linkId = 'link_' + cssId;
+
+    if (render_control_setCss_cssCache[linkId]) {
+        cssReady();
+        return;
+    }
+
+    render_control_setCss_cssCache[linkId] = {};
+    render_control_setCss_cssCache[linkId][boxId] = true;
+
     var cb = cssCallbackFn = function(){
-        cssCache.cur = linkId;
         if(cb === cssCallbackFn) {
             endTime = now();
             core_notice_trigger('cssTime', {
@@ -32,40 +41,46 @@ function render_control_setCss(resContainer) {
                 cssTime: (endTime - startTime) || 0,
                 ctrlNS: controllerNs
             });
-            resContainer.cssReady = true;
-            render_control_render(resContainer);
+            cssReady();
             //抛出css加载完成事件
         }
-    }
+    };
     startTime = now();
     css && resource_res.css(css, cb, function(){
         resContainer.cssReady = true;
         render_control_destroyCss(boxId);
         render_control_render(resContainer);
-    }, linkId);
+    }, cssId);
+    function cssReady() {
+        render_control_destroyCss(resContainer, linkId);
+        resContainer.cssReady = true;
+        render_control_render(resContainer);
+    }
 }
 
-function render_control_destroyCss(resContainer) {
+function render_control_destroyCss(resContainer, linkId) {
     var boxId = resContainer.boxId;
-    var cssCache = render_control_setCss_cssCache[boxId];
-    var css = resContainer.css;
-    var linkId = render_control_getLinkId(css);
-    if (!cssCache) {
-        return;
+    for(var _linkId in render_control_setCss_cssCache) {
+        if (linkId === _linkId) {
+            continue;
+        }
+        var linkCache = render_control_setCss_cssCache[_linkId];
+        if (linkCache[boxId]) {
+            delete linkCache[boxId];
+            !function() {
+                for (var _boxId in linkCache) {
+                    return;
+                }
+                var linkDom = getElementById(_linkId);
+                if (linkDom) {
+                    core_dom_removeNode(linkDom);
+                }
+                delete render_control_setCss_cssCache[_linkId];
+            }();
+        }
     }
-    
-    if (linkId && linkId == cssCache.last) {
-        return;
-    }
-    
-    if (cssCache.last) {
-        var cssDom = getElementById(cssCache.last);
-        cssDom && core_dom_removeNode(cssDom);
-    }
-    cssCache.last = cssCache.cur;
-    cssCache.cur = null;
 }
 
-function render_control_getLinkId(path) {
+function render_control_getCssId(path) {
     return path && render_control_setCss_cssPrefix + path.replace(/(\.css)$/i, '').replace(/\//g, '_');
 }

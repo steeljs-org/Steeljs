@@ -59,7 +59,6 @@ function render_control_render(resContainer) {
         render_control_destroyChildren(resContainer.toDestroyChildrenid);
         box.innerHTML = html;
         render_base_count--;
-        render_control_destroyCss(resContainer);
         resContainer.rendered = true;
         render_control_startLogic(resContainer);
         for(var i = 0, l = childWaitingCache.length; i < l; ++i) {

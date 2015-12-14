@@ -14,13 +14,13 @@ function loader_css( url, callback, load_ID ){
     core_dom_setAttribute(link, 'rel', 'Stylesheet');
     core_dom_setAttribute(link, 'type', 'text/css');
     core_dom_setAttribute(link, 'charset', 'utf-8');
-    core_dom_setAttribute(link, 'id', load_ID);
+    core_dom_setAttribute(link, 'id', 'link_' + load_ID);
     core_dom_setAttribute(link, 'href', url);
     head.appendChild(link);
     load_div = core_dom_createElement('div');
     core_dom_setAttribute(load_div, 'id', load_ID);
     core_hideDiv_appendChild(load_div);
-
+    
     timer = function(){
         if(parseInt(window.getComputedStyle ? getComputedStyle(load_div, null)['height'] : load_div.currentStyle && load_div.currentStyle['height']) === 42){
             core_hideDiv_removeChild(load_div);
