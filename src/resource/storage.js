@@ -8,7 +8,7 @@
 var _storage = window.localStorage;
 
 var resource_storage_set = function(item, value) {
-	if (!_storage) return;
+	if (!_storage || !item) return;
 	try {
 		_storage.setItem(item, escape(value));
 	} catch (e) {
@@ -17,7 +17,7 @@ var resource_storage_set = function(item, value) {
 };
 
 var resource_storage_get = function(item) {
-	if (!_storage) return;
+	if (!_storage || !item) return;
 	return unescape(_storage.getItem(item));
 };
 

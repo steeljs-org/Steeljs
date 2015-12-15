@@ -18,7 +18,7 @@ var resource_newcache_get = {
 		var timestamp = new Date().getTime();
 		var cacheData = JSON.parse(resource_storage_get(url));
 
-		if (timestamp - cacheData.expire < config.expire) {
+		if (cacheData && (timestamp - cacheData.expire < config.expire)) {
 			return resource_res_realData(cacheData.data, keys);
 		}
 

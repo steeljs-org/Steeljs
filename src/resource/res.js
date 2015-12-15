@@ -47,8 +47,9 @@ function resource_res_handle(url, succ, err, loader, cssId, keys) {
         resource_queue_push(url, succ, err);
         //loader
         loader(url, function(access, data) {
-            if (data) {
-                resource_newcache_set.ajax(url, { data: data, expire: new Date().getTime() })
+            if (data.code === '100000') {
+                resource_newcache_set.ajax(url, { data: data.data, expire: new Date().getTime() })
+                data.data = resource_res_realData(data.data, keys);
             }
             // resource_cache_create(url);
             // resource_cache_set(url, {
@@ -56,7 +57,7 @@ function resource_res_handle(url, succ, err, loader, cssId, keys) {
             //     expire: null
             // });
 
-            data = resource_res_realData(data);
+            //之前的ajax请求都没有回传data啊？
             resource_queue_run(url, access, data);
             resource_queue_del(url);
         }, cssId);
@@ -64,7 +65,8 @@ function resource_res_handle(url, succ, err, loader, cssId, keys) {
 };
 
 function resource_res_realData(data, keys) {
-    for (var i = 0; i < keys.length; i++) {
+    keys = keys || [];
+    for (var i = keys.length - 1; i > -1; i--) {
         data = data[keys[i]] || data;
     }
 

@@ -9,10 +9,12 @@ var ajax_config = {
 function resource_realUrl(url, keys) {
     if (!ajax_config[url]) return url;
 
-    var realUrl = url.replace(/\[((.+?))\]/g, function (a, b){
+    var realUrl = ajax_config[url].replace(/\[((.+?))\]/g, function (a, b){
         keys.push(b);
         return '';
     });
+
+    if(realUrl == ajax_config[url]) return realUrl;
 
     return resource_realUrl(realUrl, keys);
 }
