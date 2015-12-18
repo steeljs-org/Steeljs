@@ -1,5 +1,4 @@
-## steel框架使用说明
-author 谢飞(堂歌) && 王政(Finrila)
+## steel
 
 #### 文档说明
 * 版本 1.0
