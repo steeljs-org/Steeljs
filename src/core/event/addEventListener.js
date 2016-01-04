@@ -7,8 +7,8 @@
  * @param {string} fn
  */
 var core_event_addEventListener = isAddEventListener ? 
-	function( el, type, fn ) {
-		el.addEventListener( type, fn, false );
+	function( el, type, fn, useCapture) {
+		el.addEventListener( type, fn, useCapture === undefined ? false : useCapture);
 	}
 	:
 	function( el, type, fn ) {

@@ -10,4 +10,3 @@ var resource_base_version;
 
 //资源列表{url->[[access_cb, fail_cb],....]}
 var resource_queue_list = {};
-

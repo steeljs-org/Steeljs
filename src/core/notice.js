@@ -31,7 +31,7 @@ function core_notice_on( type, fn ) {
 function core_notice_off( type, fn ) {
 	var typeArray = core_notice_find( type ),
 		index,
-		spliceLength = 0;
+		spliceLength;
 	if ( fn ) {
 		if ( ( index = core_array_indexOf( fn, typeArray ) ) > -1 ) {
 			spliceLength = 1;

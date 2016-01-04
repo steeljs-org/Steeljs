@@ -22,12 +22,9 @@ function require_define(ns, deps, construtor) {
     } else {
         doDefine();
     }
-    
-
     function doDefine() {
         require_base_module_defined[ns] = true;
         core_notice_trigger(require_base_event_defined, ns);
         log('Debug: define ns("' + ns + '")');
     }
-
 }

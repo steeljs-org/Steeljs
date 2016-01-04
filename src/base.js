@@ -9,12 +9,19 @@ var userAgent = navigator.userAgent,
     docElem = document.documentElement,
     head = document.head || getElementsByTagName( 'head' )[ 0 ] || docElem,
     setTimeout = window.setTimeout,
-    location = window.location,
     clearTimeout = window.clearTimeout,
+    parseInt = window.parseInt,
+    parseFloat = window.parseFloat,
+    location = window.location,
     decodeURI = window.decodeURI,
     toString = Object.prototype.toString,
     isHTML5 = !!history.pushState,
+    webkit = userAgent.match(/Web[kK]it[\/]{0,1}([\d.]+)/),
+    webkitVersion = webkit && parseFloat(webkit[1]),
+    iphone = userAgent.match(/(iPhone\sOS)\s([\d_]+)/),
+    iphoneVersion = iphone && parseFloat(iphone[2].replace(/_/g, '.')),
     android = userAgent.match(/(Android);?[\s\/]+([\d.]+)?/),
+    androidVersion = android && parseFloat(android[2]),
     isAddEventListener = document.addEventListener,
     isDebug,
     logLevels = 'Debug|Info|Warn|Error|Fatal',
@@ -23,6 +30,16 @@ var userAgent = navigator.userAgent,
     IE = /msie (\d+\.\d+)/i.test( userAgent ) ? ( document.documentMode || + RegExp[ '$1' ] ) : 0;
 
 var mainBox;
+
+//检验history.state的支持性
+if (isHTML5) {
+    (function() {
+        var lastState = history.state;
+        history.replaceState(1, undefined);
+        isHTML5 = (history.state === 1);
+        history.replaceState(lastState, undefined);
+    })();
+}
 
 /*
  * log

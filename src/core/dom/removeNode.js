@@ -7,5 +7,5 @@
  * core_dom_removeNode( node );
  */
 function core_dom_removeNode( node ) {
-	node && node.parentNode.removeChild( node );
+	node && node.parentNode && node.parentNode.removeChild( node );
 }

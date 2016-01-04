@@ -35,6 +35,6 @@ function core_parseURL(url) {
     if (retJson.port) {
         retJson.port = parseInt(retJson.port);
     }
-    retJson.path = retJson.path || '/';
+    retJson.path = retJson.path.replace(/\/+/g, '/') || '/';
     return retJson;
 }

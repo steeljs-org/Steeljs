@@ -106,7 +106,7 @@ function loader_ajax(url, onComplete){//(url, callback)
             'isEncodeQuery' : opts['isEncode']
         });
         url.setParams(opts['args']);
-        url.setParam('__rnd', now());
+        url.setParam('__rnd', new Date().valueOf());
         trans.open(opts['method'], url.toString(), opts['asynchronous']);
         try{
             for(var k in opts['header']){

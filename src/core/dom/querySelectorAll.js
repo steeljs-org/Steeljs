@@ -35,4 +35,3 @@ function core_dom_querySelectorAll(dom, select) {
 	}
 	return result || [];
 }
-

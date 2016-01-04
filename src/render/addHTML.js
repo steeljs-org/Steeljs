@@ -3,7 +3,7 @@ function render_addHTML(node, html){
     if(IE && IE < 10){
         // node.insertAdjacentHTML('BeforeEnd', html);
         node.innerHTML = html;
-    }else {
+    } else {
         var oRange, oFrage;
         oRange = node.ownerDocument.createRange();//node.ownerDocument.createRange();
         oRange.selectNodeContents(node);

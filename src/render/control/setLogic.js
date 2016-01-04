@@ -33,7 +33,7 @@ function render_control_setLogic(resContainer) {
                     render_control_toStartLogic(resContainer);
                 }
                 //抛出js加载完成事件
-            }
+            };
             startTime = now();
             require_global(logic, cb, render_error, controllerNs);
         }
@@ -46,15 +46,17 @@ function render_control_toStartLogic(resContainer) {
 }
 
 function render_control_startLogic(resContainer) {
-    var box = getElementById(resContainer.boxId);
+    var boxId = resContainer.boxId;
+    var box = getElementById(boxId);
+    var control = render_base_controlCache[boxId];
     var logicResult;
     var real_data = resContainer.real_data || {};
     if (!resContainer.logicRunned && resContainer.logicFn && resContainer.logicReady && resContainer.rendered) {
         if (isDebug) {
-            logicResult = resContainer.logicFn(box, real_data) || {};
+            logicResult = resContainer.logicFn(box, real_data, control) || {};
         } else {
             try {
-                logicResult = resContainer.logicFn(box, real_data) || {};
+                logicResult = resContainer.logicFn(box, real_data, control) || {};
             } catch(e) {
                 log('Error: run logic error:', resContainer.logic, e);
             }

@@ -1,5 +1,8 @@
 //import ../base
 //import ../run
+//import render/control/setLogic
+//import render/control/setCss
+//import ./destroy
 
 function render_control_setChildren(resContainer) {
     var children = resContainer.children || {};
@@ -12,28 +15,5 @@ function render_control_setChildren(resContainer) {
 }
 
 function render_control_destroyChildren(childrenid) {
-    childrenid = childrenid || {};
-    for (var id in childrenid) {
-        var childResContainer = render_base_resContainer[id];
-        var childControl = render_base_controlCache[id];
-        var childControllerNs = render_base_controllerNs[id];
-        if (childControl) {
-            childControl._destroy();
-            delete render_base_controlCache[id];
-        }
-
-        if (childControllerNs) {
-            delete render_base_controllerNs[id];
-        }
-        
-        if (childResContainer) {
-            render_control_destroyChildren(childResContainer.childrenid);
-            if (childResContainer.logicResult) {
-              childResContainer.logicResult.destroy && childResContainer.logicResult.destroy();
-              delete childResContainer.logicResult;
-            }
-            delete render_base_resContainer[id];
-        }
-    }
-    
+    render_control_destroy(childrenid);
 }

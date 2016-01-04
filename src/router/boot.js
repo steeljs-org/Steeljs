@@ -15,6 +15,7 @@ function router_boot() {
         var items = router_base_routerTable[i];
         router_use(items[0], items);
     }
+    router_router_clearTransferData();
     if (router_router_get(true).config) {
         router_listen_fireRouterChange();
     }

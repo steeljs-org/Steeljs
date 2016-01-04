@@ -4,9 +4,7 @@
  * @method core_object_clone
  */
 function core_object_clone( obj ) {
-	
 	var ret = obj;
-	
 	if ( core_object_typeof( obj ) === 'array' ) {
 		ret = [];
 		var i = obj.length;
@@ -19,7 +17,5 @@ function core_object_clone( obj ) {
 			ret[ k ] = core_object_clone( obj[ k ] );
 		}
 	}
-	
 	return ret;
-	
 }

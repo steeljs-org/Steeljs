@@ -33,14 +33,17 @@ function router_listen() {
         }
         core_event_preventDefault(e);
         router_router_set(href);
-        router_listen_lastStateIndex = router_history_getStateIndex();
     });
     var popstateTime = 0;
     core_event_addEventListener(window, 'popstate', function() {
         core_notice_trigger('popstate');
         var currentStateIndex = router_history_getStateIndex();
         if (router_listen_lastStateIndex > currentStateIndex) {
-            router_base_routerType = 'back';
+            if (router_base_routerType === 'refresh') {
+                router_base_routerType = 'back-refresh';
+            } else {
+                router_base_routerType = 'back';
+            }
         } else {
             router_base_routerType = 'forward';
         }
@@ -69,7 +72,9 @@ function router_listen_getHrefNode(el) {
 
 function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
+    router_history_state_set(router_router_prevHref_key, router_base_prevHref);
     router_base_currentHref = url;
+    router_listen_lastStateIndex = router_history_getStateIndex();
     if (router_router_get(true).config) {
         router_listen_fireRouterChange();
     } else {

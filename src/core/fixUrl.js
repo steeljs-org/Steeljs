@@ -6,6 +6,9 @@
  */
 
 //import core/parseURL
+//import core/queryToJson
+//import core/jsonToQuery
+//import core/object/extend
 
 function core_fixUrl(baseUrl, path) {
     baseUrl = baseUrl || '.';
@@ -42,8 +45,11 @@ function core_fixUrl(baseUrl, path) {
         basePath = core_fixUrl_handleTwoDots(basePath);
         return basePath + path;
     }
-    if (/^\?/.test(path)) {
+    if (path.indexOf('?') === 0) {
         return origin + baseUrlJson.path + path;
+    }
+    if (path.indexOf('&') === 0) {
+        return origin + baseUrlJson.path + '?' + core_jsonToQuery(core_object_extend(core_queryToJson(baseUrlJson.query), core_queryToJson(path)));
     }
     if (/^\/[^\/]+/.test(path)) {
         return origin + path;

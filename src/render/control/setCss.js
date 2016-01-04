@@ -7,7 +7,6 @@
 //import core/notice
 //import core/nameSpaceFix
 
-var render_control_setCss_cssPrefix = 'S_CSS_';
 var render_control_setCss_cssCache = {};//css容器
 
 function render_control_setCss(resContainer) {
@@ -17,21 +16,21 @@ function render_control_setCss(resContainer) {
     var css = resContainer.css;
 
     if (!css) {
-        render_control_destroyCss(resContainer);
+        cssReady();
+        return;
     }
     var boxId = resContainer.boxId;
     var controllerNs = render_base_controllerNs[boxId];
     var css = core_nameSpaceFix(resContainer.css, controllerNs);
-    var cssId = render_control_getCssId(css);
-    var linkId = 'link_' + cssId;
 
-    if (render_control_setCss_cssCache[linkId]) {
+    if (render_control_setCss_cssCache[css]) {
+        render_control_setCss_cssCache[css][boxId] = true;
         cssReady();
         return;
     }
 
-    render_control_setCss_cssCache[linkId] = {};
-    render_control_setCss_cssCache[linkId][boxId] = true;
+    render_control_setCss_cssCache[css] = {};
+    render_control_setCss_cssCache[css][boxId] = true;
 
     var cb = cssCallbackFn = function(){
         if(cb === cssCallbackFn) {
@@ -46,41 +45,34 @@ function render_control_setCss(resContainer) {
         }
     };
     startTime = now();
-    css && resource_res.css(css, cb, function(){
-        resContainer.cssReady = true;
-        render_control_destroyCss(boxId);
-        render_control_render(resContainer);
-    }, cssId);
+    css && resource_res.css(css, cb, function() {
+        log('Error: css("' + css + '" load error!');
+        cssReady();
+    });
     function cssReady() {
-        render_control_destroyCss(resContainer, linkId);
         resContainer.cssReady = true;
         render_control_render(resContainer);
     }
 }
 
-function render_control_destroyCss(resContainer, linkId) {
+function render_control_destroyCss(resContainer, excludeSelf) {
     var boxId = resContainer.boxId;
-    for(var _linkId in render_control_setCss_cssCache) {
-        if (linkId === _linkId) {
+    var controllerNs = render_base_controllerNs[boxId];
+    var excludeCss = excludeSelf && core_nameSpaceFix(resContainer.css, controllerNs);
+    for(var css in render_control_setCss_cssCache) {
+        if (excludeCss === css) {
             continue;
         }
-        var linkCache = render_control_setCss_cssCache[_linkId];
-        if (linkCache[boxId]) {
-            delete linkCache[boxId];
+        var cssCache = render_control_setCss_cssCache[css];
+        if (cssCache[boxId]) {
+            delete cssCache[boxId];
             !function() {
-                for (var _boxId in linkCache) {
+                for (var _boxId in cssCache) {
                     return;
                 }
-                var linkDom = getElementById(_linkId);
-                if (linkDom) {
-                    core_dom_removeNode(linkDom);
-                }
-                delete render_control_setCss_cssCache[_linkId];
+                resource_res.removeCss(css);
+                delete render_control_setCss_cssCache[css];
             }();
         }
     }
-}
-
-function render_control_getCssId(path) {
-    return path && render_control_setCss_cssPrefix + path.replace(/(\.css)$/i, '').replace(/\//g, '_');
 }

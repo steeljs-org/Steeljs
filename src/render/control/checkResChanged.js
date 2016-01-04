@@ -27,5 +27,4 @@ function render_control_checkResChanged(resContainer, type, value) {
     }
 
     return res !== value;
-
 }

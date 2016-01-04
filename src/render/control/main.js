@@ -1,6 +1,6 @@
 /*
  * control核心逻辑
-*/
+ */
 //import ../base
 //import resource/res
 //import core/object/typeof
@@ -18,10 +18,12 @@
 
 var render_control_main_types = ['css', 'tpl', 'data', 'logic'];
 var render_control_main_realTypeMap = {
-    tpl  : 'tplFn',
-    data : 'real_data',
+    tpl: 'tplFn',
+    data: 'real_data',
     logic: 'logicFn'
-}
+};
+
+var render_control_main_eventList = ['init', 'enter', 'leave', 'destroy'];
 
 function render_control_main(boxId) {
     render_base_count++;
@@ -36,14 +38,15 @@ function render_control_main(boxId) {
     };
     var box = getElementById(boxId);
     var toDoSetsTimer = null;
-    
+
     //状态类型 newset|loading|ready
     //tpl,css,data,logic,children,render,
     //tplReady,cssReady,dataReady,logicReady,rendered,logicRunned
- 
+
     var changeResList = {};
     var control = {
-        id : boxId,
+        id: boxId,
+
         setForceRender: function(_forceRender) {
             resContainer.forceRender = _forceRender;
         },
@@ -56,29 +59,48 @@ function render_control_main(boxId) {
             if (!boxId) {
                 return;
             }
-            if(core_object_typeof(type) === 'object') {
-                for(var key in type) {
+            if (core_object_typeof(type) === 'object') {
+                for (var key in type) {
                     control.set(key, type[key]);
                 }
                 return;
             }
 
-            if(changeResList[type] = render_control_checkResChanged(resContainer, type, value)){
+            if (changeResList[type] = render_control_checkResChanged(resContainer, type, value)) {
                 resContainer[type] = value;
                 toDoSets();
                 return;
             }
             resContainer[type] = value;
-            
+
         },
-        _refresh: function() {
+        /**
+         * 控制器事件
+         */
+        on: function(type, fn) {
+            if (render_control_main_eventList.indexOf(type) > -1) {
+                core_notice_on(boxId + type, fn);
+            }
+        },
+        off: function(type, fn) {
+            if (render_control_main_eventList.indexOf(type) > -1 && fn) {
+                core_notice_off(boxId + type, fn);
+            }
+        },
+        refresh: function(forceRender) {
             resContainer.needToTriggerChildren = true;
-            resContainer.real_data = undefined;
+            if (forceRender) {
+                resContainer.real_data = undefined;
+            }
             changeResList['data'] = true;
             toDoSets();
         },
         _destroy: function() {
+            for (var i = render_control_main_eventList.length - 1; i >= 0; i--) {
+                core_notice_off(boxId + render_control_main_eventList[i]);
+            }
             boxId = control._controller = resContainer = box = toDoSetsTimer = undefined;
+
         }
     };
 
@@ -104,7 +126,7 @@ function render_control_main(boxId) {
         for (var i = 0, l = render_control_main_types.length; i < l; ++i) {
             type = render_control_main_types[i];
             type !== 'data' && (resContainer.lastRes[type] = resContainer[type]);
-
+            
             if (box) {
                 attrValue = core_dom_getAttribute(box, 's-' + type);
                 if (attrValue) {
@@ -120,13 +142,14 @@ function render_control_main(boxId) {
                     //     delete resContainer[render_control_main_realTypeMap[type]];
                     // }
                 }
-            } else if (resContainer.fromParent) {
+            }
+            if (resContainer.fromParent) {
                 if (resContainer[type]) {
                     changeResList[type] = true;
                 }
             }
         }
-
+        resContainer.fromParent = false;
         toDoSets();
     }
 
@@ -158,12 +181,11 @@ function render_control_main(boxId) {
                 resContainer.dataReady = false;
             }
             if (cssChanged) {
-                resContainer.cssReady = false; 
+                resContainer.cssReady = false;
             }
             if (logicChanged) {
-                resContainer.logicReady = false; 
+                resContainer.logicReady = false;
             }
-
             !resContainer.tpl && delete resContainer.tplFn;
             !resContainer.logic && delete resContainer.logicFn;
 

@@ -19,7 +19,13 @@ function resource_queue_push(url, succ, err){
 function resource_queue_run(url, access, data){
 	access = access ? 0 : 1;
     for(var i = 0, len = resource_queue_list[url].length; i < len; i++) {
-        resource_queue_list[url][i][access](data, url);
+        try {
+            resource_queue_list[url][i][access](data, url);
+        } catch(e) {
+            setTimeout(function() {
+                resource_queue_list[url][i][1](data, url);
+            });
+        }
     }
 }
 

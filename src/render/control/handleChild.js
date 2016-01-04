@@ -11,6 +11,9 @@ function render_control_handleChild(boxId, tplParseResult) {
     var childResContainer = {};
     for (var i = 0, len = tplParseResult.length; i < len; i++) {
         parseResultEle = tplParseResult[i];
+        if (parseResultEle['s-stage-scroll']) {
+            continue;
+        }
         s_id = parseResultEle['s-id'];
         childResContainer = render_base_resContainer[s_id] = render_base_resContainer[s_id] || {
             boxId: s_id,

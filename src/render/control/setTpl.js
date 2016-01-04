@@ -31,9 +31,8 @@ function render_control_setTpl(resContainer) {
                 resContainer.tplFn = jadefn;
                 render_control_setTpl_toRender(resContainer);
             }
-        }
-        startTime = new Date;
-        
+        };
+        startTime = now();
         require_global(tpl, cb, render_error, controllerNs);
     }
 }

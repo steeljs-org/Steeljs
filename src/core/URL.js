@@ -130,4 +130,3 @@ function core_URL(sURL,args){
     
     return retJson;
 };
-
