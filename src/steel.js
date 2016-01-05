@@ -1,5 +1,5 @@
 /**
- * WebApp
+ * Steel Hybrid SPA
  */
 
 ! function(window, undefined) {
