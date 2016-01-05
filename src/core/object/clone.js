@@ -1,4 +1,5 @@
 //import ./typeof
+
 /*
  * 对象克隆
  * @method core_object_clone

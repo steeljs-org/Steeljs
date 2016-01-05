@@ -1,3 +1,6 @@
+//import ./isArray
+//import ./clear
+
 /*
  * 删除数组里的某些元素
  * @method core_array_delete
@@ -8,8 +11,6 @@
  * @return {Array} 
  *  清理后的数组
  */
- //import ./isArray
- //import ./clear
 function core_array_delete( oElement, aSource ) {
     if( !core_array_isArray ){
         throw 'the delete function needs an array as second parameter'

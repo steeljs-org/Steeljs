@@ -1,3 +1,5 @@
+//import core/object/typeof
+
 /**
  * arguments 简单多态 要求参数顺序固定
  * @param  {Arguments} args  参数对象
@@ -10,9 +12,6 @@
  * }
  * test(45, 'a', undefined, [1,3], {xxx:343}) => Object {a: 45, b: "a", d: Array[2], e: Object}
  */
-
-//import core/object/typeof
-
 function core_argsPolymorphism(args, keys, types) {
     var result = {};
     var newArgs = [];

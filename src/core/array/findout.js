@@ -1,3 +1,5 @@
+//import ./isArray
+
 /**
  * 查找指定元素在数组内的索引
  * @param {Array} o
@@ -8,8 +10,6 @@
  * var li1 = ['a','b','c','a']
  * var li2 = core_array_findout(li1,'a');
  */
-
-//import ./isArray
 function core_array_findout(o, value){
     if (!core_array_isArray(o)) {
         throw 'the findout function needs an array as first parameter';

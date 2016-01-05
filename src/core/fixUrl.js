@@ -1,15 +1,15 @@
+//import core/parseURL
+//import core/queryToJson
+//import core/jsonToQuery
+//import core/object/extend
+//import core/hasProtocol
+
 /*
  * 根据相对路径得到绝对路径
  * @method core_fixUrl
  * @private
  * @return {String}
  */
-
-//import core/parseURL
-//import core/queryToJson
-//import core/jsonToQuery
-//import core/object/extend
-
 function core_fixUrl(baseUrl, path) {
     baseUrl = baseUrl || '.';
     var baseUrlJson = core_parseURL(baseUrl);
@@ -27,7 +27,7 @@ function core_fixUrl(baseUrl, path) {
     var originPath = origin + '/';
     var basePath = baseUrlJson.path;
     basePath = origin + (basePath.indexOf('/') === 0 ? '' : '/') + basePath.slice(0, basePath.lastIndexOf('/') + 1);
-    if (core_fixUrl_hasProtocol(path)) {
+    if (core_hasProtocol(path)) {
         return path;
     }
     if (path === '/') {
@@ -69,8 +69,4 @@ function core_fixUrl(baseUrl, path) {
 function core_fixUrl_handleTwoDots(url) {
     url = url.charAt(url.length - 1) === '/' ? (url.slice(0, url.length - 1)) : url;
     return url.slice(0, url.lastIndexOf('/') + 1);
-}
-
-function core_fixUrl_hasProtocol(url) {
-    return /^([a-z]+:)?\/\/\w+/i.test(url);
 }

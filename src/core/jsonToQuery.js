@@ -1,4 +1,5 @@
 //import ./object/typeof
+
 /*
  * json to query
  * @method core_jsonToQuery

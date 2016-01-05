@@ -1,6 +1,7 @@
 //import ./dom/createElement
 
 var core_hideDiv_hideDiv;
+
 /*
  * 向隐藏容器添加节点
  * @method core_hideDiv_appendChild

@@ -1,8 +1,8 @@
+//import ./isString
+
 /**
  * 扩展内容
  */
-
-//import ./isString
 
 function core_object_extend(target, key, value) {
     if (core_object_isString(key)) {

@@ -1,4 +1,5 @@
 //import ../event/addEventListener
+
 /*
  * dom ready
  * @method core_dom_ready

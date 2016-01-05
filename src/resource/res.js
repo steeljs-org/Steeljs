@@ -1,5 +1,6 @@
 //import core/fixUrl
 //import ./fixUrl
+//import core/hasProtocol
 //import ./queue
 //import loader/jsloader
 //import loader/cssloader
@@ -23,7 +24,7 @@ var resource_res = {
 };
 
 function resource_res_handle(type, name, succ, err, cssId) {
-    var hasProtocol = core_fixUrl_hasProtocol(name);
+    var hasProtocol = core_hasProtocol(name);
     var url = name, loader;
     if (!hasProtocol) {
         url = resource_fixUrl(name, type);

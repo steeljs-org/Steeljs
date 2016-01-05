@@ -1,3 +1,6 @@
+//import ./isArray
+//import ./findout
+
 /**
  * 删除数组中的空数据(like undefined/null/empty string)
  * @alias
@@ -7,8 +10,6 @@
  * var li = core_array_clear([1,2,3,undefined]);
  * li === [1,2,3];
  */
-//import ./isArray
-//import ./findout
 function core_array_clear(o){
     if (core_array_isArray(o)) {
         throw 'the clear function needs an array as first parameter';
