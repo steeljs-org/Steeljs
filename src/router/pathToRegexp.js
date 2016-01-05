@@ -170,7 +170,7 @@ function router_pathToRegexp(path, keys, options) {
         options = {};
     }
 
-    if (path instanceof RegExp) {
+    if (path instanceof window.RegExp) {
         return router_pathToRegexp_regexpToRegexp(path, keys, options);
     }
 
