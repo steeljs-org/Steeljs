@@ -2,8 +2,10 @@
 //import ./runner
 //import resource/res
 //import core/notice
+//import core/notice
 //import core/nameSpaceFix
 //import core/urlFolder
+//import core/hasProtocol
 
 //外部异步调用require方法
 function require_global(deps, complete, errcb, currNs, runDeps) {
@@ -19,6 +21,10 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
         } else {
             ! function(depNs) {
                 resource_res.js(depNs, function() {
+                    if (core_hasProtocol(depNs)) {
+                        require_base_module_defined[depNs] = true;
+                        require_base_module_loaded[depNs] = true;
+                    }
                     checkDepDefined(depNs);
                 }, function() {
                     errored++;
