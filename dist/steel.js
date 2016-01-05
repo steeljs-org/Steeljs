@@ -1,5 +1,5 @@
 /**
- * WebApp
+ * Steel Hybrid SPA
  */
 
 ! function(window, undefined) {
@@ -137,12 +137,6 @@ var require_base_module_runed = {};
 //事件
 var require_base_event_defined = '-require-defined';
 var require_global_loadingNum = 0;/*
- * 根据相对路径得到绝对路径
- * @method core_fixUrl
- * @private
- * @return {String}
- */
-/*
  * parse URL
  * @method core_parseURL
  * @private
@@ -212,6 +206,7 @@ function core_queryToJson( query ) {
 function core_object_typeof( value ) {
 	return value === null ? '' : Object.prototype.toString.call( value ).slice( 8, -1 ).toLowerCase();
 }
+
 /*
  * json to query
  * @method core_jsonToQuery
@@ -234,9 +229,6 @@ function core_jsonToQuery( json ) {
 	return queryString.join( '&' );
 	
 }/**
- * 扩展内容
- */
-/**
  * is String
  */
 
@@ -244,6 +236,10 @@ function core_jsonToQuery( json ) {
 function core_object_isString(value) {
     return core_object_typeof(value) === 'string';
 }
+
+/**
+ * 扩展内容
+ */
 
 function core_object_extend(target, key, value) {
     if (core_object_isString(key)) {
@@ -254,8 +250,21 @@ function core_object_extend(target, key, value) {
         }
     }
     return target;
+}/**
+ * 判断地址中是否有协议
+ * @param  {string} url 
+ * @return {boolean} 
+ */
+function core_hasProtocol(url) {
+    return /^([a-z]+:)?\/\/\w+/i.test(url);
 }
 
+/*
+ * 根据相对路径得到绝对路径
+ * @method core_fixUrl
+ * @private
+ * @return {String}
+ */
 function core_fixUrl(baseUrl, path) {
     baseUrl = baseUrl || '.';
     var baseUrlJson = core_parseURL(baseUrl);
@@ -273,7 +282,7 @@ function core_fixUrl(baseUrl, path) {
     var originPath = origin + '/';
     var basePath = baseUrlJson.path;
     basePath = origin + (basePath.indexOf('/') === 0 ? '' : '/') + basePath.slice(0, basePath.lastIndexOf('/') + 1);
-    if (core_fixUrl_hasProtocol(path)) {
+    if (core_hasProtocol(path)) {
         return path;
     }
     if (path === '/') {
@@ -316,10 +325,7 @@ function core_fixUrl_handleTwoDots(url) {
     url = url.charAt(url.length - 1) === '/' ? (url.slice(0, url.length - 1)) : url;
     return url.slice(0, url.lastIndexOf('/') + 1);
 }
-
-function core_fixUrl_hasProtocol(url) {
-    return /^([a-z]+:)?\/\/\w+/i.test(url);
-}/**
+/**
  * Describe 对url进行解析变化
  * @id  core_URL
  * @alias
@@ -584,11 +590,11 @@ function core_notice_trigger( type, args ) {
 			type != logNotice && core_notice_trigger( logNotice, ['[error][notice][' + type + ']', e] );
 		}
 	}
-}/**
+}
+
+/**
  * is Number
  */
-
-
 function core_object_isNumber(value) {
     return core_object_typeof(value) === 'number';
 }/**
@@ -605,7 +611,9 @@ function core_crossDomainCheck(url) {
     var locationMatch = location.href.match(urlPreReg);
     var urlMatch = url.match(urlPreReg);
     return (locationMatch && locationMatch[0]) === (urlMatch && urlMatch[0]);
-}/**
+}
+
+/**
  * arguments 简单多态 要求参数顺序固定
  * @param  {Arguments} args  参数对象
  * @param  {array} keys  参数名数组
@@ -617,8 +625,6 @@ function core_crossDomainCheck(url) {
  * }
  * test(45, 'a', undefined, [1,3], {xxx:343}) => Object {a: 45, b: "a", d: Array[2], e: Object}
  */
-
-
 function core_argsPolymorphism(args, keys, types) {
     var result = {};
     var newArgs = [];
@@ -679,6 +685,7 @@ var core_event_addEventListener = isAddEventListener ?
 	function( el, type, fn ) {
 		el.attachEvent( 'on' + type, fn );
 	};
+
 
 /*
  * dom ready
@@ -916,6 +923,7 @@ function render_error() {
 function core_dom_getAttribute( el, name ) {
     return el.getAttribute( name );
 }
+
 /*
  * 对象克隆
  * @method core_object_clone
@@ -1759,9 +1767,6 @@ function render_control_render(resContainer) {
         core_notice_trigger('allDomReady');
     }
 }/**
- * 命名空间的适应
- */
-/**
  * 获取 url 的目录地址
  */
 
@@ -1769,6 +1774,9 @@ function core_urlFolder(url){
     return url.substr(0, url.lastIndexOf('/') + 1);
 }
 
+/**
+ * 命名空间的适应
+ */
 function core_nameSpaceFix(id, basePath) {
     basePath = basePath && core_urlFolder(basePath);
     if (id.indexOf('.') === 0) {
@@ -2676,7 +2684,7 @@ function resource_fixUrl(url, type) {
 
 function resource_fixUrl_handle(path, url, basePath, hrefPath) {
     return core_fixUrl(path || basePath || hrefPath, url);
-}/** 
+}/** 
  * 资源队列管理
  * @params
  * url 请求资源地址
@@ -2784,6 +2792,7 @@ function loader_js(url, callback){
 }
 
 var core_hideDiv_hideDiv;
+
 /*
  * 向隐藏容器添加节点
  * @method core_hideDiv_appendChild
@@ -3046,7 +3055,7 @@ var resource_res = {
 };
 
 function resource_res_handle(type, name, succ, err, cssId) {
-    var hasProtocol = core_fixUrl_hasProtocol(name);
+    var hasProtocol = core_hasProtocol(name);
     var url = name, loader;
     if (!hasProtocol) {
         url = resource_fixUrl(name, type);
@@ -3079,7 +3088,7 @@ function resource_res_handle(type, name, succ, err, cssId) {
 
 function resource_res_getCssId(path) {
     return path && resource_res_cssPrefix + path.replace(/(\.css)$/i, '').replace(/\//g, '_');
-}
+}
 
 //外部异步调用require方法
 function require_global(deps, complete, errcb, currNs, runDeps) {
@@ -3095,6 +3104,10 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
         } else {
             ! function(depNs) {
                 resource_res.js(depNs, function() {
+                    if (core_hasProtocol(depNs)) {
+                        require_base_module_defined[depNs] = true;
+                        require_base_module_loaded[depNs] = true;
+                    }
                     checkDepDefined(depNs);
                 }, function() {
                     errored++;
@@ -3285,7 +3298,9 @@ function router_config(parseParamFn, config) {
  * Turn an Express-style path string such as /user/:name into a regular expression.
  *
  */
-/**
+
+
+/**
  * 判断对象是否为数组
  * @param {Array} o
  * @return {Boolean}
@@ -3294,7 +3309,6 @@ function router_config(parseParamFn, config) {
  * var bl2 = core_array_isArray(li1);
  * bl2 === TRUE
  */
-
 var core_array_isArray = Array.isArray ? function(arr) {
 	return Array.isArray(arr);
 } : function(arr){
