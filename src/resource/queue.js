@@ -1,3 +1,5 @@
+//import core/asyncCall
+
 /** 
  * 资源队列管理
  * @params
@@ -19,12 +21,13 @@ function resource_queue_push(url, succ, err){
 function resource_queue_run(url, access, data){
 	access = access ? 0 : 1;
     for(var i = 0, len = resource_queue_list[url].length; i < len; i++) {
+        var item = resource_queue_list[url][i];
         try {
-            resource_queue_list[url][i][access](data, url);
+            item[access](data, url);
         } catch(e) {
-            setTimeout(function() {
-                resource_queue_list[url][i][1](data, url);
-            });
+            core_asyncCall(function(item) {
+                item[1](data, url);
+            }, [item]);
         }
     }
 }
