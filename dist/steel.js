@@ -578,11 +578,10 @@ function core_notice_off( type, fn ) {
  * 事件触发
  * @method core_notice_trigger
  * @param {string} type
- * @param {Array} args
  */
-function core_notice_trigger( type, args ) {
+function core_notice_trigger( type ) {
 	var typeArray = core_notice_find( type );
-	args = [].concat( args || [] );
+	var args = [].slice.call(arguments, 1);
 	for ( var i = typeArray.length - 1; i > -1; i-- ) {
 		try {
 			typeArray[ i ] && typeArray[ i ].apply( undefined, args );
@@ -860,8 +859,6 @@ var render_base_controlCache = {};
 var render_base_controllerNs = {};
 //资源容器
 var render_base_resContainer = {};
-//render数量
-var render_base_count = 0;
 //渲染相关通知事件的前缀
 var render_base_notice_prefix = '-steel-render-';
 
@@ -910,7 +907,7 @@ function core_array_makeArray( obj ) {
 
 function render_error() {
 	log(arguments);
-    core_notice_trigger('renderError', core_array_makeArray(arguments));
+    core_notice_trigger.apply(undefined, ['renderError'].concat(core_array_makeArray(arguments)));
 }/*
  * control核心逻辑
  *//*
@@ -1040,10 +1037,10 @@ function render_control_destroyLogic(resContainer) {
  * @param {Object} o
  * @param {boolean} isprototype 继承的属性是否也在检查之列
  * @example
- * core_obj_isEmpty({}) === true;
- * core_obj_isEmpty({'test':'test'}) === false;
+ * core_object_isEmpty({}) === true;
+ * core_object_isEmpty({'test':'test'}) === false;
  */
-function core_obj_isEmpty(o,isprototype){
+function core_object_isEmpty(o,isprototype){
     for(var k in o){
         if(isprototype || o.hasOwnProperty(k)){
             return false;
@@ -1108,7 +1105,7 @@ function render_control_destroy_one(id, onlyRes) {
 
   if (resContainer) {
     render_control_destroyLogic(resContainer);
-    render_control_destroyCss(resContainer);
+    render_control_setCss_destroyCss(resContainer);
     render_control_destroy(resContainer.childrenid);
     delete render_base_resContainer[id];
   }
@@ -1696,6 +1693,17 @@ function render_control_setExtTplData(obj) {
     render_control_setExtTplData_F.prototype.constructor = render_control_setExtTplData_F;
 }
 
+/**
+ * 触发rendered事件
+ */
+function render_control_triggerRendered(boxId) {
+    core_notice_trigger('rendered', {
+        boxId: boxId,
+        controller: render_base_controllerNs[boxId]
+    });
+}
+
+
 var render_control_render_moduleAttrName = 's-module';
 var render_control_render_moduleAttrValue = 'ismodule';
 
@@ -1754,18 +1762,14 @@ function render_control_render(resContainer) {
     render_control_destroyLogic(resContainer);
     render_control_destroy(resContainer.toDestroyChildrenid, false);
     box.innerHTML = html;
-    render_base_count--;
+
     resContainer.rendered = true;
     setTimeout(function() {
         render_control_startLogic(resContainer);
         render_control_handleChild(boxId, tplParseResult);
     });
-    render_control_destroyCss(resContainer, true);
-
-    // 因为所有模块的Box必然存在，所以不需要有等待队列了
-    if (render_base_count <= 0) {
-        core_notice_trigger('allDomReady');
-    }
+    render_control_setCss_destroyCss(resContainer, true);
+    render_control_triggerRendered(boxId);
 }/**
  * 获取 url 的目录地址
  */
@@ -1779,11 +1783,13 @@ function core_urlFolder(url){
  */
 function core_nameSpaceFix(id, basePath) {
     basePath = basePath && core_urlFolder(basePath);
-    if (id.indexOf('.') === 0) {
-        id = basePath ? (basePath + id).replace(/\/\.\//, '/') : id.replace(/^\.\//, '');
-    }
-    while (id.indexOf('../') !== -1) {
-        id = id.replace(/\w+\/\.\.\//, '');
+    if (id) {
+        if (id.indexOf('.') === 0) {
+            id = basePath ? (basePath + id).replace(/\/\.\//, '/') : id.replace(/^\.\//, '');
+        }
+        while (id.indexOf('../') !== -1) {
+            id = id.replace(/\w+\/\.\.\//, '');
+        }
     }
     return id;
 }
@@ -1836,7 +1842,7 @@ function render_control_setCss(resContainer) {
     }
 }
 
-function render_control_destroyCss(resContainer, excludeSelf) {
+function render_control_setCss_destroyCss(resContainer, excludeSelf) {
     var boxId = resContainer.boxId;
     var controllerNs = render_base_controllerNs[boxId];
     var excludeCss = excludeSelf && core_nameSpaceFix(resContainer.css, controllerNs);
@@ -1980,7 +1986,7 @@ function render_contorl_toTiggerChildren(resContainer) {
         }
     }
     resContainer.needToTriggerChildren = false;
-}
+}
 
 var render_control_setData_dataCallbackFn;
 
@@ -2032,6 +2038,7 @@ function render_control_setData_toRender(data, resContainer, tplChanged) {
         resContainer.real_data = data;
         render_control_render(resContainer);
     } else {
+        render_control_triggerRendered(boxId);
         render_contorl_toTiggerChildren(resContainer);
     }
 }
@@ -2074,7 +2081,6 @@ var render_control_main_realTypeMap = {
 var render_control_main_eventList = ['init', 'enter', 'leave', 'destroy'];
 
 function render_control_main(boxId) {
-    render_base_count++;
     //资源容器
     var resContainer = render_base_resContainer[boxId] = render_base_resContainer[boxId] || {
         boxId: boxId,
@@ -2244,19 +2250,36 @@ function render_control_main(boxId) {
             resContainer.childrenChanged && render_control_setChildren(resContainer);
         });
     }
-}
+}
 
 var render_run_controllerLoadFn = {};
 var render_run_rootScope = {};
+var render_run_renderingMap = {};
+var render_run_renderedTimer;
+
+core_notice_on('stageChange', function() {
+    render_run_renderingMap = {};
+});
+
+core_notice_on('rendered', function(module) {
+    delete render_run_renderingMap[module.boxId];
+    if (render_run_renderedTimer) {
+        clearTimeout(render_run_renderedTimer);
+    }
+    render_run_renderedTimer = setTimeout(function() {
+        if (core_object_isEmpty(render_run_renderingMap)) {
+            core_notice_trigger('allRendered');
+            core_notice_trigger('allDomReady');
+        }
+    }, 44);
+});
 
 //controller的boot方法
 function render_run(stageBox, controller) {
-        // console.log('render run 0', stageBox, controller, render_run.caller);
     var stageBoxId, boxId, control, controllerLoadFn, controllerNs;
     var startTime = null;
     var endTime = null;
     var routerType = router_router_get().type;
-    // console.log('render_run', routerType);
     var isMain = stageBox === mainBox;
     var renderFromStage;
 
@@ -2272,7 +2295,6 @@ function render_run(stageBox, controller) {
         }
     }
 
-    // console.log('render run 1', isMain, stageBox, stageBoxId);
     boxId = stageBoxId;
     
     if (isMain) {
@@ -2289,20 +2311,25 @@ function render_run(stageBox, controller) {
                     triggerEnter(false);
                 }
             }
-
         });
-        core_notice_trigger('stageChange', [getElementById(boxId), renderFromStage]);
+
+        core_notice_trigger('stageChange', getElementById(boxId), renderFromStage);
+        
+        render_run_renderingMap[boxId] = true;
         if (!renderFromStage || routerType.indexOf('refresh') > -1) {
             async_controller();
+        } else {
+            render_control_triggerRendered(boxId);
         }
     } else {
+        render_run_renderingMap[boxId] = true;
         async_controller();
     }
 
     function async_controller() {
         //处理异步的controller
         render_run_controllerLoadFn[boxId] = undefined;
-        if (controller && typeof controller === 'string') {
+        if (core_object_isString(controller)) {
             render_base_controllerNs[boxId] = controller;
             controllerLoadFn = render_run_controllerLoadFn[boxId] = function(controller){
                 if (controllerLoadFn === render_run_controllerLoadFn[boxId] && controller) {
@@ -2341,22 +2368,16 @@ function render_run(stageBox, controller) {
 
         control = render_base_controlCache[boxId];
         if (control) {
-            if (control._controller === controller && routerType.indexOf('refresh') > -1) {
+            if (control._controller === controller) {
                 control.refresh();
                 triggerEnter(false);
                 return;
             }
             if (control._controller) {
                 control._destroy();
-                control = undefined;
-            } else if (!controller) {
-                control.refresh();
-                triggerEnter(false);
-                return;
             }
         }
-
-        render_base_controlCache[boxId] = control = control || render_control_main(boxId);
+        render_base_controlCache[boxId] = control = render_control_main(boxId);
         if (controller) {
             control._controller = controller;
             controller(control, render_run_rootScope);
@@ -2370,7 +2391,7 @@ function render_run(stageBox, controller) {
         if (isInit) {
             core_notice_trigger(boxId + 'init', transferData);
         }
-        core_notice_trigger(boxId + 'enter', [transferData, isInit]);
+        core_notice_trigger(boxId + 'enter', transferData, isInit);
     }
 }
 
@@ -2684,7 +2705,17 @@ function resource_fixUrl(url, type) {
 
 function resource_fixUrl_handle(path, url, basePath, hrefPath) {
     return core_fixUrl(path || basePath || hrefPath, url);
-}/** 
+}/**
+ * 异步调用方法 
+ */
+function core_asyncCall(fn, args) {
+    setTimeout(function() {
+        fn.apply(undefined, args);
+    });
+}
+
+
+/** 
  * 资源队列管理
  * @params
  * url 请求资源地址
@@ -2705,12 +2736,13 @@ function resource_queue_push(url, succ, err){
 function resource_queue_run(url, access, data){
 	access = access ? 0 : 1;
     for(var i = 0, len = resource_queue_list[url].length; i < len; i++) {
+        var item = resource_queue_list[url][i];
         try {
-            resource_queue_list[url][i][access](data, url);
+            item[access](data, url);
         } catch(e) {
-            setTimeout(function() {
-                resource_queue_list[url][i][1](data, url);
-            });
+            core_asyncCall(function(item) {
+                item[1](data, url);
+            }, [item]);
         }
     }
 }
