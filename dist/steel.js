@@ -1074,7 +1074,36 @@ function core_dom_setAttribute( el, name, value ) {
 	return el.setAttribute( name, value );
 }/**
  * 销毁一个模块，样式，逻辑，节点
+ *//**
+ * s-data属性的特殊处理，当子模块节点中s-data的值为#sdata-开头时 从缓存中获取模块数据
  */
+var render_control_sData_preFix = '#sdata-';
+var render_control_sData_current_boxId;
+var render_control_sData_s_data_index;
+var render_control_sData_dataMap = {};
+
+function render_control_sData(data) {
+    var dataId = render_control_sData_preFix + render_control_sData_current_boxId + '-' + (render_control_sData_s_data_index++);
+    render_control_sData_dataMap[render_control_sData_current_boxId][dataId] = data || {};
+    return dataId;
+}
+
+function render_control_sData_setBoxId(boxId) {
+    render_control_sData_current_boxId = boxId;
+    render_control_sData_s_data_index = 0;
+    render_control_sData_dataMap[boxId] = {};
+}
+
+function render_control_sData_getData(dataId) {
+    var idMatch = dataId.match(RegExp('^' + render_control_sData_preFix + '(.*)-\\d+$'));
+    if (idMatch) {
+        return render_control_sData_dataMap[idMatch[1]][dataId];
+    }
+}
+
+function render_control_sData_delData(boxId) {
+    delete render_control_sData_dataMap[boxId];
+}
 
 function render_control_destroy(idMap, onlyRes) {
   idMap = idMap || {};
@@ -1102,11 +1131,11 @@ function render_control_destroy_one(id, onlyRes) {
       delete render_base_controllerNs[id];
     }
   }
-
   if (resContainer) {
     render_control_destroyLogic(resContainer);
     render_control_setCss_destroyCss(resContainer);
     render_control_destroy(resContainer.childrenid);
+    render_control_sData_delData(id);
     delete render_base_resContainer[id];
   }
 }/**
@@ -1679,32 +1708,7 @@ function render_control_handleChild(boxId, tplParseResult) {
             render_run(s_id, s_controller);//渲染提前
         }
     }
-}/**
- * s-data属性的特殊处理，当子模块节点中s-data的值为#sdata-开头时 从缓存中获取模块数据
- */
-var render_control_sData_preFix = '#sdata-';
-var render_control_sData_current_boxId;
-var render_control_sData_s_data_index;
-var render_control_sData_dataMap = {};
-
-function render_control_sData(data) {
-    var dataId = render_control_sData_preFix + render_control_sData_current_boxId + '-' + (render_control_sData_s_data_index++);
-    render_control_sData_dataMap[dataId] = data || {};
-    return dataId;
-}
-
-function render_control_sData_setBoxId(boxId) {
-    render_control_sData_current_boxId = boxId;
-    render_control_sData_s_data_index = 0;
-}
-
-function render_control_sData_getData(dataId) {
-    return render_control_sData_dataMap[dataId];
-}
-
-function render_control_sData_delData(dataId) {
-    delete render_control_sData_dataMap[dataId];
-}
+}
 
 //用户扩展类
 function render_control_setExtTplData_F() {}
@@ -2027,6 +2031,7 @@ function render_control_setData(resContainer, tplChanged) {
     var controllerNs = render_base_controllerNs[resContainer.boxId];
     var startTime = null;
     var endTime = null;
+    var real_data;
     // var ajaxRunTime = 10;//计算ajax时间时，运行时间假定需要10ms（实际在10ms内）
 
     if (data === null || data === 'null') {
@@ -2041,8 +2046,9 @@ function render_control_setData(resContainer, tplChanged) {
     if (dataType === 'object') {
         render_control_setData_toRender(data, resContainer, tplChanged);
     } else if (dataType === 'string') {
-        if (render_control_sData_getData(data)) {
-            render_control_setData_toRender(render_control_sData_getData(data), resContainer, tplChanged);
+        real_data = render_control_sData_getData(data);
+        if (real_data) {
+            render_control_setData_toRender(real_data, resContainer, tplChanged);
             return;
         }
         var cb = render_control_setData_dataCallbackFn = function(ret) {
