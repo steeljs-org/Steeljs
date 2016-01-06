@@ -55,7 +55,7 @@ function render_control_setCss(resContainer) {
     }
 }
 
-function render_control_destroyCss(resContainer, excludeSelf) {
+function render_control_setCss_destroyCss(resContainer, excludeSelf) {
     var boxId = resContainer.boxId;
     var controllerNs = render_base_controllerNs[boxId];
     var excludeCss = excludeSelf && core_nameSpaceFix(resContainer.css, controllerNs);

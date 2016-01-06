@@ -6,6 +6,7 @@
 //import ./setCss
 //import ./setExtTplData
 //import ./destroy
+//import ./triggerRendered
 
 var render_control_render_moduleAttrName = 's-module';
 var render_control_render_moduleAttrValue = 'ismodule';
@@ -65,16 +66,12 @@ function render_control_render(resContainer) {
     render_control_destroyLogic(resContainer);
     render_control_destroy(resContainer.toDestroyChildrenid, false);
     box.innerHTML = html;
-    render_base_count--;
+
     resContainer.rendered = true;
     setTimeout(function() {
         render_control_startLogic(resContainer);
         render_control_handleChild(boxId, tplParseResult);
     });
-    render_control_destroyCss(resContainer, true);
-
-    // 因为所有模块的Box必然存在，所以不需要有等待队列了
-    if (render_base_count <= 0) {
-        core_notice_trigger('allDomReady');
-    }
+    render_control_setCss_destroyCss(resContainer, true);
+    render_control_triggerRendered(boxId);
 }

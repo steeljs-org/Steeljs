@@ -2,21 +2,40 @@
 //import ./error
 //import ./control/main
 //import core/notice
+//import core/object/isString
+//import core/object/isEmpty
 //import ./stage
 //import router/router
 //import router/history
 
 var render_run_controllerLoadFn = {};
 var render_run_rootScope = {};
+var render_run_renderingMap = {};
+var render_run_renderedTimer;
+
+core_notice_on('stageChange', function() {
+    render_run_renderingMap = {};
+});
+
+core_notice_on('rendered', function(module) {
+    delete render_run_renderingMap[module.boxId];
+    if (render_run_renderedTimer) {
+        clearTimeout(render_run_renderedTimer);
+    }
+    render_run_renderedTimer = setTimeout(function() {
+        if (core_object_isEmpty(render_run_renderingMap)) {
+            core_notice_trigger('allRendered');
+            core_notice_trigger('allDomReady');
+        }
+    }, 44);
+});
 
 //controller的boot方法
 function render_run(stageBox, controller) {
-        // console.log('render run 0', stageBox, controller, render_run.caller);
     var stageBoxId, boxId, control, controllerLoadFn, controllerNs;
     var startTime = null;
     var endTime = null;
     var routerType = router_router_get().type;
-    // console.log('render_run', routerType);
     var isMain = stageBox === mainBox;
     var renderFromStage;
 
@@ -32,7 +51,6 @@ function render_run(stageBox, controller) {
         }
     }
 
-    // console.log('render run 1', isMain, stageBox, stageBoxId);
     boxId = stageBoxId;
     
     if (isMain) {
@@ -49,20 +67,25 @@ function render_run(stageBox, controller) {
                     triggerEnter(false);
                 }
             }
-
         });
+
         core_notice_trigger('stageChange', getElementById(boxId), renderFromStage);
+        
+        render_run_renderingMap[boxId] = true;
         if (!renderFromStage || routerType.indexOf('refresh') > -1) {
             async_controller();
+        } else {
+            render_control_triggerRendered(boxId);
         }
     } else {
+        render_run_renderingMap[boxId] = true;
         async_controller();
     }
 
     function async_controller() {
         //处理异步的controller
         render_run_controllerLoadFn[boxId] = undefined;
-        if (controller && typeof controller === 'string') {
+        if (core_object_isString(controller)) {
             render_base_controllerNs[boxId] = controller;
             controllerLoadFn = render_run_controllerLoadFn[boxId] = function(controller){
                 if (controllerLoadFn === render_run_controllerLoadFn[boxId] && controller) {
@@ -101,22 +124,16 @@ function render_run(stageBox, controller) {
 
         control = render_base_controlCache[boxId];
         if (control) {
-            if (control._controller === controller && routerType.indexOf('refresh') > -1) {
+            if (control._controller === controller) {
                 control.refresh();
                 triggerEnter(false);
                 return;
             }
             if (control._controller) {
                 control._destroy();
-                control = undefined;
-            } else if (!controller) {
-                control.refresh();
-                triggerEnter(false);
-                return;
             }
         }
-
-        render_base_controlCache[boxId] = control = control || render_control_main(boxId);
+        render_base_controlCache[boxId] = control = render_control_main(boxId);
         if (controller) {
             control._controller = controller;
             controller(control, render_run_rootScope);

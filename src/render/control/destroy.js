@@ -34,7 +34,7 @@ function render_control_destroy_one(id, onlyRes) {
 
   if (resContainer) {
     render_control_destroyLogic(resContainer);
-    render_control_destroyCss(resContainer);
+    render_control_setCss_destroyCss(resContainer);
     render_control_destroy(resContainer.childrenid);
     delete render_base_resContainer[id];
   }

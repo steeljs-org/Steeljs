@@ -26,7 +26,6 @@ var render_control_main_realTypeMap = {
 var render_control_main_eventList = ['init', 'enter', 'leave', 'destroy'];
 
 function render_control_main(boxId) {
-    render_base_count++;
     //资源容器
     var resContainer = render_base_resContainer[boxId] = render_base_resContainer[boxId] || {
         boxId: boxId,

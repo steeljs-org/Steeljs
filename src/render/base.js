@@ -11,8 +11,6 @@ var render_base_controlCache = {};
 var render_base_controllerNs = {};
 //资源容器
 var render_base_resContainer = {};
-//render数量
-var render_base_count = 0;
 //渲染相关通知事件的前缀
 var render_base_notice_prefix = '-steel-render-';
 

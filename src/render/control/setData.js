@@ -6,6 +6,7 @@
 //import ./toTiggerChildren
 //import core/notice
 //import router/history
+//import ./triggerRendered
 
 var render_control_setData_dataCallbackFn;
 
@@ -57,6 +58,7 @@ function render_control_setData_toRender(data, resContainer, tplChanged) {
         resContainer.real_data = data;
         render_control_render(resContainer);
     } else {
+        render_control_triggerRendered(boxId);
         render_contorl_toTiggerChildren(resContainer);
     }
 }
