@@ -4,6 +4,7 @@
 //import core/event/preventDefault
 //import ./match
 //import ./history
+//import ./hash
 //import ./router
 //import render/run
 //import core/notice
@@ -28,14 +29,19 @@ function router_listen() {
         var href = hrefNode && hrefNode.href;
         //如果A连接有target=_blank或者用户同时按下command(新tab打开)、ctrl(新tab打开)、alt(下载)、shift(新窗口打开)键时，直接跳链。
         //@shaobo3  （此处可以优化性能@Finrila）
+        //使用hash模式，如何带hash新开页
         if (!href || href.indexOf('javascript:') === 0 || hrefNode.getAttribute("target") === "_blank" || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) {
             return;
         }
         core_event_preventDefault(e);
         router_router_set(href);
+        router_listen_lastStateIndex = router_base_useHash?
+            router_hash_getStateIndex():
+            router_history_getStateIndex();
     });
     var popstateTime = 0;
-    core_event_addEventListener(window, 'popstate', function() {
+    //非hash模式，侦听popstate事件
+    !router_base_useHash && core_event_addEventListener(window, 'popstate', function() {
         core_notice_trigger('popstate');
         var currentStateIndex = router_history_getStateIndex();
         if (router_listen_lastStateIndex > currentStateIndex) {
@@ -54,10 +60,30 @@ function router_listen() {
         }
         router_listen_handleHrefChenged(href);
     });
+    //hash模式，侦听hashchange事件
+    router_base_useHash && core_event_addEventListener(window, 'hashchange', function(){
+        if (router_base_setFlag) {
+            router_base_setFlag = false;
+            return;
+        }
+        core_notice_trigger('hashchange');
+        var currentStateIndex = router_hash_getStateIndex();
+        if (router_listen_lastStateIndex > currentStateIndex) {
+            router_base_routerType = 'back';
+        } else {
+            router_base_routerType = 'forward';
+        }
+        router_listen_lastStateIndex = currentStateIndex;
+        var href = router_hash_parse().url;
+        if (popstateTime === 0 && router_base_currentHref === href) {
+            return;
+        }
+        router_listen_handleHrefChenged(href);
+    });
+    //popstate 事件在第一次被绑定时也会触发，但不是100%，所以加了个延时
     setTimeout(function() {
         popstateTime = 1;
     }, 1000);
-    //popstate 事件在第一次被绑定时也会触发，但不是100%，所以加了个延时
 }
 
 function router_listen_getHrefNode(el) {

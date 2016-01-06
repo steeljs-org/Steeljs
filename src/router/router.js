@@ -13,6 +13,7 @@
 //import ./parseURL
 //import ./match
 //import ./history
+//import ./hash
 
 //当前访问path的变量集合,以及location相关的解析结果
 var router_router_value;
@@ -79,6 +80,7 @@ function router_router_replace(url, data) {
  * @return {undefined} 
  */
 function router_router_set(url, replace, data) {
+    router_base_setFlag = true;
     //多态
     if (core_object_isObject(replace)) {
         data = replace;
@@ -96,11 +98,15 @@ function router_router_set(url, replace, data) {
     } else {
         if (replace) {
             router_base_routerType = 'replace';
-            router_history_replaceState(url);
+            router_base_useHash?
+                router_hash_replaceState(url):
+                router_history_replaceState(url);
         } else {
             if (router_base_currentHref !== url) {
                 router_base_routerType = 'new';
-                router_history_pushState(url);
+                router_base_useHash?
+                    router_hash_pushState(url):
+                    router_history_pushState(url);
             } else {
                 router_base_routerType = 'refresh';
             }
