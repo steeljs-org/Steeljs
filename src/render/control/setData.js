@@ -7,6 +7,7 @@
 //import core/notice
 //import router/history
 //import ./triggerRendered
+//import ./sData
 
 var render_control_setData_dataCallbackFn;
 
@@ -31,6 +32,10 @@ function render_control_setData(resContainer, tplChanged) {
     if (dataType === 'object') {
         render_control_setData_toRender(data, resContainer, tplChanged);
     } else if (dataType === 'string') {
+        if (render_control_sData_getData(data)) {
+            render_control_setData_toRender(render_control_sData_getData(data), resContainer, tplChanged);
+            return;
+        }
         var cb = render_control_setData_dataCallbackFn = function(ret) {
             if (cb === render_control_setData_dataCallbackFn) {
                 //拿到ajax数据

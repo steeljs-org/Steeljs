@@ -7,6 +7,7 @@
 //import ./setExtTplData
 //import ./destroy
 //import ./triggerRendered
+//import ./sData
 
 var render_control_render_moduleAttrName = 's-module';
 var render_control_render_moduleAttrValue = 'ismodule';
@@ -24,6 +25,7 @@ function render_control_render(resContainer) {
 
     var html = resContainer.html;
     if (!html) {
+        render_control_sData_setBoxId(boxId);
         var parseResultEle = null;
         var extTplData = new render_control_setExtTplData_F();
         var retData = extTplData;
