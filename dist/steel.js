@@ -1679,18 +1679,47 @@ function render_control_handleChild(boxId, tplParseResult) {
             render_run(s_id, s_controller);//渲染提前
         }
     }
-}
+}/**
+ * s-data属性的特殊处理，当子模块节点中s-data的值为#sdata-开头时 从缓存中获取模块数据
+ */
+var render_control_sData_preFix = '#sdata-';
+var render_control_sData_current_boxId;
+var render_control_sData_s_data_index;
+var render_control_sData_dataMap = {};
+
+function render_control_sData(data) {
+    var dataId = render_control_sData_preFix + render_control_sData_current_boxId + '-' + (render_control_sData_s_data_index++);
+    render_control_sData_dataMap[dataId] = data || {};
+    return dataId;
+}
+
+function render_control_sData_setBoxId(boxId) {
+    render_control_sData_current_boxId = boxId;
+    render_control_sData_s_data_index = 0;
+}
+
+function render_control_sData_getData(dataId) {
+    return render_control_sData_dataMap[dataId];
+}
+
+function render_control_sData_delData(dataId) {
+    delete render_control_sData_dataMap[dataId];
+}
 
 //用户扩展类
 function render_control_setExtTplData_F() {}
 
+render_control_setExtTplData_F.prototype.constructor = render_control_setExtTplData_F;
+//用于帮助用户设置子模块数据的方法：steel_s_data(data) data为要设置的对象，设置后
+render_control_setExtTplData_F.prototype.steel_s_data = render_control_sData;
+
 //用户扩展全局功能方法
 function render_control_setExtTplData(obj) {
-    if (core_object_typeof(obj) !== 'object') {
+    if (!core_object_isObject(obj)) {
         throw 'The method "steel.setExtTplData(obj)" used in your app need an object as the param.';
     }
     render_control_setExtTplData_F.prototype = obj;
-    render_control_setExtTplData_F.prototype.constructor = render_control_setExtTplData_F;
+    
 }
 
 /**
@@ -1702,7 +1731,7 @@ function render_control_triggerRendered(boxId) {
         controller: render_base_controllerNs[boxId]
     });
 }
-
+
 
 var render_control_render_moduleAttrName = 's-module';
 var render_control_render_moduleAttrValue = 'ismodule';
@@ -1720,6 +1749,7 @@ function render_control_render(resContainer) {
 
     var html = resContainer.html;
     if (!html) {
+        render_control_sData_setBoxId(boxId);
         var parseResultEle = null;
         var extTplData = new render_control_setExtTplData_F();
         var retData = extTplData;
@@ -1986,7 +2016,7 @@ function render_contorl_toTiggerChildren(resContainer) {
         }
     }
     resContainer.needToTriggerChildren = false;
-}
+}
 
 var render_control_setData_dataCallbackFn;
 
@@ -2011,6 +2041,10 @@ function render_control_setData(resContainer, tplChanged) {
     if (dataType === 'object') {
         render_control_setData_toRender(data, resContainer, tplChanged);
     } else if (dataType === 'string') {
+        if (render_control_sData_getData(data)) {
+            render_control_setData_toRender(render_control_sData_getData(data), resContainer, tplChanged);
+            return;
+        }
         var cb = render_control_setData_dataCallbackFn = function(ret) {
             if (cb === render_control_setData_dataCallbackFn) {
                 //拿到ajax数据
