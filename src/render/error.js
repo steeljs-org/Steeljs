@@ -5,5 +5,5 @@
 
 function render_error() {
 	log(arguments);
-    core_notice_trigger('renderError', core_array_makeArray(arguments));
+    core_notice_trigger.apply(undefined, ['renderError'].concat(core_array_makeArray(arguments)));
 }

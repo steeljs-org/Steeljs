@@ -47,11 +47,10 @@ function core_notice_off( type, fn ) {
  * 事件触发
  * @method core_notice_trigger
  * @param {string} type
- * @param {Array} args
  */
-function core_notice_trigger( type, args ) {
+function core_notice_trigger( type ) {
 	var typeArray = core_notice_find( type );
-	args = [].concat( args || [] );
+	var args = [].slice.call(arguments, 1);
 	for ( var i = typeArray.length - 1; i > -1; i-- ) {
 		try {
 			typeArray[ i ] && typeArray[ i ].apply( undefined, args );

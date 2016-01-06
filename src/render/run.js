@@ -51,7 +51,7 @@ function render_run(stageBox, controller) {
             }
 
         });
-        core_notice_trigger('stageChange', [getElementById(boxId), renderFromStage]);
+        core_notice_trigger('stageChange', getElementById(boxId), renderFromStage);
         if (!renderFromStage || routerType.indexOf('refresh') > -1) {
             async_controller();
         }
@@ -130,6 +130,6 @@ function render_run(stageBox, controller) {
         if (isInit) {
             core_notice_trigger(boxId + 'init', transferData);
         }
-        core_notice_trigger(boxId + 'enter', [transferData, isInit]);
+        core_notice_trigger(boxId + 'enter', transferData, isInit);
     }
 }
