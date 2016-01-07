@@ -22,12 +22,12 @@ core_notice_on('rendered', function(module) {
     if (render_run_renderedTimer) {
         clearTimeout(render_run_renderedTimer);
     }
-    render_run_renderedTimer = setTimeout(function() {
+    // render_run_renderedTimer = setTimeout(function() {
         if (core_object_isEmpty(render_run_renderingMap)) {
             core_notice_trigger('allRendered');
             core_notice_trigger('allDomReady');
         }
-    }, 44);
+    // }, 44);
 });
 
 //controller的boot方法
@@ -137,6 +137,7 @@ function render_run(stageBox, controller) {
         if (controller) {
             control._controller = controller;
             controller(control, render_run_rootScope);
+            control.deal();
             triggerEnter(true);
         }
 
