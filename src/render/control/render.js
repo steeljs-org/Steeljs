@@ -59,9 +59,6 @@ function render_control_render(resContainer) {
         }
     }
     resContainer.html = html;
-    ////
-    //1. box存在，addHTML，运行logic，运行子队列（子模块addHTML）
-    //2. box不存在，则进入队列，待渲染
     ////@finrila 由于做场景管理时需要BOX是存在的，所以调整渲染子模块流程到写入HTML后再处理子模块，那么每个模块的box在页面上是一定存在的了
     var box = getElementById(boxId);
 
@@ -70,10 +67,8 @@ function render_control_render(resContainer) {
     box.innerHTML = html;
 
     resContainer.rendered = true;
-    setTimeout(function() {
-        render_control_startLogic(resContainer);
-        render_control_handleChild(boxId, tplParseResult);
-    });
+    render_control_startLogic(resContainer);
+    render_control_handleChild(boxId, tplParseResult);
     render_control_setCss_destroyCss(resContainer, true);
     render_control_triggerRendered(boxId);
 }
