@@ -622,7 +622,7 @@ function core_crossDomainCheck(url) {
  * function test(a, b, c, d, e) {
  *    console.log(core_argsPolymorphism(arguments, ['a', 'b', 'c', 'd', 'e'], ['number', 'string', 'function', 'array', 'object']));
  * }
- * test(45, 'a', undefined, [1,3], {xxx:343}) => Object {a: 45, b: "a", d: Array[2], e: Object}
+ * test(45, 'a', [1,3], {xxx:343}) => Object {a: 45, b: "a", d: Array[2], e: Object}
  */
 function core_argsPolymorphism(args, keys, types) {
     var result = {};
@@ -1787,9 +1787,6 @@ function render_control_render(resContainer) {
         }
     }
     resContainer.html = html;
-    ////
-    //1. box存在，addHTML，运行logic，运行子队列（子模块addHTML）
-    //2. box不存在，则进入队列，待渲染
     ////@finrila 由于做场景管理时需要BOX是存在的，所以调整渲染子模块流程到写入HTML后再处理子模块，那么每个模块的box在页面上是一定存在的了
     var box = getElementById(boxId);
 
@@ -1798,10 +1795,8 @@ function render_control_render(resContainer) {
     box.innerHTML = html;
 
     resContainer.rendered = true;
-    setTimeout(function() {
-        render_control_startLogic(resContainer);
-        render_control_handleChild(boxId, tplParseResult);
-    });
+    render_control_startLogic(resContainer);
+    render_control_handleChild(boxId, tplParseResult);
     render_control_setCss_destroyCss(resContainer, true);
     render_control_triggerRendered(boxId);
 }/**
@@ -2121,6 +2116,7 @@ var render_control_main_realTypeMap = {
 var render_control_main_eventList = ['init', 'enter', 'leave', 'destroy'];
 
 function render_control_main(boxId) {
+
     //资源容器
     var resContainer = render_base_resContainer[boxId] = render_base_resContainer[boxId] || {
         boxId: boxId,
@@ -2131,7 +2127,6 @@ function render_control_main(boxId) {
         forceRender: false
     };
     var box = getElementById(boxId);
-    var toDoSetsTimer = null;
 
     //状态类型 newset|loading|ready
     //tpl,css,data,logic,children,render,
@@ -2149,24 +2144,25 @@ function render_control_main(boxId) {
             /*if(type === 'tpl'){}*/
             return result;
         },
-        set: function(type, value) {
+        set: function(type, value, toDeal) {
             if (!boxId) {
                 return;
             }
             if (core_object_typeof(type) === 'object') {
+                toDeal = value;
                 for (var key in type) {
                     control.set(key, type[key]);
                 }
+                if (toDeal) {
+                    deal();
+                }
                 return;
             }
-
-            if (changeResList[type] = render_control_checkResChanged(resContainer, type, value)) {
-                resContainer[type] = value;
-                toDoSets();
-                return;
-            }
+            changeResList[type] = render_control_checkResChanged(resContainer, type, value);
             resContainer[type] = value;
-
+            if (changeResList[type] && toDeal) {
+                deal();
+            }
         },
         /**
          * 控制器事件
@@ -2187,13 +2183,14 @@ function render_control_main(boxId) {
                 resContainer.real_data = undefined;
             }
             changeResList['data'] = true;
-            toDoSets();
+            deal();
         },
+        deal: deal,
         _destroy: function() {
             for (var i = render_control_main_eventList.length - 1; i >= 0; i--) {
                 core_notice_off(boxId + render_control_main_eventList[i]);
             }
-            boxId = control._controller = resContainer = box = toDoSetsTimer = undefined;
+            boxId = control._controller = resContainer = box = undefined;
 
         }
     };
@@ -2244,51 +2241,46 @@ function render_control_main(boxId) {
             }
         }
         resContainer.fromParent = false;
-        toDoSets();
     }
 
-    function toDoSets() {
-        clearTimeout(toDoSetsTimer);
-        toDoSetsTimer = setTimeout(function() {
-            resContainer.lastRes = null;
+    function deal() {
+        resContainer.lastRes = null;
+        var tplChanged = changeResList['tpl'];
+        var dataChanged = changeResList['data'];
+        var cssChanged = changeResList['css'];
+        var logicChanged = changeResList['logic'];
+        resContainer.childrenChanged = changeResList['children'];
 
-            var tplChanged = changeResList['tpl'];
-            var dataChanged = changeResList['data'];
-            var cssChanged = changeResList['css'];
-            var logicChanged = changeResList['logic'];
-            resContainer.childrenChanged = changeResList['children'];
+        changeResList = {};
 
-            changeResList = {};
+        if (tplChanged || dataChanged) {
+            resContainer.rendered = false;
+            resContainer.html = '';
+            resContainer.toDestroyChildrenid = core_object_clone(resContainer.childrenid);
+        } else {
+            render_contorl_toTiggerChildren(resContainer);
+        }
 
-            if (tplChanged || dataChanged) {
-                resContainer.rendered = false;
-                resContainer.html = '';
-                resContainer.toDestroyChildrenid = core_object_clone(resContainer.childrenid);
-            } else {
-                render_contorl_toTiggerChildren(resContainer);
-            }
+        if (tplChanged) {
+            resContainer.tplReady = false;
+        }
+        if (dataChanged) {
+            resContainer.dataReady = false;
+        }
+        if (cssChanged) {
+            resContainer.cssReady = false;
+        }
+        if (logicChanged) {
+            resContainer.logicReady = false;
+        }
+        !resContainer.tpl && delete resContainer.tplFn;
+        !resContainer.logic && delete resContainer.logicFn;
 
-            if (tplChanged) {
-                resContainer.tplReady = false;
-            }
-            if (dataChanged) {
-                resContainer.dataReady = false;
-            }
-            if (cssChanged) {
-                resContainer.cssReady = false;
-            }
-            if (logicChanged) {
-                resContainer.logicReady = false;
-            }
-            !resContainer.tpl && delete resContainer.tplFn;
-            !resContainer.logic && delete resContainer.logicFn;
-
-            tplChanged && render_control_setTpl(resContainer);
-            dataChanged && render_control_setData(resContainer, tplChanged);
-            cssChanged && render_control_setCss(resContainer);
-            logicChanged && render_control_setLogic(resContainer);
-            resContainer.childrenChanged && render_control_setChildren(resContainer);
-        });
+        tplChanged && render_control_setTpl(resContainer);
+        dataChanged && render_control_setData(resContainer, tplChanged);
+        cssChanged && render_control_setCss(resContainer);
+        logicChanged && render_control_setLogic(resContainer);
+        resContainer.childrenChanged && render_control_setChildren(resContainer);
     }
 }
 
@@ -2306,12 +2298,12 @@ core_notice_on('rendered', function(module) {
     if (render_run_renderedTimer) {
         clearTimeout(render_run_renderedTimer);
     }
-    render_run_renderedTimer = setTimeout(function() {
+    // render_run_renderedTimer = setTimeout(function() {
         if (core_object_isEmpty(render_run_renderingMap)) {
             core_notice_trigger('allRendered');
             core_notice_trigger('allDomReady');
         }
-    }, 44);
+    // }, 44);
 });
 
 //controller的boot方法
@@ -2421,6 +2413,7 @@ function render_run(stageBox, controller) {
         if (controller) {
             control._controller = controller;
             controller(control, render_run_rootScope);
+            control.deal();
             triggerEnter(true);
         }
 
@@ -2822,7 +2815,7 @@ function loader_js(url, callback){
                 if (js.readyState.toLowerCase() == 'loaded' || js.readyState.toLowerCase() == 'complete') {
                     try{
                         clearTimeout(requestTimeout);
-                        getElementsByTagName("head")[0].removeChild(js);
+                        head.removeChild(js);
                         js['onreadystatechange'] = null;
                     }catch(exp){
                         
@@ -2848,12 +2841,12 @@ function loader_js(url, callback){
         'isEncodeQuery' : opts['isEncode']
     }).setParams(opts.args).toString();
     
-    getElementsByTagName("head")[0].appendChild(js);
+    head.appendChild(js);
     
     if (opts.timeout > 0) {
         requestTimeout = setTimeout(function(){
             try{
-                getElementsByTagName("head")[0].removeChild(js);
+                head.removeChild(js);
             }catch(exp){
                 
             }
@@ -3276,13 +3269,10 @@ function require_define(ns, deps, construtor) {
     require_base_module_deps[ns] = construtor ? (deps || []) : [];
     require_base_module_fn[ns] = construtor || deps;
     deps = require_base_module_deps[ns];
-    
     if (deps.length > 0) {
-        setTimeout(function() {
-            require_global(deps, doDefine, function() {
-                log('Error: ns("' + ns + '") deps loaded error!', '');
-            }, ns, false);
-        });
+        require_global(deps, doDefine, function() {
+            log('Error: ns("' + ns + '") deps loaded error!', '');
+        }, ns, false);
     } else {
         doDefine();
     }
