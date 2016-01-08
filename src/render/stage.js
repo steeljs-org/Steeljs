@@ -198,7 +198,10 @@ function render_stage_change_check_host_behaviour_onStageChangeBack() {
  */
 function render_stage(stageBoxId, routerType) {
 
-    var stateIndex = router_history_getStateIndex();
+    //@shaobo3---
+    var stateIndex = router_base_useHash?
+        router_hash_getStateIndex():
+        router_history_getStateIndex();
     var data = render_stage_data_get(stageBoxId, stateIndex);
     var node = getElementById(stageBoxId);
     core_dom_setAttribute(node, 's-stage-sup', 'true');
@@ -312,7 +315,10 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
     return renderFromStage;
 
     function doDestroy() {
-        var index = router_history_getStateIndex();
+        //@shaobo3---
+        var index = router_base_useHash?
+            router_hash_getStateIndex():
+            router_history_getStateIndex();
         render_stage_destroy(data, index + 1);
         if (!render_base_stageCache_usable) {
             render_stage_destroy(data, 0, index - 1);

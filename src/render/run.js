@@ -42,7 +42,10 @@ function render_run(stageBox, controller) {
                 lastBoxId = lastId;
                 core_notice_trigger(lastId + 'leave', function(transferData) {
                     if (transferData) {
-                        router_history_state_set(router_router_transferData_key, transferData);
+                        //@shaobo3---
+                        router_base_useHash?
+                            router_hash_state_set(router_router_transferData_key, transferData):
+                            router_history_state_set(router_router_transferData_key, transferData);
                     }
                 });
                 if (renderFromStage && routerType.indexOf('refresh') === -1) {
@@ -126,7 +129,10 @@ function render_run(stageBox, controller) {
     }
 
     function triggerEnter(isInit) {
-        var transferData = router_history_state_get(router_router_transferData_key);
+        //@shaobo3---
+        var transferData = router_base_useHash?
+            router_hash_state_get(router_router_transferData_key):
+            router_history_state_get(router_router_transferData_key);
         if (isInit) {
             core_notice_trigger(boxId + 'init', transferData);
         }
