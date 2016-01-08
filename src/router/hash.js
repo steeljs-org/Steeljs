@@ -2,7 +2,9 @@
  * 地址管理，history的hash实现
  */
 
+//import core/object/isObject
 //import core/object/extend
+//import core/object/isObject
 //import core/parseURL
 //import core/queryToJson
 //import core/jsonToQuery
@@ -19,14 +21,15 @@ core_notice_on('hashchange', router_hash_state_init);
 
 //history pushState 及一些处理
 function router_hash_pushState(url) {
+    console.log("pushState:::",router_base_noHistoryChange, router_base_noHistoryChange_set);
     router_hash_state_setPush(router_hash_stateIndex_key, router_hash_getStateIndex() + 1);
-    location.href = router_hash_toURL(url, router_hash_stateForPush());
+    location.href = router_hash_stringify(url, router_hash_stateForPush());
     router_hash_state_init();
 }
 //history repaceState 及一些处理
 function router_hash_replaceState(url) {
-    //history.replaceState(router_hash_state_data, undefined, url);
-    location.replace(router_hash_toURL(url, router_hash_state_data));
+    console.log("replaceState:::",router_base_noHistoryChange, router_base_noHistoryChange_set);
+    location.replace(router_hash_stringify(url, router_hash_state_data));
 }
 //获取当前页面在整个单页面跳转中的索引位置
 function router_hash_getStateIndex() {
@@ -39,7 +42,8 @@ function router_hash_state_init() {
 }
 //获取当前的state
 function router_hash_state() {
-    return router_hash_parse().state || {};
+    return core_object_isObject(router_hash_parse().state)?
+        router_hash_parse().state : {};
 }
 //获取下一个将要push页面的state数据
 function router_hash_stateForPush() {
@@ -65,11 +69,12 @@ function router_hash_state_set(key, value) {
         }
     }
     core_object_extend(router_hash_state_data, key, value);
-    router_hash_replaceState(location.href);
+    router_base_noHistoryChange_set = true;//只是设置数据，不是url变化，阻止hashchange
+    router_hash_replaceState(router_hash_parse().url);
 }
 //向下一个state的缓存区域添加数据项 并返回新的数据
 function router_hash_state_setPush(key, value) {
-    router_hash_state_dataForPush[key] = value;
+    core_object_extend(router_hash_state_dataForPush, key, value);
 }
 
 //解析hash中的url和state
@@ -77,13 +82,14 @@ function router_hash_state_setPush(key, value) {
 //#@    表示state
 function router_hash_parse(){
     var _hash = core_parseURL(location.toString()).hash;
-    var _url = _hash.match(/#~([^#]+)/)[1];
-    var _state = core_queryToJson(_hash.match(/#@([^#]+)/)[1]);
+    //暂时不支持hash模式下的hash
+    var _url = _hash.match(/#~([^#]+)/)?_hash.match(/#~([^#]+)/)[1]:location.toString();
+    var _state = _hash.match(/#@([^#]+)/)?core_queryToJson(_hash.match(/#@([^#]+)/)[1]):{};
     return {url:_url, state:_state};
 }
 
 //生成hash的绝对url
-function router_hash_toURL(url, state){
+function router_hash_stringify(url, state){
     var _result = core_parseURL(location.toString());
     var _hash = "#~" + (url || "") + "#@" + core_jsonToQuery(state || {});
     return _result.protocol + _result.slash + _result.host + _result.path + "#" + _hash;
