@@ -33,17 +33,20 @@ var router_router = {
     clearTransferData: router_router_clearTransferData
 };
 
-core_notice_on('popstate', router_router_onpopstate);
-
+!router_base_useHash && core_notice_on('popstate', router_router_onpopstate);
+router_base_useHash && core_notice_on('hashchange', router_router_onpopstate);
 function router_router_onpopstate() {
     if (router_router_isRouterAPICalled) {
         router_router_isRouterAPICalled = undefined;
-        router_history_state_set(router_router_transferData_key, router_router_transferData);
+        router_base_useHash?
+            router_hash_state_set(router_router_transferData_key, router_router_transferData):
+            router_history_state_set(router_router_transferData_key, router_router_transferData);
     } else {
         router_router_clearTransferData();
     }
     router_router_refreshValue();
 }
+
 /**
  * 获取当前路由信息
  * @return {object} 路由信息对象
@@ -80,7 +83,6 @@ function router_router_replace(url, data) {
  * @return {undefined} 
  */
 function router_router_set(url, replace, data) {
-    router_base_setFlag = true;
     //多态
     if (core_object_isObject(replace)) {
         data = replace;
@@ -147,7 +149,10 @@ function router_router_back(url, num, data, refresh) {
     num = (core_object_isNumber(num) && num > 0) ? num : 1;
     
     if (router_base_singlePage) {
-        if (router_history_getStateIndex() < num) {
+        var _stateIndex = router_base_useHash?
+            router_hash_getStateIndex():
+            router_history_getStateIndex();
+        if (_stateIndex < num) {
             url && location.replace(core_fixUrl(router_router_get().url, url));
             return false;
         }
@@ -158,7 +163,9 @@ function router_router_back(url, num, data, refresh) {
             if (url && url !== currentUrl) {
                 if (core_crossDomainCheck(url)) {
                     router_base_routerType = 'refresh';
-                    router_history_replaceState(url);
+                    router_base_useHash?
+                        router_hash_replaceState(url):
+                        router_history_replaceState(url);
                     router_router_refreshValue();
                 } else {
                     location.replace(url);
@@ -183,7 +190,9 @@ function router_router_back(url, num, data, refresh) {
 
 function router_router_clearTransferData() {
     if (router_base_singlePage) {
-        router_history_state_set(router_router_transferData_key, undefined);
+        router_base_useHash?
+            router_hash_state_set(router_router_transferData_key, undefined):
+            router_history_state_set(router_router_transferData_key, undefined);
     }
 }
 
@@ -193,16 +202,25 @@ function router_router_clearTransferData() {
  */
 function router_router_refreshValue() {
     var lastRouterValue = router_router_value;
-    var index = router_history_getStateIndex();
+    var index = router_base_useHash?
+        router_hash_getStateIndex():
+        router_history_getStateIndex();
     router_router_value = router_parseURL();
     var path = router_router_value.path;
     router_router_value.path = isDebug ? path.replace(/\.(jade)$/g, '') : path;
     router_router_value.search = router_router_value.query;
     router_router_value.query = core_queryToJson(router_router_value.query);
     router_router_value.type = router_base_routerType;
-    router_router_value.prev = router_base_prevHref || router_history_state_get(router_router_prevHref_key);
-    router_router_value.transferData = router_history_state_get(router_router_transferData_key);
-    router_router_value.state = router_history_state();
+    router_router_value.prev = router_base_prevHref ||
+        (router_base_useHash?
+            router_hash_state_get(router_router_prevHref_key):
+            router_history_state_get(router_router_prevHref_key));
+    router_router_value.transferData = router_base_useHash?
+        router_hash_state_get(router_router_transferData_key):
+        router_history_state_get(router_router_transferData_key);
+    router_router_value.state = router_base_useHash?
+        router_hash_state():
+        router_history_state();
     router_router_value.index = index;
     router_router_value.lastIndex = lastRouterValue ? lastRouterValue.index : index;
     var matchResult = router_match(router_router_value);
