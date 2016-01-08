@@ -18,7 +18,10 @@ var router_listen_count;
 var router_listen_lastStateIndex = undefined;
 
 function router_listen() {
-    router_listen_lastStateIndex = router_history_getStateIndex();
+    //@shaobo3---
+    router_listen_lastStateIndex = router_base_useHash?
+        router_hash_getStateIndex():
+        router_history_getStateIndex();
     //绑定link
     core_event_addEventListener(document, 'click', function(e) {
         //e.target 是a 有.href　下一步，或者不是a e.target.parentNode
@@ -34,6 +37,7 @@ function router_listen() {
             return;
         }
         core_event_preventDefault(e);
+        router_base_noHistoryChange = true;
         router_router_set(href);
         router_listen_lastStateIndex = router_base_useHash?
             router_hash_getStateIndex():
@@ -61,11 +65,18 @@ function router_listen() {
         router_listen_handleHrefChenged(href);
     });
     //hash模式，侦听hashchange事件
-    router_base_useHash && core_event_addEventListener(window, 'hashchange', function(){
-        if (router_base_setFlag) {
-            router_base_setFlag = false;
+    router_base_useHash && core_event_addEventListener(window, 'hashchange', function(e){
+        console.log('000, hashchange');
+        console.log("Event>>>",e);
+        if (router_base_noHistoryChange) {
+            router_base_noHistoryChange = false;
             return;
         }
+        if (router_base_noHistoryChange_set) {
+            router_base_noHistoryChange_set = false;
+            return;
+        }
+        console.log('11111, hashchange');
         core_notice_trigger('hashchange');
         var currentStateIndex = router_hash_getStateIndex();
         if (router_listen_lastStateIndex > currentStateIndex) {
@@ -98,9 +109,18 @@ function router_listen_getHrefNode(el) {
 
 function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
-    router_history_state_set(router_router_prevHref_key, router_base_prevHref);
+    //@shaobo3---
+    //TODO::为什么在这里还要设置一次，hash模式下陷入循环，导致三次hashchange
+    if (router_base_useHash) {
+        router_hash_state_set(router_router_prevHref_key, router_base_prevHref);
+    } else {
+        router_history_state_set(router_router_prevHref_key, router_base_prevHref);
+    }
     router_base_currentHref = url;
-    router_listen_lastStateIndex = router_history_getStateIndex();
+    //@shaobo3---
+    router_listen_lastStateIndex = router_base_useHash?
+        router_hash_getStateIndex():
+        router_history_getStateIndex();
     if (router_router_get(true).config) {
         router_listen_fireRouterChange();
     } else {
@@ -110,5 +130,10 @@ function router_listen_handleHrefChenged(url) {
 
 //派发routerChange事件，返回router变化数据 @shaobo3
 function router_listen_fireRouterChange() {
+    //TODO::原则上这里是单次路由的末尾，但是因为hash改变，又重新走了一次，setFlag失效
+    //TODO::使用延时大法，修复；
+    //window.setTimeout(function(){
+    //    router_base_noHistoryChange = false;
+    //}, 300);
     core_notice_trigger('routerChange', router_router_get());
 }
