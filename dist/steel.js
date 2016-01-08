@@ -1,15 +1,11 @@
 /**
  * Steel Hybrid SPA
  */
-
 ! function(window, undefined) {
-
- 
 var steel = window.steel || {
     v : 0.1,
     t : now()
 };
-
 var userAgent = navigator.userAgent,
     document = window.document,
     docElem = document.documentElement,
@@ -34,9 +30,7 @@ var userAgent = navigator.userAgent,
     logLevel = 'Info',
     logNotice = 'logNotice',
     IE = /msie (\d+\.\d+)/i.test( userAgent ) ? ( document.documentMode || + RegExp[ '$1' ] ) : 0;
-
 var mainBox;
-
 //检验history.state的支持性
 if (isHTML5) {
     (function() {
@@ -46,7 +40,6 @@ if (isHTML5) {
         history.replaceState(lastState, undefined);
     })();
 }
-
 /*
  * log
  */
@@ -66,7 +59,6 @@ function log() {
     }
     new Function('console.log(' + evalString.join(',') + ')').apply(this, args);
 }
-
 /*
  * 空白方法
  */
@@ -80,7 +72,6 @@ function emptyFunction() {}
 function getElementById( id ) {
     return document.getElementById( id );
 }
-
 /*
  * tagName取节点
  * @method getElementsByTagName
@@ -90,7 +81,6 @@ function getElementById( id ) {
 function getElementsByTagName( tagName, el ) {
     return ( el || document ).getElementsByTagName( tagName );
 }
-
 /*
  * now
  * @method now
@@ -100,25 +90,19 @@ function getElementsByTagName( tagName, el ) {
 function now() {
     return Date.now ? Date.now() : +new Date;
 }
-
 function RegExp(pattern, attributes) {
     return new window.RegExp(pattern, attributes);
 }
- 
-
 var config_list = [];
-
 function config(config) {
   var parseParamFn = config_parseParamFn(config);
   for (var i = 0, l = config_list.length; i < l; ++i) {
     config_list[i](parseParamFn, config);
   }
 }
-
 function config_push(fn) {
   config_list.push(fn);
 }
-
 function config_parseParamFn(config) {
   return function(key, defaultValue) {
     if (key in config) {
@@ -133,7 +117,6 @@ var require_base_module_fn = {};
 var require_base_module_loaded = {};
 var require_base_module_defined = {};
 var require_base_module_runed = {};
-
 //事件
 var require_base_event_defined = '-require-defined';
 var require_global_loadingNum = 0;/*
@@ -186,10 +169,8 @@ function core_parseURL(url) {
  * core_queryToJson( q1 ) === {'a':1,'b':2,'c':3};
  */
 function core_queryToJson( query ) {
-	
 	var queryList = query.split( '&' );
 	var retJson  = {};
-	
 	for( var i = 0, len = queryList.length; i < len; ++i ){
 		if ( queryList[ i ] ) {
 			var hsh = queryList[ i ].split( '=' );
@@ -199,14 +180,12 @@ function core_queryToJson( query ) {
 		}
 	}
 	return retJson;
-	
 }/*
  * typeof
  */
 function core_object_typeof( value ) {
 	return value === null ? '' : Object.prototype.toString.call( value ).slice( 8, -1 ).toLowerCase();
 }
-
 /*
  * json to query
  * @method core_jsonToQuery
@@ -215,7 +194,6 @@ function core_object_typeof( value ) {
  * @return {string} query
  */
 function core_jsonToQuery( json ) {
-	
 	var queryString = [];
 	for ( var k in json ) {
 		if ( core_object_typeof( json[ k ] ) === 'array' ) {
@@ -227,20 +205,15 @@ function core_jsonToQuery( json ) {
 		}
 	}
 	return queryString.join( '&' );
-	
 }/**
  * is String
  */
-
-
 function core_object_isString(value) {
     return core_object_typeof(value) === 'string';
 }
-
 /**
  * 扩展内容
  */
-
 function core_object_extend(target, key, value) {
     if (core_object_isString(key)) {
         target[key] = value;
@@ -258,7 +231,6 @@ function core_object_extend(target, key, value) {
 function core_hasProtocol(url) {
     return /^([a-z]+:)?\/\/\w+/i.test(url);
 }
-
 /*
  * 根据相对路径得到绝对路径
  * @method core_fixUrl
@@ -320,7 +292,6 @@ function core_fixUrl(baseUrl, path) {
     }
     return basePath + path;
 }
-
 function core_fixUrl_handleTwoDots(url) {
     url = url.charAt(url.length - 1) === '/' ? (url.slice(0, url.length - 1)) : url;
     return url.slice(0, url.lastIndexOf('/') + 1);
@@ -375,7 +346,6 @@ function core_object_parseParam(oSource, oParams, isown){
     }
     return obj;
 }
-
 function core_URL(sURL,args){
     var opts = core_object_parseParam({
         'isEncodeQuery'  : false,
@@ -383,13 +353,8 @@ function core_URL(sURL,args){
     },args||{});
     var retJson = {};
     var url_json = core_parseURL(sURL);
-    
-    
     var query_json = core_queryToJson(url_json.query);
-    
     var hash_json = core_queryToJson(url_json.hash);
-    
-    
     /**
      * Describe 设置query值
      * @method setParam
@@ -472,7 +437,6 @@ function core_URL(sURL,args){
         }
         return url.join('');
     };
-    
     return retJson;
 };/**
  * 资源变量
@@ -483,13 +447,11 @@ var resource_ajaxPath;
 var resource_basePath;
 var resource_define_apiRule;
 var resource_base_version;
-
 //资源列表{url->[[access_cb, fail_cb],....]}
 var resource_queue_list = {};
 //router资源
 var core_uniqueKey_index = 1;
 var core_uniqueKey_prefix = 'SL_' + now();
-
 /*
  * 唯一字符串
  * @method core_uniqueKey
@@ -530,11 +492,8 @@ function core_array_indexOf( oElement, aSource ) {
 	}
 	return -1;
 }
-
-
 var core_notice_data_SLKey = '_N';
 var core_notice_data = steel[ core_notice_data_SLKey ] = steel[ core_notice_data_SLKey ] || {};
-
 /*
  * 对缓存的检索
  * @method core_notice_find
@@ -542,7 +501,6 @@ var core_notice_data = steel[ core_notice_data_SLKey ] = steel[ core_notice_data
 function core_notice_find( type ) {
 	return core_notice_data[ type ] || ( core_notice_data[ type ] = [] );
 }
-
 /*
  * 添加事件
  * @method core_notice_on
@@ -552,7 +510,6 @@ function core_notice_find( type ) {
 function core_notice_on( type, fn ) {
 	core_notice_find( type ).unshift( fn );
 }
-
 /*
  * 移除事件
  * @method core_notice_off
@@ -573,7 +530,6 @@ function core_notice_off( type, fn ) {
 	}
 	spliceLength && typeArray.splice( index, spliceLength );
 }
-
 /*
  * 事件触发
  * @method core_notice_trigger
@@ -590,7 +546,6 @@ function core_notice_trigger( type ) {
 		}
 	}
 }
-
 /**
  * is Number
  */
@@ -599,19 +554,15 @@ function core_object_isNumber(value) {
 }/**
  * is Object
  */
-
-
 function core_object_isObject(value) {
     return core_object_typeof(value) === 'object';
 }
-
 function core_crossDomainCheck(url) {
     var urlPreReg = /^[^:]+:\/\/[^\/]+\//;
     var locationMatch = location.href.match(urlPreReg);
     var urlMatch = url.match(urlPreReg);
     return (locationMatch && locationMatch[0]) === (urlMatch && urlMatch[0]);
 }
-
 /**
  * arguments 简单多态 要求参数顺序固定
  * @param  {Arguments} args  参数对象
@@ -653,17 +604,13 @@ function core_argsPolymorphism(args, keys, types) {
  */
 //收集用户路由配置信息
 var router_base_routerTable = [];
-
 //处理后的路由集合，[{pathRegexp:RegExp, controller:'controllerFn', keys:{}}]
 var router_base_routerTableReg = [];
-
 //应用是否支持单页面（跳转与否）
 var router_base_singlePage = false;
-
 // @Finrila hash模式处理不可用状态，先下掉
 // //项目是否使用hash
 // var router_base_useHash = false;
-
 // init/new/forward/bak/refresh/replace
 var router_base_routerType = 'init';
 var router_base_prevHref;
@@ -684,8 +631,6 @@ var core_event_addEventListener = isAddEventListener ?
 	function( el, type, fn ) {
 		el.attachEvent( 'on' + type, fn );
 	};
-
-
 /*
  * dom ready
  * @method core_dom_ready
@@ -693,14 +638,12 @@ var core_event_addEventListener = isAddEventListener ?
  * @param {Function} handler
  */
 function core_dom_ready( handler ) {
-	
 	function DOMReady() {
 		if ( DOMReady !== emptyFunction ) {
 			DOMReady = emptyFunction;
 			handler();
 		}
 	}
-	
 	if ( /complete/.test( document.readyState ) ) {
 		handler();
 	} else {
@@ -708,12 +651,10 @@ function core_dom_ready( handler ) {
 			core_event_addEventListener( document, 'DOMContentLoaded', DOMReady );
 		} else {
 			core_event_addEventListener( document, 'onreadystatechange', DOMReady );
-
 			//在跨域嵌套iframe时 IE8- 浏览器获取window.frameElement 会出现权限问题
 			try {
 				var _frameElement = window.frameElement;
 			} catch (e) {}
-
 			if ( _frameElement == null && docElem.doScroll ) {
 				(function doScrollCheck() {
 					try {
@@ -727,7 +668,6 @@ function core_dom_ready( handler ) {
 		}
 		core_event_addEventListener( window, 'load', DOMReady );
 	}
-	
 }/*
  * preventDefault
  * @method core_event_preventDefault
@@ -741,7 +681,6 @@ function core_event_preventDefault( event ) {
 		event.returnValue = false;
 	}
 }
-
 function router_parseURL(url) {
     url = url || location.toString();
     var result = core_parseURL(url);
@@ -753,11 +692,9 @@ function router_parseURL(url) {
     // }
     return result;
 }
-
 function router_match(url) {
     var routerUrl = core_object_isObject(url) ? url : router_parseURL(url);
     var path = routerUrl.path;// store values
-
     for (var i = 0, len = router_base_routerTableReg.length; i < len; i++) {
         var obj = router_base_routerTableReg[i];
         var pathMatchResult;//正则校验结果；
@@ -768,14 +705,12 @@ function router_match(url) {
             var n = 0;
             var key;
             var val;
-
             for (var j = 1, len = pathMatchResult.length; j < len; ++j) {
                 key = keys[j - 1];
                 prop = key ? key.name : n++;
                 val = decodeURIComponent(pathMatchResult[j]);
                 param[prop] = val;
             }
-
             return {
                 config: obj['config'],
                 param: param
@@ -786,17 +721,12 @@ function router_match(url) {
 /**
  * 地址管理，负责管理state的数据和当面页面在state历史中的索引位置
  */
-
-
 // 当前页面在整个单页面跳转中的索引位置
 var router_history_stateIndex_key = '--steel-stateIndex';
 var router_history_state_data;
 var router_history_state_dataForPush;
-
 router_history_state_init();
-
 core_notice_on('popstate', router_history_state_init);
-
 //history pushState 及一些处理
 function router_history_pushState(url) {
     router_history_state_setPush(router_history_stateIndex_key, router_history_getStateIndex() + 1);
@@ -852,7 +782,6 @@ function router_history_state_setPush(key, value) {
 }/**
  * 公共对象方法定义文件
  */
-
 //control容器
 var render_base_controlCache = {};
 //controllerNs容器
@@ -861,11 +790,8 @@ var render_base_controllerNs = {};
 var render_base_resContainer = {};
 //渲染相关通知事件的前缀
 var render_base_notice_prefix = '-steel-render-';
-
-
 //sessionStorage级别 是否使用state缓存模块的数据内容
 var render_base_dataCache_usable = false;
-
 //场景相关配置
 //场景最大个数
 var render_base_stage_maxLength = 10;
@@ -880,7 +806,6 @@ var render_base_stageDefaultHTML = '';
 ////
 //是否启用进度条
 var render_base_loadingBar_usable = false;
-
 //boxid生成器 当参数为true时要求：1.必须唯一 2.同一页面同一模块的id必须是固定的
 function render_base_idMaker(supId) {
     return core_uniqueKey();
@@ -903,8 +828,6 @@ function core_array_makeArray( obj ) {
 		return rs;
 	}
 }
-
-
 function render_error() {
 	log(arguments);
     core_notice_trigger.apply(undefined, ['renderError'].concat(core_array_makeArray(arguments)));
@@ -915,12 +838,10 @@ function render_error() {
  * @method core_dom_getAttribute
  * @private
  * @param {string} name
-
  */
 function core_dom_getAttribute( el, name ) {
     return el.getAttribute( name );
 }
-
 /*
  * 对象克隆
  * @method core_object_clone
@@ -952,19 +873,15 @@ function core_object_clone( obj ) {
 function core_dom_removeNode( node ) {
 	node && node.parentNode && node.parentNode.removeChild( node );
 }
-
 function render_control_setLogic(resContainer) {
     var controllerNs = render_base_controllerNs[resContainer.boxId];
     var logic = resContainer.logic;
     var startTime = null;
     var endTime = null;
     var logicCallbackFn;
-
     resContainer.logicReady = false;
     resContainer.logicFn = null;
     resContainer.logicRunned = false;
-
-    
     if(logic){
         if(core_object_typeof(logic) === 'function'){
             resContainer.logicFn = logic;
@@ -988,12 +905,10 @@ function render_control_setLogic(resContainer) {
         }
     }
 }
-
 function render_control_toStartLogic(resContainer) {
     resContainer.logicReady = true;
     render_control_startLogic(resContainer);
 }
-
 function render_control_startLogic(resContainer) {
     var boxId = resContainer.boxId;
     var box = getElementById(boxId);
@@ -1014,7 +929,6 @@ function render_control_startLogic(resContainer) {
         resContainer.logicRunned = true;
     }
 }
-
 /*
  * 销毁logic
 */
@@ -1048,7 +962,6 @@ function core_object_isEmpty(o,isprototype){
     }
     return true;
 }
-
 function core_array_inArray(oElement, aSource){
     return core_array_indexOf(oElement, aSource) > -1;
 }/**
@@ -1081,30 +994,25 @@ var render_control_sData_preFix = '#sdata-';
 var render_control_sData_current_boxId;
 var render_control_sData_s_data_index;
 var render_control_sData_dataMap = {};
-
 function render_control_sData(data) {
     var dataId = render_control_sData_preFix + render_control_sData_current_boxId + '-' + (render_control_sData_s_data_index++);
     render_control_sData_dataMap[render_control_sData_current_boxId][dataId] = data || {};
     return dataId;
 }
-
 function render_control_sData_setBoxId(boxId) {
     render_control_sData_current_boxId = boxId;
     render_control_sData_s_data_index = 0;
     render_control_sData_dataMap[boxId] = {};
 }
-
 function render_control_sData_getData(dataId) {
     var idMatch = dataId.match(RegExp('^' + render_control_sData_preFix + '(.*)-\\d+$'));
     if (idMatch) {
         return render_control_sData_dataMap[idMatch[1]][dataId];
     }
 }
-
 function render_control_sData_delData(boxId) {
     delete render_control_sData_dataMap[boxId];
 }
-
 function render_control_destroy(idMap, onlyRes) {
   idMap = idMap || {};
   if (typeof idMap === 'string') {
@@ -1116,12 +1024,10 @@ function render_control_destroy(idMap, onlyRes) {
     render_control_destroy_one(id, onlyRes);
   }
 }
-
 function render_control_destroy_one(id, onlyRes) {
   var resContainer = render_base_resContainer[id];
   var childControl = render_base_controlCache[id];
   var childControllerNs = render_base_controllerNs[id];
-
   if (!onlyRes) {
     if (childControl) {
       childControl._destroy();
@@ -1141,7 +1047,6 @@ function render_control_destroy_one(id, onlyRes) {
 }/**
  * 得到节点的计算样式
  */
-
 var core_dom_getComputedStyle = window.getComputedStyle ? function(node, property) {
     return getComputedStyle(node, '')[property];
 } : function(node, property) {
@@ -1150,9 +1055,7 @@ var core_dom_getComputedStyle = window.getComputedStyle ? function(node, propert
  * querySelectorAll
  * 在非h5下目前只支持标签名和属性选择如div[id=fsd],属性值不支持通配符
  */
-
 var core_dom_querySelectorAll_REG1 = /([^\[]*)(?:\[([^\]=]*)=?['"]?([^\]]*?)['"]?\])?/;
-
 function core_dom_querySelectorAll(dom, select) {
 	var result;
 	var matchResult;
@@ -1200,18 +1103,14 @@ var core_event_removeEventListener = isAddEventListener ?
 	};/**
  * event对象属性适配
  */
-
 function core_event_eventFix(e) {
     e.target = e.target || e.srcElement;
 }/**
  * 两点之间的距离
  */
-
 function core_math_distance(point1, point2) {
     return Math.sqrt(Math.pow((point2[0] - point1[0]), 2) + Math.pow((point2[1] - point1[1]), 2));
 }
-
-
 var render_stage_data = {}; //stageBoxId -> {curr:index, last:index, subs:[]}
 var render_stage_anidata = {};
 var render_stage_style_mainId = 'steel-style-main';
@@ -1234,16 +1133,13 @@ var render_stage_touch_status_move_time;
 var render_stage_touch_status_ended;
 var render_stage_touch_status_end_time;
 ////
-
 var inputReg = /input|textarea/i;
-
 /**
  * 获取当前渲染的stageBoxId
  */
 function render_stage_getBox() {
     return getElementById(render_stage_boxId || mainBox && mainBox.id);
 }
-
 /**
  * 获取当前支持滚动的节点的id  这个方法只在启用了并支持场景切换功能时有效，
  */
@@ -1257,12 +1153,10 @@ function render_stage_getScrollBox() {
         }
     }
 }
-
 function render_stage_init() {
     render_stage_style_init();
     render_stage_change_init();
 }
-
 //场景切换功能初始化
 function render_stage_change_init() {
     if (!render_base_stageChange_usable) {
@@ -1274,7 +1168,6 @@ function render_stage_change_init() {
     // var isPreventDefaulted;
     var isInputTouched;
     var lastTouchendTime;
-
     core_event_addEventListener(docElem, 'touchstart', function(e) {
         core_event_eventFix(e);
         checkStopEvent(e);
@@ -1298,9 +1191,7 @@ function render_stage_change_init() {
                 render_stage_style_rewrite();
             }
         }
-        
     });
-
     // core_event_addEventListener(docElem, 'touchmove', function(e) {
     //     if (e._7) {
     //         return;
@@ -1331,14 +1222,11 @@ function render_stage_change_init() {
         // if (isPreventDefaulted) {
         //     return;
         // }
-
         // if (touchDirection === 'X') {
         //     // e.preventDefault();
         // } else {
-            
         // }
     });
-
     core_event_addEventListener(docElem, 'touchend', function(e) {
         core_event_eventFix(e);
         checkStopEvent(e);
@@ -1358,10 +1246,8 @@ function render_stage_change_init() {
             }
         }
     });
-
     //动画期间阻止一切事件的触发
     core_event_addEventListener(docElem, 'click', checkStopEvent);
-
     function readTouchData(e) {
         var touch = e.changedTouches[0];
         touchDataLastX = touchDataX;
@@ -1377,7 +1263,6 @@ function render_stage_change_init() {
         }
     }
 }
-
 function render_stage_change_check_host_behaviour_onStageChangeBack() {
     if (iphone && render_stage_touch_status_started && render_stage_touch_status_moved) {
         if (!render_stage_touch_status_ended) {
@@ -1387,14 +1272,12 @@ function render_stage_change_check_host_behaviour_onStageChangeBack() {
         }
     }
 }
-
 /**
  * 根据路由类型在维护当前场景并返回当前路由与该场景对应的渲染节点
  * @param  {string} stageBoxId  场景主节点
  * @param  {string} routerType init/new/forward/bak/refresh/replace
  */
 function render_stage(stageBoxId, routerType) {
-
     var stateIndex = router_history_getStateIndex();
     var data = render_stage_data_get(stageBoxId, stateIndex);
     var node = getElementById(stageBoxId);
@@ -1407,7 +1290,6 @@ function render_stage(stageBoxId, routerType) {
     data.curr = stateIndex;
     return (render_stage_boxId = subData.id);
 }
-
 function render_stage_ani(stageBoxId, aniType, aniEnd) {
     render_stage_ani_doing = true;
     var node = getElementById(stageBoxId);
@@ -1421,11 +1303,8 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
     var renderFromStage = false;
     var lastNode = getElementById(lastSub.id);
     var currNode = getElementById(currSub.id);
-
     if (lastSub !== currSub) {
-
         renderFromStage = currSub.inStage && render_base_stageCache_usable;
-        
         //在iphone下判断web宿主容器的行为，如果发现是宿主切换的页面就不做动画，原因是宿主的行为不能被阻止，
         var is_host_behaviour = curr < last && render_stage_change_check_host_behaviour_onStageChangeBack();
         // window._setTitle && _setTitle(is_host_behaviour ? '1111' : '000000');
@@ -1437,7 +1316,6 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
             var currLeft = (goForward ? winWidth : -winWidth/3);
             currNode.style.top = 0;
             currNode.style.left = currLeft + 'px';
-
             if (goForward) {
                 lastNode.style.zIndex = 99;
                 currNode.style.zIndex = 100;
@@ -1453,7 +1331,6 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
             render_stage_input_focused = false;
             render_stage_webkitTransitionDestroyFn = node_webkitTransitionDestroy;
             render_stage_style_rewrite();
-
             setTimeout(function() {
                 currNode.style.WebkitTransform = 'translate3d(' + (-currLeft) + 'px, 0, 0)';
                 lastNode.style.WebkitTransform = 'translate3d(' + (goForward ? -winWidth/3 : winWidth) + 'px, 0, 0)';
@@ -1461,7 +1338,6 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
                 core_dom_setAttribute(lastNode, 'class', render_stage_subNode_transition_className);
                 core_event_addEventListener(node, 'webkitTransitionEnd', node_webkitTransitionEnd);
             }, 199);
-
             function node_webkitTransitionEnd(e) {
                 var target = (e.target || e.srcElement);
                 if (target !== currNode && target !== lastNode) {
@@ -1469,7 +1345,6 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
                 }
                 node_webkitTransitionDestroy();
             }
-
             function node_webkitTransitionDestroy() {
                 if (!render_stage_webkitTransitionDestroyFn) {
                     return;
@@ -1507,7 +1382,6 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
         currSub.inStage = true;
     }
     return renderFromStage;
-
     function doDestroy() {
         var index = router_history_getStateIndex();
         render_stage_destroy(data, index + 1);
@@ -1515,7 +1389,6 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
             render_stage_destroy(data, 0, index - 1);
         }
     }
-
     function callAniEnd() {
         if (aniEnd) {
             aniEnd(currSub.id, lastSub.id, renderFromStage);
@@ -1525,9 +1398,7 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
             render_stage_ani_doing = false;
         }, 377);
     }
-
 }
-
 /**
  * 销毁场景下无用的子
  */
@@ -1535,12 +1406,10 @@ function render_stage_destroy(data, fromIndex, toIndex) {
     var subs = data.subs;
     var destroySubs = [];
     toIndex = toIndex === undefined ? (subs.length - 1) : toIndex;
-
     for (var i = fromIndex; i <= toIndex; ++i) {
         destroySubs.push(subs[i]);
         subs[i] = undefined;
     }
-
     setTimeout(function() {
         for (var i = 0, l = destroySubs.length; i < l; ++i) {
             if (destroySubs[i]) {
@@ -1560,7 +1429,6 @@ function render_stage_destroy(data, fromIndex, toIndex) {
         }
     }, 377);
 }
-
 /**
  * 新建子数据和节点 step 步数
  */
@@ -1582,7 +1450,6 @@ function render_stage_data_newsub(node, data, stateIndex) {
         return true;
     }
 }
-
 /**
  * 产生并获取数据结构
  */
@@ -1612,7 +1479,6 @@ function render_stage_style_init() {
     styleEl.innerHTML = styleTextArray.join('');
     head.appendChild(styleEl);
 }
-
 /**
  * Steel自带样式重写方法，当处于动画中时fixed节点使用abosolute，当input得到焦点时scroll节点删除overflow-y：auto，解决input聚焦时业务样式丢失的问题
  */
@@ -1624,7 +1490,6 @@ function render_stage_style_rewrite() {
     if (render_stage_input_focused) {
         styleTextArray.push('.' + render_stage_scroll_class + '{overflow-y: visible!important;}');
     }
-
     var styleEl = getElementById(render_stage_style_rewriteId);
     if (!styleEl) {
         styleEl = core_dom_createElement('style');
@@ -1636,25 +1501,21 @@ function render_stage_style_rewrite() {
         styleEl.innerHTML = styleTextArray.join('');
     }
 }
-
 //解析jade fun
 function render_parse(jadeFunStr) {
     var g;
     var result = [];
     var ret = [];
     var reg = /<[a-z]+([^>]*?s-(child)[^>]*?)>/g;//|tpl|data|css|logic
-    
     while (g = reg.exec(jadeFunStr)) {
         var ele = g[1].replace(/\\\"/g, '"');
         var oEle = ele.replace(/\"/g, '').replace(/ /g, '&');
         var eleObj = core_queryToJson(oEle);
         var id = render_base_idMaker();
-        
         eleObj['s-id'] = id;
         eleObj['s-all'] = ele;
         result.push(eleObj);
     }
-    
     reg = RegExp('(class=\"[^\]*?' + render_stage_scroll_class + '[^\]*?\")');
     if (g = reg.exec(jadeFunStr)) {
         result.push({
@@ -1667,7 +1528,6 @@ function render_parse(jadeFunStr) {
 }/*
  * 处理子模块
 */
-
 function render_control_handleChild(boxId, tplParseResult) {
     var resContainer = render_base_resContainer[boxId];
     var s_controller, s_child, s_id;
@@ -1691,12 +1551,10 @@ function render_control_handleChild(boxId, tplParseResult) {
         };
         resContainer.childrenid[s_id] = true;
         childResContainer.parentId = boxId;
-
         childResContainer.tpl = parseResultEle['s-tpl'];
         childResContainer.css = parseResultEle['s-css'];
         childResContainer.data = parseResultEle['s-data'];
         childResContainer.logic = parseResultEle['s-logic'];
-
         if(s_child = parseResultEle['s-child']) {
             s_child = (s_child === 's-child' ? '' : s_child);
             if(s_child) {
@@ -1709,23 +1567,18 @@ function render_control_handleChild(boxId, tplParseResult) {
         }
     }
 }
-
 //用户扩展类
 function render_control_setExtTplData_F() {}
-
 render_control_setExtTplData_F.prototype.constructor = render_control_setExtTplData_F;
 //用于帮助用户设置子模块数据的方法：steel_s_data(data) data为要设置的对象，设置后
 render_control_setExtTplData_F.prototype.steel_s_data = render_control_sData;
-
 //用户扩展全局功能方法
 function render_control_setExtTplData(obj) {
     if (!core_object_isObject(obj)) {
         throw 'The method "steel.setExtTplData(obj)" used in your app need an object as the param.';
     }
     render_control_setExtTplData_F.prototype = obj;
-    
 }
-
 /**
  * 触发rendered事件
  */
@@ -1735,11 +1588,8 @@ function render_control_triggerRendered(boxId) {
         controller: render_base_controllerNs[boxId]
     });
 }
-
-
 var render_control_render_moduleAttrName = 's-module';
 var render_control_render_moduleAttrValue = 'ismodule';
-
 function render_control_render(resContainer) {
     var boxId = resContainer.boxId;
     if (!resContainer.dataReady || !resContainer.tplReady || resContainer.rendered) {
@@ -1750,7 +1600,6 @@ function render_control_render(resContainer) {
     if (!tplFn || !real_data) {
         return;
     }
-
     var html = resContainer.html;
     if (!html) {
         render_control_sData_setBoxId(boxId);
@@ -1771,7 +1620,6 @@ function render_control_render(resContainer) {
     if (!resContainer.cssReady) {
         return;
     }
-
     //子模块分析
     resContainer.childrenid = {};
     var tplParseResult = render_parse(html);
@@ -1789,11 +1637,9 @@ function render_control_render(resContainer) {
     resContainer.html = html;
     ////@finrila 由于做场景管理时需要BOX是存在的，所以调整渲染子模块流程到写入HTML后再处理子模块，那么每个模块的box在页面上是一定存在的了
     var box = getElementById(boxId);
-
     render_control_destroyLogic(resContainer);
     render_control_destroy(resContainer.toDestroyChildrenid, false);
     box.innerHTML = html;
-
     resContainer.rendered = true;
     render_control_startLogic(resContainer);
     render_control_handleChild(boxId, tplParseResult);
@@ -1802,11 +1648,9 @@ function render_control_render(resContainer) {
 }/**
  * 获取 url 的目录地址
  */
-
 function core_urlFolder(url){
     return url.substr(0, url.lastIndexOf('/') + 1);
 }
-
 /**
  * 命名空间的适应
  */
@@ -1822,15 +1666,12 @@ function core_nameSpaceFix(id, basePath) {
     }
     return id;
 }
-
 var render_control_setCss_cssCache = {};//css容器
-
 function render_control_setCss(resContainer) {
     var cssCallbackFn;
     var startTime = null;
     var endTime = null;
     var css = resContainer.css;
-
     if (!css) {
         cssReady();
         return;
@@ -1838,16 +1679,13 @@ function render_control_setCss(resContainer) {
     var boxId = resContainer.boxId;
     var controllerNs = render_base_controllerNs[boxId];
     var css = core_nameSpaceFix(resContainer.css, controllerNs);
-
     if (render_control_setCss_cssCache[css]) {
         render_control_setCss_cssCache[css][boxId] = true;
         cssReady();
         return;
     }
-
     render_control_setCss_cssCache[css] = {};
     render_control_setCss_cssCache[css][boxId] = true;
-
     var cb = cssCallbackFn = function(){
         if(cb === cssCallbackFn) {
             endTime = now();
@@ -1870,7 +1708,6 @@ function render_control_setCss(resContainer) {
         render_control_render(resContainer);
     }
 }
-
 function render_control_setCss_destroyCss(resContainer, excludeSelf) {
     var boxId = resContainer.boxId;
     var controllerNs = render_base_controllerNs[boxId];
@@ -1892,7 +1729,6 @@ function render_control_setCss_destroyCss(resContainer, excludeSelf) {
         }
     }
 }
-
 function render_control_setChildren(resContainer) {
     var children = resContainer.children || {};
     for (var key in children) {
@@ -1902,20 +1738,16 @@ function render_control_setChildren(resContainer) {
         }
     }
 }
-
 function render_control_destroyChildren(childrenid) {
     render_control_destroy(childrenid);
 }
-
 function render_control_setTpl(resContainer) {
     var controllerNs = render_base_controllerNs[resContainer.boxId];
     var tplCallbackFn;
     var startTime = null;
     var endTime = null;
     var tpl = resContainer.tpl;
-
     resContainer.tplFn = null;
-    
     if(tpl){
         if(core_object_typeof(tpl) === 'function'){
             resContainer.tplFn = tpl;
@@ -1938,7 +1770,6 @@ function render_control_setTpl(resContainer) {
         require_global(tpl, cb, render_error, controllerNs);
     }
 }
-
 function render_control_setTpl_toRender(resContainer) {
     resContainer.tplReady = true;
     render_control_render(resContainer);
@@ -1948,18 +1779,15 @@ function core_object_equals(x, y){
     if ( x === y ) {
         return true;
     }
-
     // If they are not strictly equal, they both need to be Objects
     if ( ! ( x instanceof Object ) || ! ( y instanceof Object ) ) {
         return false;
     }
-
     // They must have the exact same prototype chain, the closest we can do is
     // test the constructor.
     if ( x.constructor !== y.constructor ) {
         return false;
     }
-
     for ( var p in x ) {
         // Inherited properties were tested using x.constructor === y.constructor
         if ( x.hasOwnProperty( p ) ) {
@@ -1967,24 +1795,20 @@ function core_object_equals(x, y){
             if ( ! y.hasOwnProperty( p ) ) {
                 return false;
             }
-
             // If they have the same strict value or identity then they are equal
             if ( x[ p ] === y[ p ] ) {
                 continue;
             }
-
             // Numbers, Strings, Functions, Booleans must be strictly equal
             if ( typeof( x[ p ] ) !== "object" ) {
                 return false;
             }
-
             // Objects and Arrays must be tested recursively
             if ( ! core_object_equals( x[ p ],  y[ p ] ) ) {
                 return false;
             }
         }
     }
-
     for ( p in y ) {
         // allows x[ p ] to be set to undefined
         if ( y.hasOwnProperty( p ) && ! x.hasOwnProperty( p ) ) {
@@ -1993,8 +1817,6 @@ function core_object_equals(x, y){
     }
     return true;
 };
-
-
 function render_contorl_toTiggerChildren(resContainer) {
     if (resContainer.needToTriggerChildren) {
         var s_childIdMap = {};
@@ -2003,7 +1825,6 @@ function render_contorl_toTiggerChildren(resContainer) {
                 s_childIdMap[resContainer.s_childMap[s_child]] = true;
             }
         }
-
         for (var id in resContainer.childrenid) {
             if (s_childIdMap[id]) {
                 continue;
@@ -2016,11 +1837,8 @@ function render_contorl_toTiggerChildren(resContainer) {
     }
     resContainer.needToTriggerChildren = false;
 }
-
 var render_control_setData_dataCallbackFn;
-
 function render_control_setData(resContainer, tplChanged) {
-    
     var data = resContainer.data;
     // var isMain = getElementById(resContainer.boxId) === mainBox;
     var controllerNs = render_base_controllerNs[resContainer.boxId];
@@ -2028,7 +1846,6 @@ function render_control_setData(resContainer, tplChanged) {
     var endTime = null;
     var real_data;
     // var ajaxRunTime = 10;//计算ajax时间时，运行时间假定需要10ms（实际在10ms内）
-
     if (data === null || data === 'null') {
         render_control_setData_toRender({}, resContainer, tplChanged);
         return;
@@ -2037,7 +1854,6 @@ function render_control_setData(resContainer, tplChanged) {
         return;
     }
     var dataType = core_object_typeof(data);
-    
     if (dataType === 'object') {
         render_control_setData_toRender(data, resContainer, tplChanged);
     } else if (dataType === 'string') {
@@ -2066,7 +1882,6 @@ function render_control_setData(resContainer, tplChanged) {
         });
     }
 }
-
 function render_control_setData_toRender(data, resContainer, tplChanged) {
     resContainer.dataReady = true;
     if (resContainer.forceRender || tplChanged || !core_object_equals(data, resContainer.real_data)) {
@@ -2077,13 +1892,11 @@ function render_control_setData_toRender(data, resContainer, tplChanged) {
         render_contorl_toTiggerChildren(resContainer);
     }
 }
-
 //检查资源是否改变
 function render_control_checkResChanged(resContainer, type, value) {
     var valueType = core_object_typeof(value);
     var res = resContainer[type];
     var resFun = resContainer[type+ 'Fn'];
-
     if (resContainer.lastRes && type in resContainer.lastRes) {
         return resContainer.lastRes[type] !== value;
         // return render_control_checkResChanged(resContainer.lastRes, type, value);
@@ -2091,32 +1904,25 @@ function render_control_checkResChanged(resContainer, type, value) {
     if (type === 'data') {
         return true;
     }
-
     if (valueType === 'function') {
         return !resFun || resFun.toString() !== value.toString();
     }
-
     /*if (type === 'tpl' || type === 'logic') {
         return !(resContainer[type + 'Fn'] && resContainer[type + 'Fn'] === require_runner(value)[0]);
     }*/
     if (type === 'children') {
         return !core_object_equals(res, value);
     }
-
     return res !== value;
 }
-
 var render_control_main_types = ['css', 'tpl', 'data', 'logic'];
 var render_control_main_realTypeMap = {
     tpl: 'tplFn',
     data: 'real_data',
     logic: 'logicFn'
 };
-
 var render_control_main_eventList = ['init', 'enter', 'leave', 'destroy'];
-
 function render_control_main(boxId) {
-
     //资源容器
     var resContainer = render_base_resContainer[boxId] = render_base_resContainer[boxId] || {
         boxId: boxId,
@@ -2127,15 +1933,12 @@ function render_control_main(boxId) {
         forceRender: false
     };
     var box = getElementById(boxId);
-
     //状态类型 newset|loading|ready
     //tpl,css,data,logic,children,render,
     //tplReady,cssReady,dataReady,logicReady,rendered,logicRunned
-
     var changeResList = {};
     var control = {
         id: boxId,
-
         setForceRender: function(_forceRender) {
             resContainer.forceRender = _forceRender;
         },
@@ -2191,14 +1994,10 @@ function render_control_main(boxId) {
                 core_notice_off(boxId + render_control_main_eventList[i]);
             }
             boxId = control._controller = resContainer = box = undefined;
-
         }
     };
-
     init();
-
     return control;
-
     function init() {
         resContainer.needToTriggerChildren = true;
         //状态
@@ -2208,16 +2007,13 @@ function render_control_main(boxId) {
         resContainer.logicReady = true;
         resContainer.rendered = true;
         resContainer.logicRunned = false;
-
         //第一层不能使用s-child与s-controller，只能通过render_run执行controller
         var type, attrValue;
         resContainer.lastRes = {};
         changeResList = {};
-
         for (var i = 0, l = render_control_main_types.length; i < l; ++i) {
             type = render_control_main_types[i];
             type !== 'data' && (resContainer.lastRes[type] = resContainer[type]);
-            
             if (box) {
                 attrValue = core_dom_getAttribute(box, 's-' + type);
                 if (attrValue) {
@@ -2242,7 +2038,6 @@ function render_control_main(boxId) {
         }
         resContainer.fromParent = false;
     }
-
     function deal() {
         resContainer.lastRes = null;
         var tplChanged = changeResList['tpl'];
@@ -2250,9 +2045,7 @@ function render_control_main(boxId) {
         var cssChanged = changeResList['css'];
         var logicChanged = changeResList['logic'];
         resContainer.childrenChanged = changeResList['children'];
-
         changeResList = {};
-
         if (tplChanged || dataChanged) {
             resContainer.rendered = false;
             resContainer.html = '';
@@ -2260,7 +2053,6 @@ function render_control_main(boxId) {
         } else {
             render_contorl_toTiggerChildren(resContainer);
         }
-
         if (tplChanged) {
             resContainer.tplReady = false;
         }
@@ -2275,7 +2067,6 @@ function render_control_main(boxId) {
         }
         !resContainer.tpl && delete resContainer.tplFn;
         !resContainer.logic && delete resContainer.logicFn;
-
         tplChanged && render_control_setTpl(resContainer);
         dataChanged && render_control_setData(resContainer, tplChanged);
         cssChanged && render_control_setCss(resContainer);
@@ -2283,16 +2074,13 @@ function render_control_main(boxId) {
         resContainer.childrenChanged && render_control_setChildren(resContainer);
     }
 }
-
 var render_run_controllerLoadFn = {};
 var render_run_rootScope = {};
 var render_run_renderingMap = {};
 var render_run_renderedTimer;
-
 core_notice_on('stageChange', function() {
     render_run_renderingMap = {};
 });
-
 core_notice_on('rendered', function(module) {
     delete render_run_renderingMap[module.boxId];
     if (render_run_renderedTimer) {
@@ -2305,7 +2093,6 @@ core_notice_on('rendered', function(module) {
         }
     // }, 44);
 });
-
 //controller的boot方法
 function render_run(stageBox, controller) {
     var stageBoxId, boxId, control, controllerLoadFn, controllerNs;
@@ -2314,9 +2101,7 @@ function render_run(stageBox, controller) {
     var routerType = router_router_get().type;
     var isMain = stageBox === mainBox;
     var renderFromStage;
-
     var lastBoxId;
-
     if (typeof stageBox === 'string') {
         stageBoxId = stageBox;
         stageBox = getElementById(stageBoxId);
@@ -2326,9 +2111,7 @@ function render_run(stageBox, controller) {
             stageBox.id = stageBoxId = render_base_idMaker();
         }
     }
-
     boxId = stageBoxId;
-    
     if (isMain) {
         boxId = render_stage(stageBoxId, routerType);
         renderFromStage = render_stage_ani(stageBoxId, '', function(currId, lastId, renderFromStage) {
@@ -2344,9 +2127,7 @@ function render_run(stageBox, controller) {
                 }
             }
         });
-
         core_notice_trigger('stageChange', getElementById(boxId), renderFromStage);
-        
         render_run_renderingMap[boxId] = true;
         if (!renderFromStage || routerType.indexOf('refresh') > -1) {
             async_controller();
@@ -2357,7 +2138,6 @@ function render_run(stageBox, controller) {
         render_run_renderingMap[boxId] = true;
         async_controller();
     }
-
     function async_controller() {
         //处理异步的controller
         render_run_controllerLoadFn[boxId] = undefined;
@@ -2383,7 +2163,6 @@ function render_run(stageBox, controller) {
         }
         ////
     }
-    
     function run_with_controllerobj(controllerobj) {
         controller = controllerobj || controller;
         if (stageBox !== document.body) {
@@ -2397,7 +2176,6 @@ function render_run(stageBox, controller) {
                 parentResContainer.childrenid[boxId] = true;
             }
         }
-
         control = render_base_controlCache[boxId];
         if (control) {
             if (control._controller === controller) {
@@ -2413,12 +2191,10 @@ function render_run(stageBox, controller) {
         if (controller) {
             control._controller = controller;
             controller(control, render_run_rootScope);
-            control.deal();
-            triggerEnter(true);
         }
-
+        control.deal();
+        triggerEnter(true);
     }
-
     function triggerEnter(isInit) {
         var transferData = router_history_state_get(router_router_transferData_key);
         if (isInit) {
@@ -2427,13 +2203,10 @@ function render_run(stageBox, controller) {
         core_notice_trigger(boxId + 'enter', transferData, isInit);
     }
 }
-
 //@Finrila 未处理hashchange事件
-
 var router_listen_queryTime = 5;
 var router_listen_count;
 var router_listen_lastStateIndex = undefined;
-
 function router_listen() {
     router_listen_lastStateIndex = router_history_getStateIndex();
     //绑定link
@@ -2477,7 +2250,6 @@ function router_listen() {
     }, 1000);
     //popstate 事件在第一次被绑定时也会触发，但不是100%，所以加了个延时
 }
-
 function router_listen_getHrefNode(el) {
     if (el && router_listen_count < router_listen_queryTime) {
         router_listen_count++;
@@ -2487,7 +2259,6 @@ function router_listen_getHrefNode(el) {
         return router_listen_getHrefNode(el.parentNode);
     }
 }
-
 function router_listen_handleHrefChenged(url) {
     router_base_prevHref = router_base_currentHref;
     router_history_state_set(router_router_prevHref_key, router_base_prevHref);
@@ -2499,12 +2270,10 @@ function router_listen_handleHrefChenged(url) {
         location.reload();
     }
 }
-
 //派发routerChange事件，返回router变化数据 @shaobo3
 function router_listen_fireRouterChange() {
     core_notice_trigger('routerChange', router_router_get());
 }
-
 //当前访问path的变量集合,以及location相关的解析结果
 var router_router_value;
 var router_router_transferData;
@@ -2512,7 +2281,6 @@ var router_router_isRouterAPICalled;
 var router_router_transferData_key = '-steel-router-transferData';
 var router_router_backNum_key = '-steel-router-backNum';
 var router_router_prevHref_key = '-steel-router-prevHref';
-
 var router_router = {
     get: router_router_get,
     push: router_router_push,
@@ -2522,9 +2290,7 @@ var router_router = {
     refresh: router_router_refresh,
     clearTransferData: router_router_clearTransferData
 };
-
 core_notice_on('popstate', router_router_onpopstate);
-
 function router_router_onpopstate() {
     if (router_router_isRouterAPICalled) {
         router_router_isRouterAPICalled = undefined;
@@ -2577,7 +2343,6 @@ function router_router_set(url, replace, data) {
     }
     router_router_transferData = data;
     url = core_fixUrl(router_router_get().url, url || '');
-    
     if (!router_base_singlePage || !core_crossDomainCheck(url)) {// || (android && history.length === 1)
         if (replace) {
             location.replace(url);
@@ -2601,7 +2366,6 @@ function router_router_set(url, replace, data) {
         router_listen_handleHrefChenged(url);
     }
 }
-
 /**
  * 单页面刷新
  * @return {undefined} 
@@ -2627,10 +2391,8 @@ function router_router_back(url, num, data, refresh) {
     num = options.num;
     data = options.data;
     refresh = options.refresh;
-
     router_router_transferData = data;
     num = (core_object_isNumber(num) && num > 0) ? num : 1;
-    
     if (router_base_singlePage) {
         if (router_history_getStateIndex() < num) {
             url && location.replace(core_fixUrl(router_router_get().url, url));
@@ -2663,15 +2425,12 @@ function router_router_back(url, num, data, refresh) {
         }
         return true;
     }
-
 }
-
 function router_router_clearTransferData() {
     if (router_base_singlePage) {
         router_history_state_set(router_router_transferData_key, undefined);
     }
 }
-
 /**
  * 内部使用的路由信息刷新方法
  * @return {object} 路由信息对象
@@ -2697,10 +2456,7 @@ function router_router_refreshValue() {
     }
     return router_router_value;
 }
-
-
 function resource_fixUrl(url, type) {
-
     switch(type) {
         case 'js':
             path = resource_jsPath;
@@ -2711,9 +2467,7 @@ function resource_fixUrl(url, type) {
         case 'ajax':
             path = resource_ajaxPath;
     }
-
     var currentRouter = router_router_get();
-     
     //匹配参数{id} -> ?id=2
     // var urlMatch = url.match(/\{(.*?)\}/g);
     if (type === 'ajax') {
@@ -2728,14 +2482,12 @@ function resource_fixUrl(url, type) {
         url = core_URL(url).setParams(urlParams).toString();
         url = url.charAt(0) === '/' ? url.slice(1) : url;
     }
-
     var result = resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
     if ((type === 'js' || type === 'css') && !RegExp('(\\.' + type + ')$').test(url)) {
         result += '.' + type;
     }
     return result;
 }
-
 function resource_fixUrl_handle(path, url, basePath, hrefPath) {
     return core_fixUrl(path || basePath || hrefPath, url);
 }/**
@@ -2746,8 +2498,6 @@ function core_asyncCall(fn, args) {
         fn.apply(undefined, args);
     });
 }
-
-
 /** 
  * 资源队列管理
  * @params
@@ -2757,15 +2507,12 @@ function core_asyncCall(fn, args) {
  * access 是否成功
  * data 资源数据
  */
-
 function resource_queue_create(url){
     resource_queue_list[url] = [];
 }
-
 function resource_queue_push(url, succ, err){
     resource_queue_list[url].push([succ, err]);
 }
-
 function resource_queue_run(url, access, data){
 	access = access ? 0 : 1;
     for(var i = 0, len = resource_queue_list[url].length; i < len; i++) {
@@ -2779,11 +2526,9 @@ function resource_queue_run(url, access, data){
         }
     }
 }
-
 function resource_queue_del(url) {
     url in resource_queue_list && (delete resource_queue_list[url]);
 }
-
 function loader_js(url, callback){
     var entityList = {};
     var opts = {
@@ -2792,11 +2537,8 @@ function loader_js(url, callback){
         'args': {},
         'isEncode' : false
     };
-    
     var js, requestTimeout;
-    
     var uniqueID = core_uniqueKey();
-    
     js = entityList[uniqueID];
     if (js != null && !IE) {
         core_dom_removeNode(js);
@@ -2805,7 +2547,6 @@ function loader_js(url, callback){
     if (js == null) {
         js = entityList[uniqueID] = core_dom_createElement('script');
     }
-    
     js.charset = opts.charset;
     js.id = 'scriptRequest_script_' + uniqueID;
     js.type = 'text/javascript';
@@ -2818,7 +2559,6 @@ function loader_js(url, callback){
                         head.removeChild(js);
                         js['onreadystatechange'] = null;
                     }catch(exp){
-                        
                     }
                     callback(true);
                 }
@@ -2832,32 +2572,24 @@ function loader_js(url, callback){
                 }catch(exp){}
                 callback(true);
             };
-            
         }
-        
     }
-    
     js.src = core_URL(url,{
         'isEncodeQuery' : opts['isEncode']
     }).setParams(opts.args).toString();
-    
     head.appendChild(js);
-    
     if (opts.timeout > 0) {
         requestTimeout = setTimeout(function(){
             try{
                 head.removeChild(js);
             }catch(exp){
-                
             }
             callback(false);
         }, opts.timeout);
     }
     return js;
 }
-
 var core_hideDiv_hideDiv;
-
 /*
  * 向隐藏容器添加节点
  * @method core_hideDiv_appendChild
@@ -2871,7 +2603,6 @@ function core_hideDiv_appendChild( el ) {
 	}
 	core_hideDiv_hideDiv.appendChild( el );
 }
-
 /*
  * 向隐藏容器添加节点
  * @method core_hideDiv_removeChild
@@ -2881,14 +2612,12 @@ function core_hideDiv_appendChild( el ) {
 function core_hideDiv_removeChild( el ) {
 	core_hideDiv_hideDiv && core_hideDiv_hideDiv.removeChild( el );
 }
-
 function loader_css(url, callback, load_ID) {
     var link = core_dom_createElement('link');
     var load_div = null;
     var domID = core_uniqueKey();
     var timer = null;
     var _rTime = 500;//5000毫秒
-
     core_dom_setAttribute(link, 'rel', 'Stylesheet');
     core_dom_setAttribute(link, 'type', 'text/css');
     core_dom_setAttribute(link, 'charset', 'utf-8');
@@ -2898,7 +2627,6 @@ function loader_css(url, callback, load_ID) {
     load_div = core_dom_createElement('div');
     core_dom_setAttribute(load_div, 'id', load_ID);
     core_hideDiv_appendChild(load_div);
-
     timer = function() {
         if (parseInt(window.getComputedStyle ? getComputedStyle(load_div, null)['height'] : load_div.currentStyle && load_div.currentStyle['height']) === 42) {
             core_hideDiv_removeChild(load_div);
@@ -2915,7 +2643,6 @@ function loader_css(url, callback, load_ID) {
     };
     setTimeout(timer, 50);
 }
-
 function loader_css_remove(load_ID) {
     var linkDom = getElementById('link_' + load_ID);
     if (linkDom) {
@@ -2933,7 +2660,6 @@ function loader_css_remove(load_ID) {
         'args': {},
         'onComplete': null,
         'onTimeout': null,
-        
         'onFail': null,
         'method': 'get', // post or get
         'asynchronous': true,
@@ -2943,12 +2669,9 @@ function loader_css_remove(load_ID) {
  * @return {Void} 
  * @example
  * loader_ajax(url, {//'url':'/ajax.php',
-    
     'args':{'id':123,'test':'true'},
     });
  */
-
-
 function loader_ajax(url, onComplete){//(url, callback)
     var opts = {
         'charset': 'UTF-8',
@@ -2957,7 +2680,6 @@ function loader_ajax(url, onComplete){//(url, callback)
         'onComplete': onComplete || emptyFunction,
         'onTimeout': emptyFunction,
         'uniqueID': null,
-        
         'onFail': emptyFunction,
         'method': 'get', // post or get
         'asynchronous': true,
@@ -2965,15 +2687,11 @@ function loader_ajax(url, onComplete){//(url, callback)
         'isEncode' : false,
         'responseType': 'json'// xml or text or json
     };
-    
     if (url == '') {
         throw 'ajax need url in parameters object';
     }
-    
     var tm;
-    
     var trans = getXHR();
-    
     var cback = function(){
         if (trans.readyState == 4) {
             clearTimeout(tm);
@@ -2985,7 +2703,6 @@ function loader_ajax(url, onComplete){//(url, callback)
             }else {
                 try{
                     if(trans.responseText && typeof trans.responseText === 'string'){
-                        
                         // data = $.core.json.strToJson(trans.responseText);
                         data = window['eval']('(' + trans.responseText + ')');
                     }else{
@@ -3015,14 +2732,12 @@ function loader_ajax(url, onComplete){//(url, callback)
         }*/
     };
     trans.onreadystatechange = cback;
-    
     if(!opts['header']['Content-Type']){
         opts['header']['Content-Type'] = 'application/x-www-form-urlencoded';
     }
     if(!opts['header']['X-Requested-With']){
         opts['header']['X-Requested-With'] = 'XMLHttpRequest';
     }
-    
     if (opts['method'].toLocaleLowerCase() == 'get') {
         var url = core_URL(url, {
             'isEncodeQuery' : opts['isEncode']
@@ -3035,10 +2750,8 @@ function loader_ajax(url, onComplete){//(url, callback)
                 trans.setRequestHeader(k, opts['header'][k]);
             }
         }catch(exp){
-        
         }
         trans.send('');
-        
     }
     else {
         trans.open(opts['method'], url, opts['asynchronous']);
@@ -3047,7 +2760,6 @@ function loader_ajax(url, onComplete){//(url, callback)
                 trans.setRequestHeader(k, opts['header'][k]);
             }
         }catch(exp){
-        
         }
         trans.send(core_jsonToQuery(opts['args'],opts['isEncode']));
     }
@@ -3058,11 +2770,9 @@ function loader_ajax(url, onComplete){//(url, callback)
                 opts['onTimeout']({}, trans);
                 callback(false, {}, trans);
             }catch(exp){
-                
             }
         }, opts['timeout']);
     }
-
     function getXHR(){
         var _XHR = false;
         try {
@@ -3085,10 +2795,8 @@ function loader_ajax(url, onComplete){//(url, callback)
     }
     return trans;
 }
-
 function resource_request(url, callback) {
     var apiRule = resource_define_apiRule || onComplete;
-
     function onComplete(req, params, callback) {
         if (req && req.code == '100000') {
             callback(true, req);
@@ -3101,9 +2809,7 @@ function resource_request(url, callback) {
         apiRule(req, params, callback);
     });
 }
-
 var resource_res_cssPrefix = 'S_CSS_';
-
 var resource_res = {
     js: function(name, succ, err) {
         resource_res_handle('js', name, succ, err);
@@ -3118,7 +2824,6 @@ var resource_res = {
         return loader_css_remove(resource_res_getCssId(name));
     }
 };
-
 function resource_res_handle(type, name, succ, err, cssId) {
     var hasProtocol = core_hasProtocol(name);
     var url = name, loader;
@@ -3150,11 +2855,9 @@ function resource_res_handle(type, name, succ, err, cssId) {
         resource_queue_del(url);
     }
 }
-
 function resource_res_getCssId(path) {
     return path && resource_res_cssPrefix + path.replace(/(\.css)$/i, '').replace(/\//g, '_');
 }
-
 //外部异步调用require方法
 function require_global(deps, complete, errcb, currNs, runDeps) {
     var depNs;
@@ -3180,7 +2883,6 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
             }(depNs);
         }
     }
-
     function check() {
         if (deps.length <= depDefined) {
             if (errored) {
@@ -3194,7 +2896,6 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
             }
         }
     }
-
     function checkDepDefined(depNs) {
         if (require_base_module_defined[depNs]) {
             depDefined++;
@@ -3210,12 +2911,10 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
         }
     }
 }
-
 //内部同步调用require方法
 function require_runner_makeRequire(currNs) {
     var basePath = core_urlFolder(currNs);
     return require;
-
     function require(ns) {
         if (core_object_typeof(ns) === 'array') {
             var paramList = core_array_makeArray(arguments);
@@ -3223,21 +2922,18 @@ function require_runner_makeRequire(currNs) {
             return require_global.apply(window, paramList);
         }
         ns = core_nameSpaceFix(ns, basePath);
-
         if (!require_base_module_defined[ns]) {
             throw 'Error: ns("' + ns + '") is undefined!';
         }
         return require_base_module_runed[ns];
     }
 }
-
 //运行define列表，并返回实例集
 function require_runner(pkg, basePath) {
     pkg = [].concat(pkg);
     var i, len;
     var ns, nsConstructor, module;
     var resultList = [];
-
     for (i = 0, len = pkg.length; i < len; i++) {
         ns = core_nameSpaceFix(pkg[i], basePath);
         nsConstructor = require_base_module_fn[ns];
@@ -3259,7 +2955,6 @@ function require_runner(pkg, basePath) {
     }
     return resultList;
 }
-
 //全局define
 function require_define(ns, deps, construtor) {
     if (require_base_module_defined[ns]) {
@@ -3282,12 +2977,8 @@ function require_define(ns, deps, construtor) {
         log('Debug: define ns("' + ns + '")');
     }
 }
-
  //暂不做
- 
-
 var resource_config_slash = '/';
-
 config_push(function (parseParamFn) {
     resource_jsPath = parseParamFn('jsPath', resource_jsPath);
     resource_cssPath = parseParamFn('cssPath', resource_cssPath);
@@ -3299,13 +2990,10 @@ config_push(function (parseParamFn) {
  /**
  * 渲染管理器的主页面
  */
-
-
 var render_render_stage = {
     getBox: render_stage_getBox,
     getScrollBox: render_stage_getScrollBox
 };
-
 config_push(function(parseParamFn) {
     if (isHTML5) {
         render_base_dataCache_usable = parseParamFn('dataCache', render_base_dataCache_usable);
@@ -3324,19 +3012,13 @@ config_push(function(parseParamFn) {
 });/**
  * 渲染的启动入口
  */
-
-
 function render_boot() {
-    
     render_stage_init();
-    
 }
  /**
  * 路由配置
  */
-
 config_push(router_config);
-
 function router_config(parseParamFn, config) {
   router_base_routerTable = parseParamFn('router', router_base_routerTable);
   // @Finrila hash模式处理不可用状态，先下掉
@@ -3360,8 +3042,6 @@ function router_config(parseParamFn, config) {
  * Turn an Express-style path string such as /user/:name into a regular expression.
  *
  */
-
-
 /**
  * 判断对象是否为数组
  * @param {Array} o
@@ -3376,8 +3056,6 @@ var core_array_isArray = Array.isArray ? function(arr) {
 } : function(arr){
 	return 'array' === core_object_typeof(arr);
 };
-
-
 /**
  * The main path matching regexp utility.
  *
@@ -3396,7 +3074,6 @@ var router_pathToRegexp_PATH_REGEXP = RegExp([
     // Match regexp special characters that are always escaped.
     '([.+*?=^!:${}()[\\]|\\/])'
 ].join('|'), 'g');
-
 /**
  * Escape the capturing group by escaping special characters and meaning.
  *
@@ -3406,7 +3083,6 @@ var router_pathToRegexp_PATH_REGEXP = RegExp([
 function router_pathToRegexp_escapeGroup(group) {
     return group.replace(/([=!:$\/()])/g, '\\$1');
 }
-
 /**
  * Attach the keys as a property of the regexp.
  *
@@ -3418,7 +3094,6 @@ function router_pathToRegexp_attachKeys(re, keys) {
     re.keys = keys;
     return re;
 }
-
 /**
  * Get the router_pathToRegexp_flags for a regexp from the options.
  *
@@ -3428,7 +3103,6 @@ function router_pathToRegexp_attachKeys(re, keys) {
 function router_pathToRegexp_flags(options) {
     return options.sensitive ? '' : 'i';
 }
-
 /**
  * Pull out keys from a regexp.
  *
@@ -3439,7 +3113,6 @@ function router_pathToRegexp_flags(options) {
 function router_pathToRegexp_regexpToRegexp(path, keys) {
     // Use a negative lookahead to match only capturing groups.
     var groups = path.source.match(/\((?!\?)/g);
-
     if (groups) {
         for (var i = 0; i < groups.length; i++) {
             keys.push({
@@ -3450,10 +3123,8 @@ function router_pathToRegexp_regexpToRegexp(path, keys) {
             });
         }
     }
-
     return router_pathToRegexp_attachKeys(path, keys);
 }
-
 /**
  * Transform an array into a regexp.
  *
@@ -3464,15 +3135,12 @@ function router_pathToRegexp_regexpToRegexp(path, keys) {
  */
 function router_pathToRegexp_arrayToRegexp(path, keys, options) {
     var parts = [];
-
     for (var i = 0; i < path.length; i++) {
         parts.push(router_pathToRegexp(path[i], keys, options).source);
     }
-
     var regexp = RegExp('(?:' + parts.join('|') + ')', router_pathToRegexp_flags(options));
     return router_pathToRegexp_attachKeys(regexp, keys);
 }
-
 /**
  * Replace the specific tags with regexp strings.
  *
@@ -3482,44 +3150,34 @@ function router_pathToRegexp_arrayToRegexp(path, keys, options) {
  */
 function router_pathToRegexp_replacePath(path, keys) {
     var index = 0;
-
     function replace(_, escaped, prefix, key, capture, group, suffix, escape) {
         if (escaped) {
             return escaped;
         }
-
         if (escape) {
             return '\\' + escape;
         }
-
         var repeat = suffix === '+' || suffix === '*';
         var optional = suffix === '?' || suffix === '*';
-
         keys.push({
             name: key || index++,
             delimiter: prefix || '/',
             optional: optional,
             repeat: repeat
         });
-
         prefix = prefix ? ('\\' + prefix) : '';
         capture = router_pathToRegexp_escapeGroup(capture || group || '[^' + (prefix || '\\/') + ']+?');
-
         if (repeat) {
             capture = capture + '(?:' + prefix + capture + ')*';
         }
-
         if (optional) {
             return '(?:' + prefix + '(' + capture + '))?';
         }
-
         // Basic parameter support.
         return prefix + '(' + capture + ')';
     }
-
     return path.replace(router_pathToRegexp_PATH_REGEXP, replace);
 }
-
 /**
  * Normalize the given path string, returning a regular expression.
  *
@@ -3534,27 +3192,22 @@ function router_pathToRegexp_replacePath(path, keys) {
  */
 function router_pathToRegexp(path, keys, options) {
     keys = keys || [];
-
     if (!core_array_isArray(keys)) {
         options = keys;
         keys = [];
     } else if (!options) {
         options = {};
     }
-
     if (path instanceof window.RegExp) {
         return router_pathToRegexp_regexpToRegexp(path, keys, options);
     }
-
     if (core_array_isArray(path)) {
         return router_pathToRegexp_arrayToRegexp(path, keys, options);
     }
-
     var strict = options.strict;
     var end = options.end !== false;
     var route = router_pathToRegexp_replacePath(path, keys);
     var endsWithSlash = path.charAt(path.length - 1) === '/';
-
     // In non-strict mode we allow a slash at the end of match. If the path to
     // match already ends with a slash, we remove it for consistency. The slash
     // is valid at the end of a path match, not in the middle. This is important
@@ -3562,7 +3215,6 @@ function router_pathToRegexp(path, keys, options) {
     if (!strict) {
         route = (endsWithSlash ? route.slice(0, -2) : route) + '(?:\\/(?=$))?';
     }
-
     if (end) {
         route += '$';
     } else {
@@ -3570,10 +3222,8 @@ function router_pathToRegexp(path, keys, options) {
         // possible by using a positive lookahead to the end or next path segment.
         route += strict && endsWithSlash ? '' : '(?=\\/|$)';
     }
-
     return router_pathToRegexp_attachKeys(RegExp('^' + route, router_pathToRegexp_flags(options)), keys);
 }
-
 function router_use(path, config) {
     var key, value, _results;
     if (typeof path === 'object' && !(path instanceof window.RegExp)) {
@@ -3595,9 +3245,6 @@ function router_use(path, config) {
         });
     }
 }
-
-
-
 function router_boot() {
     for (var i = 0, len = router_base_routerTable.length; i < len; i++) {
         var items = router_base_routerTable[i];
@@ -3610,9 +3257,6 @@ function router_boot() {
     //浏览器支持HTML5，且应用设置为单页面应用时，绑定路由侦听； @shaobo3
     isHTML5 && router_base_singlePage && router_listen();
 }
- 
- 
-
   config_push(function(parseParamFn, config) {
     isDebug = parseParamFn('debug', isDebug);
     logLevel = parseParamFn('logLevel', logLevel);
@@ -3624,7 +3268,6 @@ function router_boot() {
       mainBox = getElementById(mainBox);
     }
   });
-
   steel.d = require_define;
   steel.res = resource_res;
   steel.run = render_run;
@@ -3635,7 +3278,6 @@ function router_boot() {
   steel.setExtTplData = render_control_setExtTplData;
   steel.require = require_global;
   steel.config = config;
-
   steel.boot = function(ns) {
     steel.isDebug = isDebug;
     require_global(ns, function() {
@@ -3643,7 +3285,6 @@ function router_boot() {
       router_boot();
     });
   };
-
   steel._destroyByNode = function(node) {
     var id = node && node.id;
     var resContainer;
@@ -3652,14 +3293,11 @@ function router_boot() {
       render_control_destroyChildren(resContainer.toDestroyChildrenid);
     }
   };
-  
   core_notice_on('routerChange', function(routerValue) {
     var config = routerValue.config;
     var controller = config[1];
     render_run(mainBox, controller);
     log("Info: routerChange", mainBox, controller, routerValue.type);
   });
-
   window.steel = steel;
-
 }(window);
