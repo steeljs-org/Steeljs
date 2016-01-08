@@ -137,10 +137,9 @@ function render_run(stageBox, controller) {
         if (controller) {
             control._controller = controller;
             controller(control, render_run_rootScope);
-            control.deal();
-            triggerEnter(true);
         }
-
+        control.deal();
+        triggerEnter(true);
     }
 
     function triggerEnter(isInit) {
