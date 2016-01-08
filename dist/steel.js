@@ -2073,7 +2073,7 @@ function render_control_setData_toRender(data, resContainer, tplChanged) {
         resContainer.real_data = data;
         render_control_render(resContainer);
     } else {
-        render_control_triggerRendered(boxId);
+        render_control_triggerRendered(resContainer.boxId);
         render_contorl_toTiggerChildren(resContainer);
     }
 }
