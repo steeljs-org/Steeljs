@@ -4,6 +4,7 @@
 //import core/object/typeof
 //import core/nameSpaceFix
 //import core/urlFolder
+//import core/asyncCall
 
 //内部同步调用require方法
 function require_runner_makeRequire(currNs) {
@@ -17,9 +18,12 @@ function require_runner_makeRequire(currNs) {
             return require_global.apply(window, paramList);
         }
         ns = core_nameSpaceFix(ns, basePath);
-
         if (!require_base_module_defined[ns]) {
-            throw 'Error: ns("' + ns + '") is undefined!';
+            log('Error: ns("' + ns + '") is undefined!');
+            return;
+        }
+        if (!(ns in require_base_module_runed)) {
+            require_runner(ns);
         }
         return require_base_module_runed[ns];
     }
