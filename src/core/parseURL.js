@@ -23,7 +23,8 @@ function core_parseURL(url) {
     var results = parse_url.exec(url);
     var retJson = {};
     if (!results) {
-        throw 'parseURL:"' + url + '" is wrong!';
+        log('Error:parseURL:"' + url + '" is wrong!');
+        return;
     }
     for (var i = 0, len = names.length; i < len; i += 1) {
         retJson[names[i]] = results[i] || "";
