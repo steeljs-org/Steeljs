@@ -12,13 +12,12 @@
  */
 function core_array_clear(o){
     if (core_array_isArray(o)) {
-        throw 'the clear function needs an array as first parameter';
-    }
-    var result = [];
-    for (var i = 0, len = o.length; i < len; i += 1) {
-        if (!(core_array_findout([undefined,null,''],o[i]).length)) {
-            result.push(o[i]);
+        var result = [];
+        for (var i = 0, len = o.length; i < len; i += 1) {
+            if (!(core_array_findout([undefined,null,''],o[i]).length)) {
+                result.push(o[i]);
+            }
         }
+        return result;
     }
-    return result;
 };
