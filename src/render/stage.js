@@ -353,7 +353,7 @@ function render_stage_destroy(data, fromIndex, toIndex) {
                         try{
                             render_control_destroy(subId);
                         } catch(e) {
-                            throw e;
+                            log('Error: destroy subId(' + subId + ') error in stage!');
                         } finally {
                             core_dom_removeNode(getElementById(subId));
                         }
