@@ -11,8 +11,8 @@ render_control_setExtTplData_F.prototype.steel_s_data = render_control_sData;
 //用户扩展全局功能方法
 function render_control_setExtTplData(obj) {
     if (!core_object_isObject(obj)) {
-        throw 'The method "steel.setExtTplData(obj)" used in your app need an object as the param.';
+        log('Error:The method "steel.setExtTplData(obj)" used in your app need an object as the param.');
+        return;
     }
     render_control_setExtTplData_F.prototype = obj;
-    
 }
