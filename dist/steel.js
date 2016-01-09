@@ -144,7 +144,8 @@ function core_parseURL(url) {
     var results = parse_url.exec(url);
     var retJson = {};
     if (!results) {
-        throw 'parseURL:"' + url + '" is wrong!';
+        log('Error:parseURL:"' + url + '" is wrong!');
+        return;
     }
     for (var i = 0, len = names.length; i < len; i += 1) {
         retJson[names[i]] = results[i] || "";
@@ -1419,7 +1420,7 @@ function render_stage_destroy(data, fromIndex, toIndex) {
                         try{
                             render_control_destroy(subId);
                         } catch(e) {
-                            throw e;
+                            log('Error: destroy subId(' + subId + ') error in stage!');
                         } finally {
                             core_dom_removeNode(getElementById(subId));
                         }
@@ -1575,7 +1576,8 @@ render_control_setExtTplData_F.prototype.steel_s_data = render_control_sData;
 //用户扩展全局功能方法
 function render_control_setExtTplData(obj) {
     if (!core_object_isObject(obj)) {
-        throw 'The method "steel.setExtTplData(obj)" used in your app need an object as the param.';
+        log('Error:The method "steel.setExtTplData(obj)" used in your app need an object as the param.');
+        return;
     }
     render_control_setExtTplData_F.prototype = obj;
 }
@@ -2688,7 +2690,8 @@ function loader_ajax(url, onComplete){//(url, callback)
         'responseType': 'json'// xml or text or json
     };
     if (url == '') {
-        throw 'ajax need url in parameters object';
+        log('Error: ajax need url in parameters object');
+        return;
     }
     var tm;
     var trans = getXHR();
@@ -2910,7 +2913,7 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
             });
         }
     }
-}
+}
 //内部同步调用require方法
 function require_runner_makeRequire(currNs) {
     var basePath = core_urlFolder(currNs);
@@ -2923,7 +2926,11 @@ function require_runner_makeRequire(currNs) {
         }
         ns = core_nameSpaceFix(ns, basePath);
         if (!require_base_module_defined[ns]) {
-            throw 'Error: ns("' + ns + '") is undefined!';
+            log('Error: ns("' + ns + '") is undefined!');
+            return;
+        }
+        if (!(ns in require_base_module_runed)) {
+            require_runner(ns);
         }
         return require_base_module_runed[ns];
     }
