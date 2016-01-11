@@ -1471,7 +1471,7 @@ function render_stage_style_init() {
         styleTextArray.push('body{overflow:hidden;-webkit-overflow-scrolling : touch;}');//
         styleTextArray.push('.' + render_stage_ani_transition_class + '{-webkit-transition: -webkit-transform 0.4s ease-out;transition: transform 0.4s ease-out;}');
         styleTextArray.push('.' + render_stage_subNode_class + '{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;}');
-        styleTextArray.push('.' + render_stage_scroll_class + '{position:absolute;top:0;left:0;width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;-webkit-box-sizing : border-box;}');
+        styleTextArray.push('.' + render_stage_scroll_class + '{position:absolute;top:0;left:0;width:100%;height:100%;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;-webkit-box-sizing : border-box;}');
     }
     styleTextArray.push('.' + render_stage_fixed_class + '{position:fixed!important;}');
     var styleEl = core_dom_createElement('style');
@@ -1935,6 +1935,7 @@ function render_control_main(boxId) {
         forceRender: false
     };
     var box = getElementById(boxId);
+    var dealCalledByUser;
     //状态类型 newset|loading|ready
     //tpl,css,data,logic,children,render,
     //tplReady,cssReady,dataReady,logicReady,rendered,logicRunned
@@ -1944,10 +1945,8 @@ function render_control_main(boxId) {
         setForceRender: function(_forceRender) {
             resContainer.forceRender = _forceRender;
         },
-        get: function(url, type) {
-            var result = '';
-            /*if(type === 'tpl'){}*/
-            return result;
+        get: function(type) {
+            return resContainer && resContainer[type];
         },
         set: function(type, value, toDeal) {
             if (!boxId) {
@@ -1990,6 +1989,10 @@ function render_control_main(boxId) {
             changeResList['data'] = true;
             deal();
         },
+        /**
+         * 资源处理接口,用户可以使用这个接口主动让框架去分析资源进行处理
+         * @type {undefined}
+         */
         deal: deal,
         _destroy: function() {
             for (var i = render_control_main_eventList.length - 1; i >= 0; i--) {
@@ -2027,9 +2030,6 @@ function render_control_main(boxId) {
                     if (type in resContainer) {
                         delete resContainer[type];
                     }
-                    // if (render_control_main_realTypeMap[type] && render_control_main_realTypeMap[type] in resContainer) {
-                    //     delete resContainer[render_control_main_realTypeMap[type]];
-                    // }
                 }
             }
             if (resContainer.fromParent) {
@@ -2040,7 +2040,14 @@ function render_control_main(boxId) {
         }
         resContainer.fromParent = false;
     }
-    function deal() {
+    function deal(isSelfCall) {
+        if (isSelfCall) {
+            if (dealCalledByUser) {
+                return;
+            }
+        } else {
+            dealCalledByUser = true;
+        }
         resContainer.lastRes = null;
         var tplChanged = changeResList['tpl'];
         var dataChanged = changeResList['data'];
@@ -2194,7 +2201,7 @@ function render_run(stageBox, controller) {
             control._controller = controller;
             controller(control, render_run_rootScope);
         }
-        control.deal();
+        control.deal(true);
         triggerEnter(true);
     }
     function triggerEnter(isInit) {
