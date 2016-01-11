@@ -15,7 +15,6 @@ function router_hash_pushState(url, data) {
 function router_hash_replaceState(url, data) {
     var _newURL = router_hash_stringify(url, data);
     if (_newURL === location.href)  {
-        console.log("url没变化");
         router_base_dataSetFlag = false;
         router_base_routerSetFlag = false;
         return;

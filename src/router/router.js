@@ -213,3 +213,8 @@ function router_router_refreshValue() {
     }
     return router_router_value;
 }
+
+function router_router_initHash(){
+    router_history_state_set(router_history_stateIndex_key, router_router_value || 0);
+    router_history_replaceState(router_hash_parse().url);
+}

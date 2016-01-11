@@ -64,7 +64,7 @@ function router_history_state_get(key, defaultValue) {
 }
 //设置值到缓存中，并更改history.state的值
 function router_history_state_set(key, value) {
-    if (!value) return;//如果value是undefined或者0或者""或者null，不设置
+    if (value == undefined) return;//如果value是undefined不设置
     router_history_state_data = {};
     var state = router_base_useHash?router_hash_getState():router_state_getState();
     if (state) {
@@ -74,7 +74,7 @@ function router_history_state_set(key, value) {
     }
     core_object_extend(router_history_state_data, key, value);
     router_base_dataSetFlag = true;
-    console.log("router_base_dataSetFlag", router_base_dataSetFlag);
+    //console.log("router_base_dataSetFlag", router_base_dataSetFlag);
     router_history_replaceState(
         router_base_useHash?router_hash_parse().url:location.href
     );

@@ -53,8 +53,6 @@ function router_listen_popstateHandler(e){
 }
 
 function router_listen_hashchangeHandler(e){
-    console.log("router_base_dataSetFlag>>>", router_base_dataSetFlag);
-    console.log("router_base_routerSetFlag>>>", router_base_routerSetFlag);
     if (router_base_dataSetFlag) {
         router_base_dataSetFlag = false;
         return;
@@ -63,7 +61,6 @@ function router_listen_hashchangeHandler(e){
         router_base_routerSetFlag = false;
         return;
     }
-    console.log("***************hashchange");
     var _url = router_hash_parse().url;
     router_listen_eventHandler(_url);
 }
@@ -98,7 +95,6 @@ function router_listen_getHrefNode(el) {
 }
 
 function router_listen_handleRouterChanged(url) {
-    console.log("@@@@@@@@@@@@@@@router_listen_handleRouterChanged");
     router_base_prevHref = router_base_currentHref;
     router_history_state_set(router_router_prevHref_key, router_base_prevHref);
     router_base_currentHref = url;
