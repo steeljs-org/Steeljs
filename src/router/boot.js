@@ -17,7 +17,7 @@ function router_boot() {
     }
     router_router_clearTransferData();
     if (router_base_useHash) {
-        //hash模式下，只是更新一下url中的hash信息;
+        //hash模式下，只是更新一下url中的hash信息;会有两次刷新~
         router_router_initHash();
     }
     if (router_router_get(true).config) {

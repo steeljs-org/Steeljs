@@ -216,5 +216,6 @@ function router_router_refreshValue() {
 
 function router_router_initHash(){
     router_history_state_set(router_history_stateIndex_key, router_router_value || 0);
+    router_base_initHashFlag = true;
     router_history_replaceState(router_hash_parse().url);
 }

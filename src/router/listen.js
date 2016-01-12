@@ -61,6 +61,10 @@ function router_listen_hashchangeHandler(e){
         router_base_routerSetFlag = false;
         return;
     }
+    if (router_base_initHashFlag) {
+        router_base_initHashFlag = false;
+        return;
+    }
     var _url = router_hash_parse().url;
     router_listen_eventHandler(_url);
 }
