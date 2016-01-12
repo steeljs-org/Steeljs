@@ -33,14 +33,12 @@ var router_router = {
     clearTransferData: router_router_clearTransferData
 };
 
-!router_base_useHash && core_notice_on('popstate', router_router_onpopstate);
-router_base_useHash && core_notice_on('hashchange', router_router_onpopstate);
+core_notice_on('pophistory', router_router_onpopstate);
+
 function router_router_onpopstate() {
     if (router_router_isRouterAPICalled) {
         router_router_isRouterAPICalled = undefined;
-        router_base_useHash?
-            router_hash_state_set(router_router_transferData_key, router_router_transferData):
-            router_history_state_set(router_router_transferData_key, router_router_transferData);
+        router_history_state_set(router_router_transferData_key, router_router_transferData);
     } else {
         router_router_clearTransferData();
     }
@@ -100,22 +98,22 @@ function router_router_set(url, replace, data) {
     } else {
         if (replace) {
             router_base_routerType = 'replace';
-            router_base_useHash?
-                router_hash_replaceState(url):
-                router_history_replaceState(url);
+            router_base_routerSetFlag = true;
+            //console.log("router_base_routerSetFlag", router_base_routerSetFlag);
+            router_history_replaceState(url);
         } else {
             if (router_base_currentHref !== url) {
                 router_base_routerType = 'new';
-                router_base_useHash?
-                    router_hash_pushState(url):
-                    router_history_pushState(url);
+                router_base_routerSetFlag = true;
+                //console.log("router_base_routerSetFlag", router_base_routerSetFlag);
+                router_history_pushState(url);
             } else {
                 router_base_routerType = 'refresh';
             }
         }
         router_router_isRouterAPICalled = true;
         router_router_onpopstate();
-        router_listen_handleHrefChenged(url);
+        router_listen_handleRouterChanged(url);
     }
 }
 
@@ -149,23 +147,20 @@ function router_router_back(url, num, data, refresh) {
     num = (core_object_isNumber(num) && num > 0) ? num : 1;
     
     if (router_base_singlePage) {
-        var _stateIndex = router_base_useHash?
-            router_hash_getStateIndex():
-            router_history_getStateIndex();
-        if (_stateIndex < num) {
+        if (router_history_getStateIndex() < num) {
+            //是否替换；超出索引，不符合，直接拒掉呗。
             url && location.replace(core_fixUrl(router_router_get().url, url));
             return false;
         }
-        core_notice_on('popstate', function popstate() {
-            core_notice_off('popstate', popstate);
+        core_notice_on('pophistory', function popstate() {
+            core_notice_off('pophistory', popstate);
             var currentUrl = router_router_get().url;
             url = url && core_fixUrl(currentUrl, url);
             if (url && url !== currentUrl) {
                 if (core_crossDomainCheck(url)) {
                     router_base_routerType = 'refresh';
-                    router_base_useHash?
-                        router_hash_replaceState(url):
-                        router_history_replaceState(url);
+                    router_base_routerSetFlag = true;
+                    router_history_replaceState(url);
                     router_router_refreshValue();
                 } else {
                     location.replace(url);
@@ -190,9 +185,7 @@ function router_router_back(url, num, data, refresh) {
 
 function router_router_clearTransferData() {
     if (router_base_singlePage) {
-        router_base_useHash?
-            router_hash_state_set(router_router_transferData_key, undefined):
-            router_history_state_set(router_router_transferData_key, undefined);
+        router_history_state_set(router_router_transferData_key, undefined);
     }
 }
 
@@ -202,25 +195,16 @@ function router_router_clearTransferData() {
  */
 function router_router_refreshValue() {
     var lastRouterValue = router_router_value;
-    var index = router_base_useHash?
-        router_hash_getStateIndex():
-        router_history_getStateIndex();
+    var index = router_history_getStateIndex();
     router_router_value = router_parseURL();
     var path = router_router_value.path;
     router_router_value.path = isDebug ? path.replace(/\.(jade)$/g, '') : path;
     router_router_value.search = router_router_value.query;
     router_router_value.query = core_queryToJson(router_router_value.query);
     router_router_value.type = router_base_routerType;
-    router_router_value.prev = router_base_prevHref ||
-        (router_base_useHash?
-            router_hash_state_get(router_router_prevHref_key):
-            router_history_state_get(router_router_prevHref_key));
-    router_router_value.transferData = router_base_useHash?
-        router_hash_state_get(router_router_transferData_key):
-        router_history_state_get(router_router_transferData_key);
-    router_router_value.state = router_base_useHash?
-        router_hash_state():
-        router_history_state();
+    router_router_value.prev = router_base_prevHref || router_history_state_get(router_router_prevHref_key);
+    router_router_value.transferData = router_history_state_get(router_router_transferData_key);
+    router_router_value.state = router_history_state();
     router_router_value.index = index;
     router_router_value.lastIndex = lastRouterValue ? lastRouterValue.index : index;
     var matchResult = router_match(router_router_value);
@@ -229,4 +213,10 @@ function router_router_refreshValue() {
         router_router_value.param = matchResult.param;
     }
     return router_router_value;
+}
+
+function router_router_initHash(){
+    router_history_state_set(router_history_stateIndex_key, router_router_value || 0);
+    router_base_initHashFlag = true;
+    router_history_replaceState(router_hash_parse().url);
 }

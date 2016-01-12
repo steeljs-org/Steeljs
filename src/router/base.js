@@ -20,5 +20,8 @@ var router_base_routerType = 'init';
 var router_base_prevHref;
 var router_base_currentHref = location.toString();
 
-//历史记录变化的标志位，
-var router_base_noHistoryChange = false;
+//用户主动设置路由url标志位
+var router_base_hashChange = false;
+var router_base_routerSetFlag = false;
+var router_base_dataSetFlag = false;
+var router_base_initHashFlag = false;
