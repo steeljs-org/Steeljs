@@ -12,3 +12,7 @@ node_modules
 
 #rainer800
 distToDemo.sh
+Gruntfile.js
+./build/steel.js
+./dist/steel.js
+
