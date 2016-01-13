@@ -64,7 +64,7 @@ function router_history_state_get(key, defaultValue) {
 }
 //设置值到缓存中，并更改history.state的值
 function router_history_state_set(key, value) {
-    if (value == undefined) return;//如果value是undefined不设置
+    if (router_base_useHash && (value == undefined || value == "")) return;//如果value是undefined不设置
     router_history_state_data = {};
     var state = router_base_useHash?router_hash_getState():router_state_getState();
     if (state) {
