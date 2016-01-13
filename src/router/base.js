@@ -24,4 +24,3 @@ var router_base_currentHref = location.toString();
 var router_base_hashChange = false;
 var router_base_routerSetFlag = false;
 var router_base_dataSetFlag = false;
-var router_base_initHashFlag = false;
