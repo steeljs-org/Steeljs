@@ -6,6 +6,8 @@
 //import ./setCss
 //import ./setExtTplData
 //import ./destroy
+//import ./triggerRendered
+//import ./sData
 
 var render_control_render_moduleAttrName = 's-module';
 var render_control_render_moduleAttrValue = 'ismodule';
@@ -23,6 +25,7 @@ function render_control_render(resContainer) {
 
     var html = resContainer.html;
     if (!html) {
+        render_control_sData_setBoxId(boxId);
         var parseResultEle = null;
         var extTplData = new render_control_setExtTplData_F();
         var retData = extTplData;
@@ -56,25 +59,16 @@ function render_control_render(resContainer) {
         }
     }
     resContainer.html = html;
-    ////
-    //1. box存在，addHTML，运行logic，运行子队列（子模块addHTML）
-    //2. box不存在，则进入队列，待渲染
     ////@finrila 由于做场景管理时需要BOX是存在的，所以调整渲染子模块流程到写入HTML后再处理子模块，那么每个模块的box在页面上是一定存在的了
     var box = getElementById(boxId);
 
     render_control_destroyLogic(resContainer);
     render_control_destroy(resContainer.toDestroyChildrenid, false);
     box.innerHTML = html;
-    render_base_count--;
-    resContainer.rendered = true;
-    setTimeout(function() {
-        render_control_startLogic(resContainer);
-        render_control_handleChild(boxId, tplParseResult);
-    });
-    render_control_destroyCss(resContainer, true);
 
-    // 因为所有模块的Box必然存在，所以不需要有等待队列了
-    if (render_base_count <= 0) {
-        core_notice_trigger('allDomReady');
-    }
+    resContainer.rendered = true;
+    render_control_startLogic(resContainer);
+    render_control_handleChild(boxId, tplParseResult);
+    render_control_setCss_destroyCss(resContainer, true);
+    render_control_triggerRendered(boxId);
 }

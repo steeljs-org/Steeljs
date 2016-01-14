@@ -34,7 +34,7 @@ function loader_js(url, callback){
                 if (js.readyState.toLowerCase() == 'loaded' || js.readyState.toLowerCase() == 'complete') {
                     try{
                         clearTimeout(requestTimeout);
-                        getElementsByTagName("head")[0].removeChild(js);
+                        head.removeChild(js);
                         js['onreadystatechange'] = null;
                     }catch(exp){
                         
@@ -60,12 +60,12 @@ function loader_js(url, callback){
         'isEncodeQuery' : opts['isEncode']
     }).setParams(opts.args).toString();
     
-    getElementsByTagName("head")[0].appendChild(js);
+    head.appendChild(js);
     
     if (opts.timeout > 0) {
         requestTimeout = setTimeout(function(){
             try{
-                getElementsByTagName("head")[0].removeChild(js);
+                head.removeChild(js);
             }catch(exp){
                 
             }

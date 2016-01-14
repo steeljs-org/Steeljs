@@ -12,13 +12,10 @@ function require_define(ns, deps, construtor) {
     require_base_module_deps[ns] = construtor ? (deps || []) : [];
     require_base_module_fn[ns] = construtor || deps;
     deps = require_base_module_deps[ns];
-    
     if (deps.length > 0) {
-        setTimeout(function() {
-            require_global(deps, doDefine, function() {
-                log('Error: ns("' + ns + '") deps loaded error!', '');
-            }, ns, false);
-        });
+        require_global(deps, doDefine, function() {
+            log('Error: ns("' + ns + '") deps loaded error!', '');
+        }, ns, false);
     } else {
         doDefine();
     }

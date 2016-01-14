@@ -2,6 +2,7 @@
  * 销毁一个模块，样式，逻辑，节点
  */
 //import ../base
+//import ./sData
 //import render/control/setLogic
 //import render/control/setCss
 
@@ -31,11 +32,11 @@ function render_control_destroy_one(id, onlyRes) {
       delete render_base_controllerNs[id];
     }
   }
-
   if (resContainer) {
     render_control_destroyLogic(resContainer);
-    render_control_destroyCss(resContainer);
+    render_control_setCss_destroyCss(resContainer);
     render_control_destroy(resContainer.childrenid);
+    render_control_sData_delData(id);
     delete render_base_resContainer[id];
   }
 }

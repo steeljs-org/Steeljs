@@ -26,7 +26,7 @@ var render_control_main_realTypeMap = {
 var render_control_main_eventList = ['init', 'enter', 'leave', 'destroy'];
 
 function render_control_main(boxId) {
-    render_base_count++;
+
     //资源容器
     var resContainer = render_base_resContainer[boxId] = render_base_resContainer[boxId] || {
         boxId: boxId,
@@ -37,7 +37,7 @@ function render_control_main(boxId) {
         forceRender: false
     };
     var box = getElementById(boxId);
-    var toDoSetsTimer = null;
+    var dealCalledByUser;
 
     //状态类型 newset|loading|ready
     //tpl,css,data,logic,children,render,
@@ -50,29 +50,28 @@ function render_control_main(boxId) {
         setForceRender: function(_forceRender) {
             resContainer.forceRender = _forceRender;
         },
-        get: function(url, type) {
-            var result = '';
-            /*if(type === 'tpl'){}*/
-            return result;
+        get: function(type) {
+            return resContainer && resContainer[type];
         },
-        set: function(type, value) {
+        set: function(type, value, toDeal) {
             if (!boxId) {
                 return;
             }
             if (core_object_typeof(type) === 'object') {
+                toDeal = value;
                 for (var key in type) {
                     control.set(key, type[key]);
                 }
+                if (toDeal) {
+                    deal();
+                }
                 return;
             }
-
-            if (changeResList[type] = render_control_checkResChanged(resContainer, type, value)) {
-                resContainer[type] = value;
-                toDoSets();
-                return;
-            }
+            changeResList[type] = render_control_checkResChanged(resContainer, type, value);
             resContainer[type] = value;
-
+            if (changeResList[type] && toDeal) {
+                deal();
+            }
         },
         /**
          * 控制器事件
@@ -93,13 +92,18 @@ function render_control_main(boxId) {
                 resContainer.real_data = undefined;
             }
             changeResList['data'] = true;
-            toDoSets();
+            deal();
         },
+        /**
+         * 资源处理接口,用户可以使用这个接口主动让框架去分析资源进行处理
+         * @type {undefined}
+         */
+        deal: deal,
         _destroy: function() {
             for (var i = render_control_main_eventList.length - 1; i >= 0; i--) {
                 core_notice_off(boxId + render_control_main_eventList[i]);
             }
-            boxId = control._controller = resContainer = box = toDoSetsTimer = undefined;
+            boxId = control._controller = resContainer = box = undefined;
 
         }
     };
@@ -138,9 +142,6 @@ function render_control_main(boxId) {
                     if (type in resContainer) {
                         delete resContainer[type];
                     }
-                    // if (render_control_main_realTypeMap[type] && render_control_main_realTypeMap[type] in resContainer) {
-                    //     delete resContainer[render_control_main_realTypeMap[type]];
-                    // }
                 }
             }
             if (resContainer.fromParent) {
@@ -150,50 +151,53 @@ function render_control_main(boxId) {
             }
         }
         resContainer.fromParent = false;
-        toDoSets();
     }
 
-    function toDoSets() {
-        clearTimeout(toDoSetsTimer);
-        toDoSetsTimer = setTimeout(function() {
-            resContainer.lastRes = null;
-
-            var tplChanged = changeResList['tpl'];
-            var dataChanged = changeResList['data'];
-            var cssChanged = changeResList['css'];
-            var logicChanged = changeResList['logic'];
-            resContainer.childrenChanged = changeResList['children'];
-
-            changeResList = {};
-
-            if (tplChanged || dataChanged) {
-                resContainer.rendered = false;
-                resContainer.html = '';
-                resContainer.toDestroyChildrenid = core_object_clone(resContainer.childrenid);
-            } else {
-                render_contorl_toTiggerChildren(resContainer);
+    function deal(isSelfCall) {
+        if (isSelfCall) {
+            if (dealCalledByUser) {
+                return;
             }
+        } else {
+            dealCalledByUser = true;
+        }
+        
+        resContainer.lastRes = null;
+        var tplChanged = changeResList['tpl'];
+        var dataChanged = changeResList['data'];
+        var cssChanged = changeResList['css'];
+        var logicChanged = changeResList['logic'];
+        resContainer.childrenChanged = changeResList['children'];
 
-            if (tplChanged) {
-                resContainer.tplReady = false;
-            }
-            if (dataChanged) {
-                resContainer.dataReady = false;
-            }
-            if (cssChanged) {
-                resContainer.cssReady = false;
-            }
-            if (logicChanged) {
-                resContainer.logicReady = false;
-            }
-            !resContainer.tpl && delete resContainer.tplFn;
-            !resContainer.logic && delete resContainer.logicFn;
+        changeResList = {};
 
-            tplChanged && render_control_setTpl(resContainer);
-            dataChanged && render_control_setData(resContainer, tplChanged);
-            cssChanged && render_control_setCss(resContainer);
-            logicChanged && render_control_setLogic(resContainer);
-            resContainer.childrenChanged && render_control_setChildren(resContainer);
-        });
+        if (tplChanged || dataChanged) {
+            resContainer.rendered = false;
+            resContainer.html = '';
+            resContainer.toDestroyChildrenid = core_object_clone(resContainer.childrenid);
+        } else {
+            render_contorl_toTiggerChildren(resContainer);
+        }
+
+        if (tplChanged) {
+            resContainer.tplReady = false;
+        }
+        if (dataChanged) {
+            resContainer.dataReady = false;
+        }
+        if (cssChanged) {
+            resContainer.cssReady = false;
+        }
+        if (logicChanged) {
+            resContainer.logicReady = false;
+        }
+        !resContainer.tpl && delete resContainer.tplFn;
+        !resContainer.logic && delete resContainer.logicFn;
+
+        tplChanged && render_control_setTpl(resContainer);
+        dataChanged && render_control_setData(resContainer, tplChanged);
+        cssChanged && render_control_setCss(resContainer);
+        logicChanged && render_control_setLogic(resContainer);
+        resContainer.childrenChanged && render_control_setChildren(resContainer);
     }
 }

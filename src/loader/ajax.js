@@ -45,7 +45,8 @@ function loader_ajax(url, onComplete){//(url, callback)
     };
     
     if (url == '') {
-        throw 'ajax need url in parameters object';
+        log('Error: ajax need url in parameters object');
+        return;
     }
     
     var tm;
