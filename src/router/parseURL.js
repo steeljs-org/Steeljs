@@ -3,13 +3,8 @@
 //import ./base
 
 function router_parseURL(url) {
-    url = url || location.toString();
+    //这里只是针对url做路径处理，默认的也是hash中解析出来的url或者是base里的url；@shaobo3
+    url = url || router_base_useHash?router_hash_parse().url:location.toString();
     var result = core_parseURL(url);
-    // @Finrila hash模式处理不可用状态，先下掉
-    // var hash = result.hash;
-    // if (router_base_useHash && hash) {
-    //     //获取当前 hash后的 path
-    //     result = core_parseURL(core_fixUrl(url, hash));
-    // }
     return result;
 }

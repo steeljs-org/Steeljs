@@ -14,7 +14,6 @@ var render_base_resContainer = {};
 //渲染相关通知事件的前缀
 var render_base_notice_prefix = '-steel-render-';
 
-
 //sessionStorage级别 是否使用state缓存模块的数据内容
 var render_base_dataCache_usable = false;
 
@@ -32,6 +31,7 @@ var render_base_stageDefaultHTML = '';
 ////
 //是否启用进度条
 var render_base_loadingBar_usable = false;
+
 
 //boxid生成器 当参数为true时要求：1.必须唯一 2.同一页面同一模块的id必须是固定的
 function render_base_idMaker(supId) {

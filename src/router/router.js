@@ -13,6 +13,7 @@
 //import ./parseURL
 //import ./match
 //import ./history
+//import ./hash
 
 //当前访问path的变量集合,以及location相关的解析结果
 var router_router_value;
@@ -32,7 +33,7 @@ var router_router = {
     clearTransferData: router_router_clearTransferData
 };
 
-core_notice_on('popstate', router_router_onpopstate);
+core_notice_on('pophistory', router_router_onpopstate);
 
 function router_router_onpopstate() {
     if (router_router_isRouterAPICalled) {
@@ -43,6 +44,7 @@ function router_router_onpopstate() {
     }
     router_router_refreshValue();
 }
+
 /**
  * 获取当前路由信息
  * @return {object} 路由信息对象
@@ -96,10 +98,14 @@ function router_router_set(url, replace, data) {
     } else {
         if (replace) {
             router_base_routerType = 'replace';
+            router_base_routerSetFlag = true;
+            //console.log("router_base_routerSetFlag", router_base_routerSetFlag);
             router_history_replaceState(url);
         } else {
             if (router_base_currentHref !== url) {
                 router_base_routerType = 'new';
+                router_base_routerSetFlag = true;
+                //console.log("router_base_routerSetFlag", router_base_routerSetFlag);
                 router_history_pushState(url);
             } else {
                 router_base_routerType = 'refresh';
@@ -107,7 +113,7 @@ function router_router_set(url, replace, data) {
         }
         router_router_isRouterAPICalled = true;
         router_router_onpopstate();
-        router_listen_handleHrefChenged(url);
+        router_listen_handleRouterChanged(url);
     }
 }
 
@@ -142,16 +148,18 @@ function router_router_back(url, num, data, refresh) {
     
     if (router_base_singlePage) {
         if (router_history_getStateIndex() < num) {
+            //是否替换；超出索引，不符合，直接拒掉呗。
             url && location.replace(core_fixUrl(router_router_get().url, url));
             return false;
         }
-        core_notice_on('popstate', function popstate() {
-            core_notice_off('popstate', popstate);
+        core_notice_on('pophistory', function popstate() {
+            core_notice_off('pophistory', popstate);
             var currentUrl = router_router_get().url;
             url = url && core_fixUrl(currentUrl, url);
             if (url && url !== currentUrl) {
                 if (core_crossDomainCheck(url)) {
                     router_base_routerType = 'refresh';
+                    router_base_routerSetFlag = true;
                     router_history_replaceState(url);
                     router_router_refreshValue();
                 } else {
