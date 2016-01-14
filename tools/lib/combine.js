@@ -27,7 +27,7 @@ function _import( jsPath, basePath, importMap, notimportMap, parentFile ) {
 		} else {
 			return _import( _jsPath, basePath, importMap, notimportMap, jsPath );
 		}
-	} );
+	} ).replace(/(\n[\r \t]*)+(\n\r?)/g, '\n');
 	
 	function realImportPath(importName) {
 		if (/^\./.test(importName)) {
