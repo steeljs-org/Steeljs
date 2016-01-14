@@ -15,4 +15,5 @@ distToDemo.sh
 Gruntfile.js
 ./build/steel.js
 ./dist/steel.js
+./node_modules/
 
