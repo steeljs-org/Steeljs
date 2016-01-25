@@ -4,6 +4,7 @@
 
 
 function render_error() {
-	log(arguments);
-    core_notice_trigger.apply(undefined, ['renderError'].concat(core_array_makeArray(arguments)));
+    var args = core_array_makeArray(arguments);
+    log.apply(undefined, ['Error:'].concat(args));
+    core_notice_trigger.apply(undefined, ['renderError'].concat(args));
 }
