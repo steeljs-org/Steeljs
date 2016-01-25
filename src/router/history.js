@@ -35,7 +35,7 @@ function router_history_state_init() {
 }
 //获取当前的state
 function router_history_state() {
-    return core_object_isObject(history.state) ? history.state : {};
+    return history.state || {};
 }
 //获取下一个将要push页面的state数据
 function router_history_stateForPush() {

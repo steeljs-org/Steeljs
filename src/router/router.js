@@ -23,6 +23,9 @@ var router_router_backNum_key = '-steel-router-backNum';
 var router_router_prevHref_key = '-steel-router-prevHref';
 
 var router_router = {
+    fix: function(url) {
+        return core_fixUrl(router_router_get().url, url);
+    },
     get: router_router_get,
     push: router_router_push,
     replace: router_router_replace,
@@ -187,7 +190,10 @@ function router_router_clearTransferData() {
  */
 function router_router_refreshValue() {
     var lastRouterValue = router_router_value;
-    var index = router_history_getStateIndex();
+    var index = 0;
+    if (router_base_singlePage) {
+        index = router_history_getStateIndex()
+    }
     router_router_value = router_parseURL();
     var path = router_router_value.path;
     router_router_value.path = isDebug ? path.replace(/\.(jade)$/g, '') : path;
