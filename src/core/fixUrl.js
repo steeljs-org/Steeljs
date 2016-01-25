@@ -21,7 +21,7 @@ function core_fixUrl(baseUrl, path) {
     if (baseUrlJson.protocol) {
         origin = baseUrlJson.protocol + '//' + baseUrlJson.host + (baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port));
     } else {
-        origin = location.origin;
+        origin = origin = location.origin || location.toString().replace(/^([^\/]*\/\/[^\/]*)\/.*$/, '$1');
         baseUrl = origin + baseUrl;
     }
     var originPath = origin + '/';
