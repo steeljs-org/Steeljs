@@ -8,6 +8,7 @@
 //import core/nameSpaceFix
 
 var render_control_setCss_cssCache = {};//css容器
+var render_control_setCss_cssCallbackFn;
 
 function render_control_setCss(resContainer) {
     var cssCallbackFn;
@@ -32,8 +33,8 @@ function render_control_setCss(resContainer) {
     render_control_setCss_cssCache[css] = {};
     render_control_setCss_cssCache[css][boxId] = true;
 
-    var cb = cssCallbackFn = function(){
-        if(cb === cssCallbackFn) {
+    var cb = render_control_setCss_cssCallbackFn = function(){
+        if(cb === render_control_setCss_cssCallbackFn) {
             endTime = now();
             core_notice_trigger('cssTime', {
                 startTime: startTime,
