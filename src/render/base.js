@@ -22,7 +22,7 @@ var render_base_dataCache_usable = false;
 //场景最大个数
 var render_base_stage_maxLength = 10;
 //是否启用场景管理
-// var render_base_stage_usable = false;
+var render_base_stage_usable = false;
 //内存级：是否在浏览器中内存缓存启用了场景的页面内容，缓存后页面将由开发者主动刷新
 var render_base_stageCache_usable = false;
 //是否支持场景切换

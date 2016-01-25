@@ -53,7 +53,7 @@ function render_run(stageBox, controller) {
 
     boxId = stageBoxId;
     
-    if (isMain) {
+    if (render_base_stage_usable && isMain) {
         boxId = render_stage(stageBoxId, routerType);
         renderFromStage = render_stage_ani(stageBoxId, '', function(currId, lastId, renderFromStage) {
             if (currId !== lastId) {
@@ -78,6 +78,9 @@ function render_run(stageBox, controller) {
             render_control_triggerRendered(boxId);
         }
     } else {
+        if (isMain) {
+            core_notice_trigger('stageChange', getElementById(boxId), false);
+        }
         render_run_renderingMap[boxId] = true;
         async_controller();
     }

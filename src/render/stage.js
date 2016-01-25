@@ -401,6 +401,9 @@ function render_stage_data_get(stageBoxId, stateIndex) {
 }
 //fixed元素处理 解决动画时和动画后fixed节点抖动的问题
 function render_stage_style_init() {
+    if (!render_base_stage_usable) {
+        return;
+    }
     var styleTextArray = [];
     if (render_base_stageChange_usable) {
         styleTextArray.push('body{overflow:hidden;-webkit-overflow-scrolling : touch;}');//
