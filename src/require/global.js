@@ -38,7 +38,7 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
             if (errored) {
                 errcb();
             } else {
-                var runner_result;
+                var runner_result = [];
                 if (runDeps === undefined || runDeps === true) {
                     runner_result = require_runner(deps);
                 }
