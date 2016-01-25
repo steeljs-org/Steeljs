@@ -9,12 +9,12 @@ config_push(function(parseParamFn) {
             // return;
             //目前限制使用这个功能，这个限制会优先于用户的配置
             render_base_stage_usable = parseParamFn('stage', render_base_stage_usable);
-            // if (render_base_stage_usable) {
+            if (render_base_stage_usable) {
                 render_base_stageCache_usable = parseParamFn('stageCache', render_base_stageCache_usable);
                 render_base_stageChange_usable = parseParamFn('stageChange', render_base_stageChange_usable);
                 render_base_stageDefaultHTML = parseParamFn('stageDefaultHTML', render_base_stageDefaultHTML);
                 render_base_stage_maxLength = parseParamFn('stageMaxLength', render_base_stage_maxLength);
-            // }
+            }
         }
     }
 });
