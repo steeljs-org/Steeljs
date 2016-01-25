@@ -9,6 +9,7 @@
   //import require/index
   //import loader/index
   //import resource/index
+  //import resource/boot
   //import render/index
   //import router/index
   //import core/notice
@@ -40,6 +41,7 @@
   steel.boot = function(ns) {
     steel.isDebug = isDebug;
     require_global(ns, function() {
+      resource_boot();
       render_boot();
       router_boot();
     });
