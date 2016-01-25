@@ -2,17 +2,20 @@
 //import loader/ajax
 
 function resource_request(url, callback) {
-    var apiRule = resource_define_apiRule || onComplete;
+    return loader_ajax(url, function(response, params) {
+        resource_request_apiRule(url, response, params, callback);
+    });
+}
 
-    function onComplete(req, params, callback) {
-        if (req && req.code == '100000') {
-            callback(true, req);
-        }else {
-            log('Error: res data url("' + url + '") : The api error code is ' + (req && req.code) + '. The error reason is ' + (req && req.msg));
-            callback(false, req, params);
+function resource_request_apiRule(url, response, params, callback) {
+    if (resource_base_apiRule) {
+        resource_base_apiRule(response, params, callback);
+    } else {
+        if (response && response.code == '100000') {
+            callback(true, response);
+        } else {
+            log('Error: response data url("' + url + '") : The api error code is ' + (response && response.code) + '. The error reason is ' + (response && response.msg));
+            callback(false, response, params);
         }
     }
-    return loader_ajax(url, function(req, params) {
-        apiRule(req, params, callback);
-    });
 }
