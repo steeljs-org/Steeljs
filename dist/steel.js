@@ -249,7 +249,7 @@ function core_fixUrl(baseUrl, path) {
     if (baseUrlJson.protocol) {
         origin = baseUrlJson.protocol + '//' + baseUrlJson.host + (baseUrlJson.port === 80 ? '' : (':' + baseUrlJson.port));
     } else {
-        origin = location.origin;
+        origin = origin = location.origin || location.toString().replace(/^([^\/]*\/\/[^\/]*)\/.*$/, '$1');
         baseUrl = origin + baseUrl;
     }
     var originPath = origin + '/';
@@ -446,7 +446,7 @@ var resource_jsPath;
 var resource_cssPath;
 var resource_ajaxPath;
 var resource_basePath;
-var resource_define_apiRule;
+var resource_base_apiRule;
 var resource_base_version;
 //资源列表{url->[[access_cb, fail_cb],....]}
 var resource_queue_list = {};
@@ -749,7 +749,7 @@ function router_history_state_init() {
 }
 //获取当前的state
 function router_history_state() {
-    return core_object_isObject(history.state) ? history.state : {};
+    return history.state || {};
 }
 //获取下一个将要push页面的state数据
 function router_history_stateForPush() {
@@ -797,7 +797,7 @@ var render_base_dataCache_usable = false;
 //场景最大个数
 var render_base_stage_maxLength = 10;
 //是否启用场景管理
-// var render_base_stage_usable = false;
+var render_base_stage_usable = false;
 //内存级：是否在浏览器中内存缓存启用了场景的页面内容，缓存后页面将由开发者主动刷新
 var render_base_stageCache_usable = false;
 //是否支持场景切换
@@ -830,8 +830,9 @@ function core_array_makeArray( obj ) {
 	}
 }
 function render_error() {
-	log(arguments);
-    core_notice_trigger.apply(undefined, ['renderError'].concat(core_array_makeArray(arguments)));
+    var args = core_array_makeArray(arguments);
+    log.apply(undefined, ['Error:'].concat(args));
+    core_notice_trigger.apply(undefined, ['renderError'].concat(args));
 }/*
  * control核心逻辑
  *//*
@@ -1466,6 +1467,9 @@ function render_stage_data_get(stageBoxId, stateIndex) {
 }
 //fixed元素处理 解决动画时和动画后fixed节点抖动的问题
 function render_stage_style_init() {
+    if (!render_base_stage_usable) {
+        return;
+    }
     var styleTextArray = [];
     if (render_base_stageChange_usable) {
         styleTextArray.push('body{overflow:hidden;-webkit-overflow-scrolling : touch;}');//
@@ -1669,6 +1673,7 @@ function core_nameSpaceFix(id, basePath) {
     return id;
 }
 var render_control_setCss_cssCache = {};//css容器
+var render_control_setCss_cssCallbackFn;
 function render_control_setCss(resContainer) {
     var cssCallbackFn;
     var startTime = null;
@@ -1688,8 +1693,8 @@ function render_control_setCss(resContainer) {
     }
     render_control_setCss_cssCache[css] = {};
     render_control_setCss_cssCache[css][boxId] = true;
-    var cb = cssCallbackFn = function(){
-        if(cb === cssCallbackFn) {
+    var cb = render_control_setCss_cssCallbackFn = function(){
+        if(cb === render_control_setCss_cssCallbackFn) {
             endTime = now();
             core_notice_trigger('cssTime', {
                 startTime: startTime,
@@ -2121,7 +2126,7 @@ function render_run(stageBox, controller) {
         }
     }
     boxId = stageBoxId;
-    if (isMain) {
+    if (render_base_stage_usable && isMain) {
         boxId = render_stage(stageBoxId, routerType);
         renderFromStage = render_stage_ani(stageBoxId, '', function(currId, lastId, renderFromStage) {
             if (currId !== lastId) {
@@ -2144,6 +2149,9 @@ function render_run(stageBox, controller) {
             render_control_triggerRendered(boxId);
         }
     } else {
+        if (isMain) {
+            core_notice_trigger('stageChange', getElementById(boxId), false);
+        }
         render_run_renderingMap[boxId] = true;
         async_controller();
     }
@@ -2291,6 +2299,9 @@ var router_router_transferData_key = '-steel-router-transferData';
 var router_router_backNum_key = '-steel-router-backNum';
 var router_router_prevHref_key = '-steel-router-prevHref';
 var router_router = {
+    fix: function(url) {
+        return core_fixUrl(router_router_get().url, url);
+    },
     get: router_router_get,
     push: router_router_push,
     replace: router_router_replace,
@@ -2446,7 +2457,10 @@ function router_router_clearTransferData() {
  */
 function router_router_refreshValue() {
     var lastRouterValue = router_router_value;
-    var index = router_history_getStateIndex();
+    var index = 0;
+    if (router_base_singlePage) {
+        index = router_history_getStateIndex()
+    }
     router_router_value = router_parseURL();
     var path = router_router_value.path;
     router_router_value.path = isDebug ? path.replace(/\.(jade)$/g, '') : path;
@@ -2489,7 +2503,6 @@ function resource_fixUrl(url, type) {
             return '';
         });
         url = core_URL(url).setParams(urlParams).toString();
-        url = url.charAt(0) === '/' ? url.slice(1) : url;
     }
     var result = resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
     if ((type === 'js' || type === 'css') && !RegExp('(\\.' + type + ')$').test(url)) {
@@ -2537,128 +2550,6 @@ function resource_queue_run(url, access, data){
 }
 function resource_queue_del(url) {
     url in resource_queue_list && (delete resource_queue_list[url]);
-}
-function loader_js(url, callback){
-    var entityList = {};
-    var opts = {
-        'charset': 'UTF-8',
-        'timeout': 30 * 1000,
-        'args': {},
-        'isEncode' : false
-    };
-    var js, requestTimeout;
-    var uniqueID = core_uniqueKey();
-    js = entityList[uniqueID];
-    if (js != null && !IE) {
-        core_dom_removeNode(js);
-        js = null;
-    }
-    if (js == null) {
-        js = entityList[uniqueID] = core_dom_createElement('script');
-    }
-    js.charset = opts.charset;
-    js.id = 'scriptRequest_script_' + uniqueID;
-    js.type = 'text/javascript';
-    if (callback != null) {
-        if (IE) {
-            js['onreadystatechange'] = function(){
-                if (js.readyState.toLowerCase() == 'loaded' || js.readyState.toLowerCase() == 'complete') {
-                    try{
-                        clearTimeout(requestTimeout);
-                        head.removeChild(js);
-                        js['onreadystatechange'] = null;
-                    }catch(exp){
-                    }
-                    callback(true);
-                }
-            };
-        }
-        else {
-            js['onload'] = function(){
-                try{
-                    clearTimeout(requestTimeout);
-                    core_dom_removeNode(js);
-                }catch(exp){}
-                callback(true);
-            };
-        }
-    }
-    js.src = core_URL(url,{
-        'isEncodeQuery' : opts['isEncode']
-    }).setParams(opts.args).toString();
-    head.appendChild(js);
-    if (opts.timeout > 0) {
-        requestTimeout = setTimeout(function(){
-            try{
-                head.removeChild(js);
-            }catch(exp){
-            }
-            callback(false);
-        }, opts.timeout);
-    }
-    return js;
-}
-var core_hideDiv_hideDiv;
-/*
- * 向隐藏容器添加节点
- * @method core_hideDiv_appendChild
- * @private
- * @param {Element} el 节点
- */
-function core_hideDiv_appendChild( el ) {
-	if ( !core_hideDiv_hideDiv ) {
-		( core_hideDiv_hideDiv = core_dom_createElement( 'div' ) ).style.cssText = 'position:absolute;top:-9999px;';
-		head.appendChild( core_hideDiv_hideDiv );
-	}
-	core_hideDiv_hideDiv.appendChild( el );
-}
-/*
- * 向隐藏容器添加节点
- * @method core_hideDiv_removeChild
- * @private
- * @param {Element} el 节点
- */
-function core_hideDiv_removeChild( el ) {
-	core_hideDiv_hideDiv && core_hideDiv_hideDiv.removeChild( el );
-}
-function loader_css(url, callback, load_ID) {
-    var link = core_dom_createElement('link');
-    var load_div = null;
-    var domID = core_uniqueKey();
-    var timer = null;
-    var _rTime = 500;//5000毫秒
-    core_dom_setAttribute(link, 'rel', 'Stylesheet');
-    core_dom_setAttribute(link, 'type', 'text/css');
-    core_dom_setAttribute(link, 'charset', 'utf-8');
-    core_dom_setAttribute(link, 'id', 'link_' + load_ID);
-    core_dom_setAttribute(link, 'href', url);
-    head.appendChild(link);
-    load_div = core_dom_createElement('div');
-    core_dom_setAttribute(load_div, 'id', load_ID);
-    core_hideDiv_appendChild(load_div);
-    timer = function() {
-        if (parseInt(window.getComputedStyle ? getComputedStyle(load_div, null)['height'] : load_div.currentStyle && load_div.currentStyle['height']) === 42) {
-            core_hideDiv_removeChild(load_div);
-            callback(true);
-            return;
-        }
-        if (--_rTime > 0) {
-            setTimeout(timer, 10);
-        } else {
-            log('Error: css("' + url + '" timeout!');
-            core_hideDiv_removeChild(load_div);
-            callback(false);
-        }
-    };
-    setTimeout(timer, 50);
-}
-function loader_css_remove(load_ID) {
-    var linkDom = getElementById('link_' + load_ID);
-    if (linkDom) {
-        core_dom_removeNode(linkDom);
-        return true;
-    }
-    return false;
 }/**
  * make an ajax request
  * @alias loader_ajax
@@ -2806,26 +2697,277 @@ function loader_ajax(url, onComplete){//(url, callback)
     return trans;
 }
 function resource_request(url, callback) {
-    var apiRule = resource_define_apiRule || onComplete;
-    function onComplete(req, params, callback) {
-        if (req && req.code == '100000') {
-            callback(true, req);
-        }else {
-            log('Error: res data url("' + url + '") : The api error code is ' + (req && req.code) + '. The error reason is ' + (req && req.msg));
-            callback(false, req, params);
-        }
-    }
-    return loader_ajax(url, function(req, params) {
-        apiRule(req, params, callback);
+    return loader_ajax(url, function(response, params) {
+        resource_request_apiRule(url, response, params, callback);
     });
 }
+function resource_request_apiRule(url, response, params, callback) {
+    if (resource_base_apiRule) {
+        resource_base_apiRule(response, params, callback);
+    } else {
+        if (response && response.code == '100000') {
+            callback(true, response);
+        } else {
+            log('Error: response data url("' + url + '") : The api error code is ' + (response && response.code) + '. The error reason is ' + (response && response.msg));
+            callback(false, response, params);
+        }
+    }
+}
+var resource_preLoad_resMap = {};
+/**
+ * 支持两种资源的预加载
+ * css: link节点 s-preload-css="name1|name2|name3"
+ *     例如：<link s-preload-css="page/index" href="http://a.com/css/page/index.css?version=x" type="text/css" rel="stylesheet">
+ * data: script节点 s-preload-data="name1|name2|name3"
+ *     例：
+ *        1. jsonp方式
+ *           <script s-preload-data="/aj/index?page=2" s-preload-data-property="index_data" type="text/javascript">
+ *               function index_callback(data) {
+ *                   index_data = data;
+ *               }
+ *           </script>
+ *           <script type="text/javascript" src="http://a.com/aj/index?page=2&callback=index_callback" async="async"></script>
+ *        2. ajax方式
+ *           <script s-preload-data="/aj/index?page=2" s-preload-data-property="index_data" type="text/javascript">
+ *               //ajax方法定义
+ *               ajax('/aj/index?page=2', function(data) {
+ *                   index_data = data;
+ *               }, function() {
+ *                   index_data = false;
+ *               })
+ *           </script>
+ */
+function resource_preLoad_bootLoad() {
+    var links = getElementsByTagName('link');
+    for (var i = links.length - 1; i >= 0; i--) {
+        var preloadCss = links[i].getAttribute('s-preload-css');
+        if (preloadCss) {
+            preloadCss = preloadCss.replace(/&amp;/gi, '&');
+            var cssUrls = preloadCss.split('|');
+            for (var j = cssUrls.length - 1; j >= 0; j--) {
+                resource_preLoad_setRes(cssUrls[j], 'css', true, true);
+            }
+        }
+    }
+    var scripts = getElementsByTagName('script');
+    for (var i = scripts.length - 1; i >= 0; i--) {
+        var preloadData = scripts[i].getAttribute('s-preload-data');
+        var preloadDataProperty = scripts[i].getAttribute('s-preload-data-property');
+        if (preloadData) {
+            preloadData = preloadData.replace(/&amp;/gi, '&');
+            resource_preLoad_bootLoad_data(preloadData, preloadDataProperty);
+        }
+    }
+}
+function resource_preLoad_bootLoad_data(url, property) {
+    resource_preLoad_setRes(url, 'ajax', false);
+    check();
+    function check() {
+        if (property in window) {
+            var resource = resource_preLoad_resMap[url];
+            resource.complete = true;
+            var response = window[property];
+            var success = resource_request_apiRule(url, response, {}, function(success, response) {
+                var callbackList = resource[success ? 'onsuccess' : 'onfail'];
+                resource[success ? 'success' : 'fail'] = response;
+                for (var i = 0, l = callbackList.length; i < l; i++) {
+                    callbackList[i] && callbackList[i](response);
+                }
+            });
+        } else {
+            setTimeout(check, 19);
+        }
+    }
+}
+function resource_preLoad_setRes(url, type, complete, success, fail) {
+    resource_preLoad_resMap[url] = {
+        type: type,
+        complete: complete,
+        success: success,
+        fail: fail,
+        onsuccess: [],
+        onfail: []
+    };
+}
+// /**
+//  * 资源预加载
+//  * @param  {array} resArray 资源数组 [{url, type}]
+//  * @return {undefined}   
+//  */
+// function resource_preLoad(resArray) {
+//     if (router_router_get().type === 'init') {
+//         if (core_array_isArray(resArray)) {
+//             for (var i = resArray.length - 1; i >= 0; i--) {
+//                 var res = resArray[i];
+//                 resource_preLoad_resMap[res.url] = {
+//                     type: res.type,
+//                     complete: false
+//                 };
+//             }
+//         }
+//         for(var url in resource_preLoad_resMap) {
+//             resource_preLoad_doLoad(url);
+//         }
+//     }
+// }
+/**
+ * 得到预加载的资源
+ * @param  {string} url 
+ */
+function resource_preLoad_get(url) {
+    return resource_preLoad_resMap[url];
+}
+// /**
+//  * 加载
+//  */
+// function resource_preLoad_doLoad(url) {
+//     var urlObj = resource_preLoad_resMap[url];
+//     resource_res_do(urlObj.type, url, function() {
+//         urlObj.complete = true;
+//         urlObj.success = arguments;
+//     }, function() {
+//         urlObj.complete = true;
+//         urlObj.fail = arguments;
+//     }, urlObj.type === 'css' ? resource_res_getCssId(url) : '');
+// }
+function loader_js(url, callback){
+    var entityList = {};
+    var opts = {
+        'charset': 'UTF-8',
+        'timeout': 30 * 1000,
+        'args': {},
+        'isEncode' : false
+    };
+    var js, requestTimeout;
+    var uniqueID = core_uniqueKey();
+    js = entityList[uniqueID];
+    if (js != null && !IE) {
+        core_dom_removeNode(js);
+        js = null;
+    }
+    if (js == null) {
+        js = entityList[uniqueID] = core_dom_createElement('script');
+    }
+    js.charset = opts.charset;
+    js.id = 'scriptRequest_script_' + uniqueID;
+    js.type = 'text/javascript';
+    if (callback != null) {
+        if (IE) {
+            js['onreadystatechange'] = function(){
+                if (js.readyState.toLowerCase() == 'loaded' || js.readyState.toLowerCase() == 'complete') {
+                    try{
+                        clearTimeout(requestTimeout);
+                        head.removeChild(js);
+                        js['onreadystatechange'] = null;
+                    }catch(exp){
+                    }
+                    callback(true);
+                }
+            };
+        }
+        else {
+            js['onload'] = function(){
+                try{
+                    clearTimeout(requestTimeout);
+                    core_dom_removeNode(js);
+                }catch(exp){}
+                callback(true);
+            };
+        }
+    }
+    js.src = core_URL(url,{
+        'isEncodeQuery' : opts['isEncode']
+    }).setParams(opts.args).toString();
+    head.appendChild(js);
+    if (opts.timeout > 0) {
+        requestTimeout = setTimeout(function(){
+            try{
+                head.removeChild(js);
+            }catch(exp){
+            }
+            callback(false);
+        }, opts.timeout);
+    }
+    return js;
+}
+var core_hideDiv_hideDiv;
+/*
+ * 向隐藏容器添加节点
+ * @method core_hideDiv_appendChild
+ * @private
+ * @param {Element} el 节点
+ */
+function core_hideDiv_appendChild( el ) {
+	if ( !core_hideDiv_hideDiv ) {
+		( core_hideDiv_hideDiv = core_dom_createElement( 'div' ) ).style.cssText = 'position:absolute;top:-9999px;';
+		head.appendChild( core_hideDiv_hideDiv );
+	}
+	core_hideDiv_hideDiv.appendChild( el );
+}
+/*
+ * 向隐藏容器添加节点
+ * @method core_hideDiv_removeChild
+ * @private
+ * @param {Element} el 节点
+ */
+function core_hideDiv_removeChild( el ) {
+	core_hideDiv_hideDiv && core_hideDiv_hideDiv.removeChild( el );
+}
+function loader_css(url, callback, load_ID) {
+    var load_div = null;
+    var domID = core_uniqueKey();
+    var timer = null;
+    var _rTime = 500;//5000毫秒
+    load_div = core_dom_createElement('div');
+    core_dom_setAttribute(load_div, 'id', load_ID);
+    core_hideDiv_appendChild(load_div);
+    if (check()) {
+        return;
+    }
+    var link = core_dom_createElement('link');
+    core_dom_setAttribute(link, 'rel', 'Stylesheet');
+    core_dom_setAttribute(link, 'type', 'text/css');
+    core_dom_setAttribute(link, 'charset', 'utf-8');
+    core_dom_setAttribute(link, 'id', 'link_' + load_ID);
+    core_dom_setAttribute(link, 'href', url);
+    head.appendChild(link);
+    timer = function() {
+        if (check()) {
+            return;
+        }
+        if (--_rTime > 0) {
+            setTimeout(timer, 10);
+        } else {
+            log('Error: css("' + url + '" timeout!');
+            core_hideDiv_removeChild(load_div);
+            callback(false);
+        }
+    };
+    setTimeout(timer, 50);
+    function check() {
+        var result = parseInt(window.getComputedStyle ? getComputedStyle(load_div, null)['height'] : load_div.currentStyle && load_div.currentStyle['height']) === 42;
+        if (result) {
+            load_div && core_hideDiv_removeChild(load_div);
+            callback(true);
+        }
+        return result;
+    }
+}
+function loader_css_remove(load_ID) {
+    var linkDom = getElementById('link_' + load_ID);
+    if (linkDom) {
+        core_dom_removeNode(linkDom);
+        return true;
+    }
+    return false;
+}
 var resource_res_cssPrefix = 'S_CSS_';
 var resource_res = {
     js: function(name, succ, err) {
         resource_res_handle('js', name, succ, err);
     },
     css: function(name, succ, err) {
-        resource_res_handle('css', name, succ, err, resource_res_getCssId(name));
+        resource_res_handle('css', name, succ, err);
     },
     get: function(name, succ, err) {
         resource_res_handle('ajax', name, succ, err);
@@ -2834,7 +2976,29 @@ var resource_res = {
         return loader_css_remove(resource_res_getCssId(name));
     }
 };
-function resource_res_handle(type, name, succ, err, cssId) {
+function resource_res_handle(type, name, succ, err) {
+    var nameObj = resource_preLoad_get(name);
+    log('Info:', name, !!nameObj);
+    if (router_router_get().type === 'init' && nameObj) {
+        if (nameObj.complete) {
+            if (nameObj.success) {
+                succ && succ.apply(undefined, [].concat(nameObj.success));
+            } else {
+                err && err.apply(undefined, [].concat(nameObj.fail));
+            }
+        } else {
+            nameObj.onsuccess.push(succ);
+            nameObj.onfail.push(err);
+        }
+    } else {
+        resource_res_do(type, name, succ, err);
+    }
+}
+function resource_res_do(type, name, succ, err) {
+    var cssId;
+    if (type === 'css') {
+        cssId = resource_res_getCssId(name);
+    }
     var hasProtocol = core_hasProtocol(name);
     var url = name, loader;
     if (!hasProtocol) {
@@ -2898,7 +3062,7 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
             if (errored) {
                 errcb();
             } else {
-                var runner_result;
+                var runner_result = [];
                 if (runDeps === undefined || runDeps === true) {
                     runner_result = require_runner(deps);
                 }
@@ -2998,9 +3162,12 @@ config_push(function (parseParamFn) {
     resource_cssPath = parseParamFn('cssPath', resource_cssPath);
     resource_ajaxPath = parseParamFn('ajaxPath', resource_ajaxPath);
     resource_basePath = parseParamFn('basePath', resource_config_slash);
-    resource_define_apiRule = parseParamFn('defApiRule', resource_define_apiRule);
+    resource_base_apiRule = parseParamFn('defApiRule', resource_base_apiRule);
     resource_base_version = parseParamFn('version', resource_base_version);
 });
+function resource_boot() {
+    resource_preLoad_bootLoad();
+}
  /**
  * 渲染管理器的主页面
  */
@@ -3014,13 +3181,13 @@ config_push(function(parseParamFn) {
         if ((iphone && iphoneVersion >= 8.0 && webkit) || (android && androidVersion >= 4.4 && webkit)) {
             // return;
             //目前限制使用这个功能，这个限制会优先于用户的配置
-            // render_base_stage_usable = parseParamFn('stage', render_base_stage_usable);
-            // if (render_base_stage_usable) {
+            render_base_stage_usable = parseParamFn('stage', render_base_stage_usable);
+            if (render_base_stage_usable) {
                 render_base_stageCache_usable = parseParamFn('stageCache', render_base_stageCache_usable);
                 render_base_stageChange_usable = parseParamFn('stageChange', render_base_stageChange_usable);
                 render_base_stageDefaultHTML = parseParamFn('stageDefaultHTML', render_base_stageDefaultHTML);
                 render_base_stage_maxLength = parseParamFn('stageMaxLength', render_base_stage_maxLength);
-            // }
+            }
         }
     }
 });/**
@@ -3295,6 +3462,7 @@ function router_boot() {
   steel.boot = function(ns) {
     steel.isDebug = isDebug;
     require_global(ns, function() {
+      resource_boot();
       render_boot();
       router_boot();
     });
