@@ -32,7 +32,6 @@ function resource_fixUrl(url, type) {
             return '';
         });
         url = core_URL(url).setParams(urlParams).toString();
-        url = url.charAt(0) === '/' ? url.slice(1) : url;
     }
 
     var result = resource_fixUrl_handle(path, url, resource_basePath, currentRouter.url.replace(/\/([^\/]+)$/, '/'));
