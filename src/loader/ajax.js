@@ -27,16 +27,16 @@
 //import core/jsonToQuery
 //import core/object/parseParam
 
-function loader_ajax(url, onComplete){//(url, callback)
+function loader_ajax(url, onComplete, onFail){//(url, callback)
     var opts = {
         'charset': 'UTF-8',
         'timeout': 30 * 1000,
         'args': {},
         'onComplete': onComplete || emptyFunction,
-        'onTimeout': emptyFunction,
+        'onTimeout': onFail || emptyFunction,
         'uniqueID': null,
         
-        'onFail': emptyFunction,
+        'onFail': onFail || emptyFunction,
         'method': 'get', // post or get
         'asynchronous': true,
         'header' : {},
