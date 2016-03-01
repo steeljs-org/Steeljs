@@ -1,5 +1,6 @@
 //import ./uniqueID
 //import ./array/indexOf
+//import ./array/makeArray
 
 var core_notice_data_SLKey = '_N';
 var core_notice_data = steel[ core_notice_data_SLKey ] = steel[ core_notice_data_SLKey ] || {};
@@ -50,7 +51,8 @@ function core_notice_off( type, fn ) {
  */
 function core_notice_trigger( type ) {
 	var typeArray = core_notice_find( type );
-	var args = [].slice.call(arguments, 1);
+	var args = core_array_makeArray(arguments);
+	args = args.slice(1, args.length);
 	for ( var i = typeArray.length - 1; i > -1; i-- ) {
 		try {
 			typeArray[ i ] && typeArray[ i ].apply( undefined, args );
