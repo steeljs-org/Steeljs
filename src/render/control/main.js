@@ -23,7 +23,13 @@ var render_control_main_realTypeMap = {
     logic: 'logicFn'
 };
 
-var render_control_main_eventList = ['init', 'enter', 'leave', 'destroy'];
+var render_control_main_eventList = [
+  'init',//模块初始化
+  'enter',//模块从其他模块切换进入（不一定只发生在初始化时）
+  'leave',//模块离开（不一定销毁）
+  'error',//模块运行时错误，类型资源错误（data,tpl,css,logic）、渲染错误(render)、逻辑运行错误(run,runLogic)
+  'destroy'//模块销毁事件
+  ];
 
 function render_control_main(boxId) {
 

@@ -13,6 +13,7 @@
 //import core/event/removeEventListener
 //import core/event/eventFix
 //import core/math/distance
+//import core/dom/className
 //import router/history
 
 var render_stage_data = {}; //stageBoxId -> {curr:index, last:index, subs:[]}
@@ -23,8 +24,6 @@ var render_stage_ani_transition_class = 'steel-stage-transform';
 var render_stage_scroll_class = 'steel-render-stage-scroll';
 var render_stage_fixed_class = 'steel-render-stage-fixed';
 var render_stage_subNode_class = 'steel-stage-sub';
-var render_stage_subNode_className = render_stage_subNode_class;
-var render_stage_subNode_transition_className = render_stage_ani_transition_class + ' ' + render_stage_subNode_class;
 //状态变量区域
 var render_stage_webkitTransitionDestroyFn;
 var render_stage_ani_doing;
@@ -260,8 +259,8 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
             setTimeout(function() {
                 currNode.style.WebkitTransform = 'translate3d(' + (-currLeft) + 'px, 0, 0)';
                 lastNode.style.WebkitTransform = 'translate3d(' + (goForward ? -winWidth/3 : winWidth) + 'px, 0, 0)';
-                core_dom_setAttribute(currNode, 'class', render_stage_subNode_transition_className);
-                core_dom_setAttribute(lastNode, 'class', render_stage_subNode_transition_className);
+                core_dom_className(currNode, render_stage_ani_transition_class);
+                core_dom_className(lastNode, render_stage_ani_transition_class);
                 core_event_addEventListener(node, 'webkitTransitionEnd', node_webkitTransitionEnd);
             }, 199);
 
@@ -279,8 +278,8 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
                 }
                 render_stage_webkitTransitionDestroyFn = false;
                 core_event_removeEventListener(node, 'webkitTransitionEnd', node_webkitTransitionEnd);
-                core_dom_setAttribute(currNode, 'class', render_stage_subNode_className);
-                core_dom_setAttribute(lastNode, 'class', render_stage_subNode_className);
+                core_dom_className(currNode, undefined, render_stage_ani_transition_class);
+                core_dom_className(lastNode, undefined, render_stage_ani_transition_class);
                 currNode.style.cssText = '';
                 lastNode.style.cssText = 'display:none';
                 render_stage_style_rewrite();
@@ -371,7 +370,7 @@ function render_stage_data_newsub(node, data, stateIndex) {
     var subId = render_base_idMaker();
     var subNode = core_dom_createElement('div');
     subNode.id = subId;
-    core_dom_setAttribute(subNode, 'class', render_stage_subNode_className);
+    core_dom_className(subNode, render_stage_subNode_class);
     core_dom_setAttribute(subNode, 's-stage-sub', 'true');
     subNode.innHTML = render_base_stageDefaultHTML;
     subNode.style.display = 'none';

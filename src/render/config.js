@@ -17,4 +17,5 @@ config_push(function(parseParamFn) {
             }
         }
     }
+    render_base_useCssPrefix_usable = parseParamFn('useCssPrefix', render_base_useCssPrefix_usable);
 });

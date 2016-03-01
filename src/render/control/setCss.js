@@ -6,6 +6,8 @@
 //import ./render
 //import core/notice
 //import core/nameSpaceFix
+//import core/dom/className
+//import ./triggerError
 
 var render_control_setCss_cssCache = {};//css容器
 var render_control_setCss_cssCallbackFn;
@@ -21,9 +23,14 @@ function render_control_setCss(resContainer) {
         return;
     }
     var boxId = resContainer.boxId;
+    var box;
+    var cssId;
     var controllerNs = render_base_controllerNs[boxId];
     var css = core_nameSpaceFix(resContainer.css, controllerNs);
-
+    //给模块添加css前缀
+    if (render_base_useCssPrefix_usable && (box = getElementById(boxId)) && (cssId = resource_res_getCssId(css))) {
+        core_dom_className(box, cssId);
+    }
     if (render_control_setCss_cssCache[css]) {
         render_control_setCss_cssCache[css][boxId] = true;
         cssReady();
@@ -46,9 +53,9 @@ function render_control_setCss(resContainer) {
         }
     };
     startTime = now();
-    css && resource_res.css(css, cb, function() {
-        log('Error: css("' + css + '" load error!');
+    resource_res.css(css, cb, function() {
         cssReady();
+        render_control_triggerError(resContainer, 'css', css);
     });
     function cssReady() {
         resContainer.cssReady = true;

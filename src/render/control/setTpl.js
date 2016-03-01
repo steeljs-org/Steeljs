@@ -4,6 +4,7 @@
 //import ../error
 //import ./render
 //import core/notice
+//import ./triggerError
 
 function render_control_setTpl(resContainer) {
     var controllerNs = render_base_controllerNs[resContainer.boxId];
@@ -33,7 +34,10 @@ function render_control_setTpl(resContainer) {
             }
         };
         startTime = now();
-        require_global(tpl, cb, render_error, controllerNs);
+        require_global(tpl, cb, function() {
+            render_error();
+            render_control_triggerError(resContainer, 'tpl', tpl);
+        }, controllerNs);
     }
 }
 

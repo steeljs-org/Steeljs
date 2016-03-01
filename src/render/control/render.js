@@ -8,6 +8,7 @@
 //import ./destroy
 //import ./triggerRendered
 //import ./sData
+//import ./triggerError
 
 var render_control_render_moduleAttrName = 's-module';
 var render_control_render_moduleAttrValue = 'ismodule';
@@ -36,6 +37,7 @@ function render_control_render(resContainer) {
             html = tplFn(retData);
         } catch (e) {
             render_error(e);
+            render_control_triggerError(resContainer, 'render', e);
             return;
         }
         resContainer.html = html;

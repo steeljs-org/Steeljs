@@ -30,6 +30,8 @@ var render_base_stageChange_usable = false;
 //场景默认显示内容
 var render_base_stageDefaultHTML = '';
 ////
+//是否添加模块父样式
+var render_base_useCssPrefix_usable = false;
 //是否启用进度条
 var render_base_loadingBar_usable = false;
 

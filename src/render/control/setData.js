@@ -8,6 +8,7 @@
 //import router/history
 //import ./triggerRendered
 //import ./sData
+//import ./triggerError
 
 var render_control_setData_dataCallbackFn;
 
@@ -55,6 +56,7 @@ function render_control_setData(resContainer, tplChanged) {
         resource_res.get(data, cb, function(ret){
             resContainer.real_data = null;
             render_error(ret);
+            render_control_triggerError(resContainer, 'data', data, ret);
         });
     }
 }
