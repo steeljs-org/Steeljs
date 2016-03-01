@@ -14,6 +14,7 @@ var userAgent = navigator.userAgent,
     clearTimeout = window.clearTimeout,
     parseInt = window.parseInt,
     parseFloat = window.parseFloat,
+    slice = [].slice,
     location = window.location,
     decodeURI = window.decodeURI,
     toString = Object.prototype.toString,
@@ -493,6 +494,17 @@ function core_array_indexOf( oElement, aSource ) {
 	}
 	return -1;
 }
+/*
+ * 把类数组改变成数组
+ * @method core_array_makeArray
+ * @private
+ * @param {arrayLike} obj
+ *	需要查找的对象
+ * @return {Array} 
+ */
+function core_array_makeArray( obj ) {
+    return slice.call(obj, 0, obj.length);
+}
 var core_notice_data_SLKey = '_N';
 var core_notice_data = steel[ core_notice_data_SLKey ] = steel[ core_notice_data_SLKey ] || {};
 /*
@@ -538,7 +550,8 @@ function core_notice_off( type, fn ) {
  */
 function core_notice_trigger( type ) {
 	var typeArray = core_notice_find( type );
-	var args = [].slice.call(arguments, 1);
+	var args = core_array_makeArray(arguments);
+	args = args.slice(1, args.length);
 	for ( var i = typeArray.length - 1; i > -1; i-- ) {
 		try {
 			typeArray[ i ] && typeArray[ i ].apply( undefined, args );
@@ -805,33 +818,16 @@ var render_base_stageChange_usable = false;
 //场景默认显示内容
 var render_base_stageDefaultHTML = '';
 ////
+//是否添加模块父样式
+var render_base_useCssPrefix_usable = false;
 //是否启用进度条
 var render_base_loadingBar_usable = false;
 //boxid生成器 当参数为true时要求：1.必须唯一 2.同一页面同一模块的id必须是固定的
 function render_base_idMaker(supId) {
     return core_uniqueKey();
-}/*
- * 把类数组改变成数组
- * @method core_array_makeArray
- * @private
- * @param {arrayLike} obj
- *	需要查找的对象
- * @return {Array} 
- */
-function core_array_makeArray( obj ) {
-	try {
-		return [].slice.call(obj);
-	} catch (e) { //for IE
-		var j, i = 0, rs = [];
-		while ( j = obj[i] ){
-			rs[i++] = j;
-		}
-		return rs;
-	}
-}
+}
 function render_error() {
     var args = core_array_makeArray(arguments);
-    log.apply(undefined, ['Error:'].concat(args));
     core_notice_trigger.apply(undefined, ['renderError'].concat(args));
 }/*
  * control核心逻辑
@@ -875,6 +871,18 @@ function core_object_clone( obj ) {
 function core_dom_removeNode( node ) {
 	node && node.parentNode && node.parentNode.removeChild( node );
 }
+/**
+ * 模块渲染和运行时的错误触发
+ * @param  {object} resContainer 资源容器
+ * @param  {string} type         错误类型
+ * @param  {any} ...         错误信息
+ * @return {undefined}          
+ */
+function render_control_triggerError(resContainer, type) {
+    var args = core_array_makeArray(arguments).slice(1);
+    log.apply(undefined, ['Error: render'].concat(args));
+    core_notice_trigger.apply(undefined, [resContainer.boxId + 'error'].concat(args))
+}
 function render_control_setLogic(resContainer) {
     var controllerNs = render_base_controllerNs[resContainer.boxId];
     var logic = resContainer.logic;
@@ -903,7 +911,10 @@ function render_control_setLogic(resContainer) {
                 //抛出js加载完成事件
             };
             startTime = now();
-            require_global(logic, cb, render_error, controllerNs);
+            require_global(logic, cb, function() {
+                render_error();
+                render_control_triggerError(resContainer, 'logic', logic);
+            }, controllerNs);
         }
     }
 }
@@ -924,7 +935,7 @@ function render_control_startLogic(resContainer) {
             try {
                 logicResult = resContainer.logicFn(box, real_data, control) || {};
             } catch(e) {
-                log('Error: run logic error:', resContainer.logic, e);
+                render_control_triggerError(resContainer, 'runLogic', resContainer.logic, e);
             }
         }
         resContainer.logicResult = logicResult;
@@ -1113,6 +1124,16 @@ function core_event_eventFix(e) {
 function core_math_distance(point1, point2) {
     return Math.sqrt(Math.pow((point2[0] - point1[0]), 2) + Math.pow((point2[1] - point1[1]), 2));
 }
+var core_dom_className_blankReg = / +/g;
+/**
+ * classname编辑工具
+ */
+function core_dom_className(node, addNames, delNames) {
+    var oldClassName = ' ' + (node.className || '').replace(core_dom_className_blankReg, '  ') + ' ';
+    addNames = addNames || '';
+    delNames = (addNames + ' ' +(delNames || '')).replace(core_dom_className_blankReg, '|').replace(/^\||\|$/, '');
+    node.className = oldClassName.replace(RegExp(' (' + delNames + ') ', 'ig'), ' ') + ' ' + addNames;
+}
 var render_stage_data = {}; //stageBoxId -> {curr:index, last:index, subs:[]}
 var render_stage_anidata = {};
 var render_stage_style_mainId = 'steel-style-main';
@@ -1121,8 +1142,6 @@ var render_stage_ani_transition_class = 'steel-stage-transform';
 var render_stage_scroll_class = 'steel-render-stage-scroll';
 var render_stage_fixed_class = 'steel-render-stage-fixed';
 var render_stage_subNode_class = 'steel-stage-sub';
-var render_stage_subNode_className = render_stage_subNode_class;
-var render_stage_subNode_transition_className = render_stage_ani_transition_class + ' ' + render_stage_subNode_class;
 //状态变量区域
 var render_stage_webkitTransitionDestroyFn;
 var render_stage_ani_doing;
@@ -1336,8 +1355,8 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
             setTimeout(function() {
                 currNode.style.WebkitTransform = 'translate3d(' + (-currLeft) + 'px, 0, 0)';
                 lastNode.style.WebkitTransform = 'translate3d(' + (goForward ? -winWidth/3 : winWidth) + 'px, 0, 0)';
-                core_dom_setAttribute(currNode, 'class', render_stage_subNode_transition_className);
-                core_dom_setAttribute(lastNode, 'class', render_stage_subNode_transition_className);
+                core_dom_className(currNode, render_stage_ani_transition_class);
+                core_dom_className(lastNode, render_stage_ani_transition_class);
                 core_event_addEventListener(node, 'webkitTransitionEnd', node_webkitTransitionEnd);
             }, 199);
             function node_webkitTransitionEnd(e) {
@@ -1353,8 +1372,8 @@ function render_stage_ani(stageBoxId, aniType, aniEnd) {
                 }
                 render_stage_webkitTransitionDestroyFn = false;
                 core_event_removeEventListener(node, 'webkitTransitionEnd', node_webkitTransitionEnd);
-                core_dom_setAttribute(currNode, 'class', render_stage_subNode_className);
-                core_dom_setAttribute(lastNode, 'class', render_stage_subNode_className);
+                core_dom_className(currNode, undefined, render_stage_ani_transition_class);
+                core_dom_className(lastNode, undefined, render_stage_ani_transition_class);
                 currNode.style.cssText = '';
                 lastNode.style.cssText = 'display:none';
                 render_stage_style_rewrite();
@@ -1438,7 +1457,7 @@ function render_stage_data_newsub(node, data, stateIndex) {
     var subId = render_base_idMaker();
     var subNode = core_dom_createElement('div');
     subNode.id = subId;
-    core_dom_setAttribute(subNode, 'class', render_stage_subNode_className);
+    core_dom_className(subNode, render_stage_subNode_class);
     core_dom_setAttribute(subNode, 's-stage-sub', 'true');
     subNode.innHTML = render_base_stageDefaultHTML;
     subNode.style.display = 'none';
@@ -1619,6 +1638,7 @@ function render_control_render(resContainer) {
             html = tplFn(retData);
         } catch (e) {
             render_error(e);
+            render_control_triggerError(resContainer, 'render', e);
             return;
         }
         resContainer.html = html;
@@ -1671,7 +1691,7 @@ function core_nameSpaceFix(id, basePath) {
         }
     }
     return id;
-}
+}
 var render_control_setCss_cssCache = {};//css容器
 var render_control_setCss_cssCallbackFn;
 function render_control_setCss(resContainer) {
@@ -1684,8 +1704,14 @@ function render_control_setCss(resContainer) {
         return;
     }
     var boxId = resContainer.boxId;
+    var box;
+    var cssId;
     var controllerNs = render_base_controllerNs[boxId];
     var css = core_nameSpaceFix(resContainer.css, controllerNs);
+    //给模块添加css前缀
+    if (render_base_useCssPrefix_usable && (box = getElementById(boxId)) && (cssId = resource_res_getCssId(css))) {
+        core_dom_className(box, cssId);
+    }
     if (render_control_setCss_cssCache[css]) {
         render_control_setCss_cssCache[css][boxId] = true;
         cssReady();
@@ -1706,9 +1732,9 @@ function render_control_setCss(resContainer) {
         }
     };
     startTime = now();
-    css && resource_res.css(css, cb, function() {
-        log('Error: css("' + css + '" load error!');
+    resource_res.css(css, cb, function() {
         cssReady();
+        render_control_triggerError(resContainer, 'css', css);
     });
     function cssReady() {
         resContainer.cssReady = true;
@@ -1747,7 +1773,7 @@ function render_control_setChildren(resContainer) {
 }
 function render_control_destroyChildren(childrenid) {
     render_control_destroy(childrenid);
-}
+}
 function render_control_setTpl(resContainer) {
     var controllerNs = render_base_controllerNs[resContainer.boxId];
     var tplCallbackFn;
@@ -1774,7 +1800,10 @@ function render_control_setTpl(resContainer) {
             }
         };
         startTime = now();
-        require_global(tpl, cb, render_error, controllerNs);
+        require_global(tpl, cb, function() {
+            render_error();
+            render_control_triggerError(resContainer, 'tpl', tpl);
+        }, controllerNs);
     }
 }
 function render_control_setTpl_toRender(resContainer) {
@@ -1843,7 +1872,7 @@ function render_contorl_toTiggerChildren(resContainer) {
         }
     }
     resContainer.needToTriggerChildren = false;
-}
+}
 var render_control_setData_dataCallbackFn;
 function render_control_setData(resContainer, tplChanged) {
     var data = resContainer.data;
@@ -1886,6 +1915,7 @@ function render_control_setData(resContainer, tplChanged) {
         resource_res.get(data, cb, function(ret){
             resContainer.real_data = null;
             render_error(ret);
+            render_control_triggerError(resContainer, 'data', data, ret);
         });
     }
 }
@@ -1928,7 +1958,13 @@ var render_control_main_realTypeMap = {
     data: 'real_data',
     logic: 'logicFn'
 };
-var render_control_main_eventList = ['init', 'enter', 'leave', 'destroy'];
+var render_control_main_eventList = [
+  'init',//模块初始化
+  'enter',//模块从其他模块切换进入（不一定只发生在初始化时）
+  'leave',//模块离开（不一定销毁）
+  'error',//模块运行时错误，类型资源错误（data,tpl,css,logic）、渲染错误(render)、逻辑运行错误(run,runLogic)
+  'destroy'//模块销毁事件
+  ];
 function render_control_main(boxId) {
     //资源容器
     var resContainer = render_base_resContainer[boxId] = render_base_resContainer[boxId] || {
@@ -2572,15 +2608,15 @@ function resource_queue_del(url) {
     'args':{'id':123,'test':'true'},
     });
  */
-function loader_ajax(url, onComplete){//(url, callback)
+function loader_ajax(url, onComplete, onFail){//(url, callback)
     var opts = {
         'charset': 'UTF-8',
         'timeout': 30 * 1000,
         'args': {},
         'onComplete': onComplete || emptyFunction,
-        'onTimeout': emptyFunction,
+        'onTimeout': onFail || emptyFunction,
         'uniqueID': null,
-        'onFail': emptyFunction,
+        'onFail': onFail || emptyFunction,
         'method': 'get', // post or get
         'asynchronous': true,
         'header' : {},
@@ -2699,6 +2735,8 @@ function loader_ajax(url, onComplete){//(url, callback)
 function resource_request(url, callback) {
     return loader_ajax(url, function(response, params) {
         resource_request_apiRule(url, response, params, callback);
+    }, function(response) {
+        callback(false, response);
     });
 }
 function resource_request_apiRule(url, response, params, callback) {
@@ -2751,8 +2789,9 @@ function resource_preLoad_bootLoad() {
     }
     var scripts = getElementsByTagName('script');
     for (var i = scripts.length - 1; i >= 0; i--) {
-        var preloadData = scripts[i].getAttribute('s-preload-data');
-        var preloadDataProperty = scripts[i].getAttribute('s-preload-data-property');
+        var script = scripts[i];
+        var preloadData = script.getAttribute('s-preload-data');
+        var preloadDataProperty = script.getAttribute('s-preload-data-property');
         if (preloadData) {
             preloadData = preloadData.replace(/&amp;/gi, '&');
             resource_preLoad_bootLoad_data(preloadData, preloadDataProperty);
@@ -2761,21 +2800,40 @@ function resource_preLoad_bootLoad() {
 }
 function resource_preLoad_bootLoad_data(url, property) {
     resource_preLoad_setRes(url, 'ajax', false);
+    var checkTime = 250;//250*19 超时时间
+    var resource = resource_preLoad_resMap[url];
     check();
     function check() {
+        if (!resource || resource.complete) {
+            return;
+        }
         if (property in window) {
-            var resource = resource_preLoad_resMap[url];
             resource.complete = true;
             var response = window[property];
-            var success = resource_request_apiRule(url, response, {}, function(success, response) {
-                var callbackList = resource[success ? 'onsuccess' : 'onfail'];
-                resource[success ? 'success' : 'fail'] = response;
-                for (var i = 0, l = callbackList.length; i < l; i++) {
-                    callbackList[i] && callbackList[i](response);
-                }
-            });
+            if (response === 'error') {
+                callback(false, null);
+            } else {
+                resource_request_apiRule(url, response, {}, function(success, response) {
+                    callback(success, response);
+                });
+            }
         } else {
-            setTimeout(check, 19);
+            if (checkTime > 0) {
+                setTimeout(check, 19);
+            } else {
+                resource.complete = true;
+                callback(false, null);
+            }
+        }
+        checkTime--;
+    }
+    function callback(success, response) {
+        var callbackList = resource[success ? 'onsuccess' : 'onfail'];
+        resource[success ? 'success' : 'fail'] = response;
+        for (var i = 0, l = callbackList.length; i < l; i++) {
+            if (callbackList[i]) {
+                callbackList[i](response);
+            }
         }
     }
 }
@@ -2789,27 +2847,6 @@ function resource_preLoad_setRes(url, type, complete, success, fail) {
         onfail: []
     };
 }
-// /**
-//  * 资源预加载
-//  * @param  {array} resArray 资源数组 [{url, type}]
-//  * @return {undefined}   
-//  */
-// function resource_preLoad(resArray) {
-//     if (router_router_get().type === 'init') {
-//         if (core_array_isArray(resArray)) {
-//             for (var i = resArray.length - 1; i >= 0; i--) {
-//                 var res = resArray[i];
-//                 resource_preLoad_resMap[res.url] = {
-//                     type: res.type,
-//                     complete: false
-//                 };
-//             }
-//         }
-//         for(var url in resource_preLoad_resMap) {
-//             resource_preLoad_doLoad(url);
-//         }
-//     }
-// }
 /**
  * 得到预加载的资源
  * @param  {string} url 
@@ -2817,19 +2854,6 @@ function resource_preLoad_setRes(url, type, complete, success, fail) {
 function resource_preLoad_get(url) {
     return resource_preLoad_resMap[url];
 }
-// /**
-//  * 加载
-//  */
-// function resource_preLoad_doLoad(url) {
-//     var urlObj = resource_preLoad_resMap[url];
-//     resource_res_do(urlObj.type, url, function() {
-//         urlObj.complete = true;
-//         urlObj.success = arguments;
-//     }, function() {
-//         urlObj.complete = true;
-//         urlObj.fail = arguments;
-//     }, urlObj.type === 'css' ? resource_res_getCssId(url) : '');
-// }
 function loader_js(url, callback){
     var entityList = {};
     var opts = {
@@ -3190,6 +3214,7 @@ config_push(function(parseParamFn) {
             }
         }
     }
+    render_base_useCssPrefix_usable = parseParamFn('useCssPrefix', render_base_useCssPrefix_usable);
 });/**
  * 渲染的启动入口
  */
