@@ -7,13 +7,5 @@
  * @return {Array} 
  */
 function core_array_makeArray( obj ) {
-	try {
-		return [].slice.call(obj);
-	} catch (e) { //for IE
-		var j, i = 0, rs = [];
-		while ( j = obj[i] ){
-			rs[i++] = j;
-		}
-		return rs;
-	}
+    return slice.call(obj, 0, obj.length);
 }
