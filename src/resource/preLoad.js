@@ -42,8 +42,9 @@ function resource_preLoad_bootLoad() {
     }
     var scripts = getElementsByTagName('script');
     for (var i = scripts.length - 1; i >= 0; i--) {
-        var preloadData = scripts[i].getAttribute('s-preload-data');
-        var preloadDataProperty = scripts[i].getAttribute('s-preload-data-property');
+        var script = scripts[i];
+        var preloadData = script.getAttribute('s-preload-data');
+        var preloadDataProperty = script.getAttribute('s-preload-data-property');
         if (preloadData) {
             preloadData = preloadData.replace(/&amp;/gi, '&');
             resource_preLoad_bootLoad_data(preloadData, preloadDataProperty);
@@ -53,22 +54,40 @@ function resource_preLoad_bootLoad() {
 
 function resource_preLoad_bootLoad_data(url, property) {
     resource_preLoad_setRes(url, 'ajax', false);
+    var checkTime = 250;//250*19 超时时间
+    var resource = resource_preLoad_resMap[url];
     check();
     function check() {
+        if (!resource || resource.complete) {
+            return;
+        }
         if (property in window) {
-            var resource = resource_preLoad_resMap[url];
             resource.complete = true;
             var response = window[property];
-            var success = resource_request_apiRule(url, response, {}, function(success, response) {
-                var callbackList = resource[success ? 'onsuccess' : 'onfail'];
-                resource[success ? 'success' : 'fail'] = response;
-                for (var i = 0, l = callbackList.length; i < l; i++) {
-                    callbackList[i] && callbackList[i](response);
-                }
-            });
-            
+            if (response === 'error') {
+                callback(false, null);
+            } else {
+                resource_request_apiRule(url, response, {}, function(success, response) {
+                    callback(success, response);
+                });
+            }
         } else {
-            setTimeout(check, 19);
+            if (checkTime > 0) {
+                setTimeout(check, 19);
+            } else {
+                resource.complete = true;
+                callback(false, null);
+            }
+        }
+        checkTime--;
+    }
+    function callback(success, response) {
+        var callbackList = resource[success ? 'onsuccess' : 'onfail'];
+        resource[success ? 'success' : 'fail'] = response;
+        for (var i = 0, l = callbackList.length; i < l; i++) {
+            if (callbackList[i]) {
+                callbackList[i](response);
+            }
         }
     }
 }
@@ -84,28 +103,6 @@ function resource_preLoad_setRes(url, type, complete, success, fail) {
     };
 }
 
-// /**
-//  * 资源预加载
-//  * @param  {array} resArray 资源数组 [{url, type}]
-//  * @return {undefined}   
-//  */
-// function resource_preLoad(resArray) {
-//     if (router_router_get().type === 'init') {
-//         if (core_array_isArray(resArray)) {
-//             for (var i = resArray.length - 1; i >= 0; i--) {
-//                 var res = resArray[i];
-//                 resource_preLoad_resMap[res.url] = {
-//                     type: res.type,
-//                     complete: false
-//                 };
-//             }
-//         }
-//         for(var url in resource_preLoad_resMap) {
-//             resource_preLoad_doLoad(url);
-//         }
-//     }
-// }
-
 /**
  * 得到预加载的资源
  * @param  {string} url 
@@ -113,17 +110,3 @@ function resource_preLoad_setRes(url, type, complete, success, fail) {
 function resource_preLoad_get(url) {
     return resource_preLoad_resMap[url];
 }
-
-// /**
-//  * 加载
-//  */
-// function resource_preLoad_doLoad(url) {
-//     var urlObj = resource_preLoad_resMap[url];
-//     resource_res_do(urlObj.type, url, function() {
-//         urlObj.complete = true;
-//         urlObj.success = arguments;
-//     }, function() {
-//         urlObj.complete = true;
-//         urlObj.fail = arguments;
-//     }, urlObj.type === 'css' ? resource_res_getCssId(url) : '');
-// }

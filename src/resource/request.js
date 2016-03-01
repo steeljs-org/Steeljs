@@ -4,6 +4,8 @@
 function resource_request(url, callback) {
     return loader_ajax(url, function(response, params) {
         resource_request_apiRule(url, response, params, callback);
+    }, function(response) {
+        callback(false, response);
     });
 }
 
