@@ -20,8 +20,8 @@ steel是一个致力于分离前后端职责的前端框架，它的思想是通
             meta(charset='utf-8')
             title Hello World
     body
-    script(src="http://js.t.sinajs.cn/SteelHelloWorld/src/js/lib/lib.js")
-    script(src="http://js.t.sinajs.cn/SteelHelloWorld/src/js/app.js")
+    script(src="http://127.0.0.1/SteelHelloWorld/src/js/lib/lib.js")
+    script(src="http://127.0.0.1/SteelHelloWorld/src/js/app.js")
     script.
             steel.boot('app');
             
@@ -36,9 +36,9 @@ steel是一个致力于分离前后端职责的前端框架，它的思想是通
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
         <title>粉丝服务平台</title>
-        <link rel="stylesheet" href="http://img.t.sinajs.cn/t4/appstyle/e/apps/message/css/mobile_base.css?version=<?= htmlentities($g_version_css, ENT_QUOTES, 'UTF-8') ?>" />
-        <script src="http://js.t.sinajs.cn/t6/apps/fans_service_mobile/js/lib/lib.js?version=<?= htmlentities($g_version_css, ENT_QUOTES, 'UTF-8') ?>"></script>
-        <script src="http://js.t.sinajs.cn/t6/apps/fans_service_mobile/js/app/groupmsg.js?version=<?= htmlentities($g_version_css, ENT_QUOTES, 'UTF-8') ?>"></script>
+        <link rel="stylesheet" href="http://127.0.0.1/css/mobile_base.css?version=<?= htmlentities($g_version_css, ENT_QUOTES, 'UTF-8') ?>" />
+        <script src="http://127.0.0.1/js/lib/lib.js?version=<?= htmlentities($g_version_css, ENT_QUOTES, 'UTF-8') ?>"></script>
+        <script src="http://127.0.0.1/js/app/groupmsg.js?version=<?= htmlentities($g_version_css, ENT_QUOTES, 'UTF-8') ?>"></script>
         <?php include(dirname(__FILE__) . '/../../common/include/config.phtml') ?>
         <script>steel.boot('app/groupmsg');</script>
     </head>
@@ -242,29 +242,19 @@ gulp版本的工具是grunt构建工具的改进版，性能更高，提升了�
 * host配置 ——
 
 ```
-    127.0.0.1 js.t.sinajs.cn js1.t.sinajs.cn js2.t.sinajs.cn
-    127.0.0.1 e1.weibo.com #模拟后端host，跟gulpfile的back_hostname值一致
-    10.73.15.236  e.weibo.com #php host 
-    //输入e1.weibo.com/v1/public/ custommenu/main 走的是前端模拟目录文件和aj数据
-    //此时输入e.weibo.com/v1/public/custommenu/main 走的是后端真实目录文件和数据
 ```
 * gulpfile配置 ——
 ```
     port：服务端口
-    pathnamePrefix：'/t6/apps/fans_service_mobile/', //工程path
+    pathnamePrefix：'/', //工程path
     front_base：'server_front', //debug目录名
     back_base：'server_back', //模拟后端的文件放置目录
-    front_hostname：'js.t.sinajs.cn img.t.sinajs.cn', //静态资源host配置，与host
-    back_hostname ： 'e.weibo.com e1.weibo.com' //后端的host，目的是模拟后端的页面路由请求，提供前端可仿真的功能，比如 /index 对应 /html/index.html
+    front_hostname：'127.0.0.1', //静态资源host配置，与host
+    back_hostname ： '127.0.0.1' //后端的host，目的是模拟后端的页面路由请求，提供前端可仿真的功能，比如 /index 对应 /html/index.html
 ```
 #### 2.3.6 上线
 * 上线前使用gulp build命令
 * QB上线(wb)
-* 注意：
-    * QB的线上目录是从svn的build目录获取，发布系统上“输入发布代码路径”，形如：https://svn1.intra.sina.com.cn/weibo/ria/t6/apps/enp_mindPage /trunk/build/
-    * QB填入项“输入标签路径”，指存放发布版本代码的目录，形如：https://svn1.intra.sina.com.cn/weibo/ria/t6/apps/enp_mindPage /quickBuildTag/release_tags/
-* 附录：
-    * 有weibo ria权限的同学可以参考工程 - https://svn1.intra.sina.com.cn/weibo/ria/t6/apps/enp_mindPage/trunk
 
 
 
