@@ -26,7 +26,6 @@ var resource_res = {
 
 function resource_res_handle(type, name, succ, err) {
     var nameObj = resource_preLoad_get(name);
-    log('Info:', name, !!nameObj);
     if (router_router_get().type === 'init' && nameObj) {
         if (nameObj.complete) {
             if (nameObj.success) {
