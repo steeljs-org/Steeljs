@@ -38,6 +38,10 @@ function router_listen() {
     core_event_addEventListener(window, 'popstate', function() {
         core_notice_trigger('popstate');
         var currentStateIndex = router_history_getStateIndex();
+        if (router_listen_lastStateIndex === currentStateIndex || router_base_currentHref === href) {
+            return;
+        }
+        var href = location.href;
         if (router_listen_lastStateIndex > currentStateIndex) {
             if (router_base_routerType === 'refresh') {
                 router_base_routerType = 'back-refresh';
@@ -48,16 +52,8 @@ function router_listen() {
             router_base_routerType = 'forward';
         }
         router_listen_lastStateIndex = currentStateIndex;
-        var href = location.href;
-        if (popstateTime === 0 && router_base_currentHref === href) {
-            return;
-        }
         router_listen_handleHrefChenged(href);
     });
-    setTimeout(function() {
-        popstateTime = 1;
-    }, 1000);
-    //popstate 事件在第一次被绑定时也会触发，但不是100%，所以加了个延时
 }
 
 function router_listen_getHrefNode(el) {
