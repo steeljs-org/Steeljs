@@ -54,10 +54,6 @@ function core_notice_trigger( type ) {
 	var args = core_array_makeArray(arguments);
 	args = args.slice(1, args.length);
 	for ( var i = typeArray.length - 1; i > -1; i-- ) {
-		try {
-			typeArray[ i ] && typeArray[ i ].apply( undefined, args );
-		} catch ( e ) {
-			type != logNotice && core_notice_trigger( logNotice, ['[error][notice][' + type + ']', e] );
-		}
+		typeArray[ i ] && typeArray[ i ].apply( undefined, args );
 	}
 }

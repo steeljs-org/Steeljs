@@ -22,13 +22,7 @@ function resource_queue_run(url, access, data){
 	access = access ? 0 : 1;
     for(var i = 0, len = resource_queue_list[url].length; i < len; i++) {
         var item = resource_queue_list[url][i];
-        try {
-            item[access](data, url);
-        } catch(e) {
-            core_asyncCall(function(item) {
-                item[1](data, url);
-            }, [item]);
-        }
+        item[access](data, url);
     }
 }
 
