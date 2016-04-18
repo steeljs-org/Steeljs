@@ -553,11 +553,7 @@ function core_notice_trigger( type ) {
 	var args = core_array_makeArray(arguments);
 	args = args.slice(1, args.length);
 	for ( var i = typeArray.length - 1; i > -1; i-- ) {
-		try {
-			typeArray[ i ] && typeArray[ i ].apply( undefined, args );
-		} catch ( e ) {
-			type != logNotice && core_notice_trigger( logNotice, ['[error][notice][' + type + ']', e] );
-		}
+		typeArray[ i ] && typeArray[ i ].apply( undefined, args );
 	}
 }
 /**
@@ -2255,7 +2251,7 @@ function render_run(stageBox, controller) {
         }
         core_notice_trigger(boxId + 'enter', transferData, isInit);
     }
-}
+}
 //@Finrila 未处理hashchange事件
 var router_listen_queryTime = 5;
 var router_listen_count;
@@ -2282,6 +2278,10 @@ function router_listen() {
     core_event_addEventListener(window, 'popstate', function() {
         core_notice_trigger('popstate');
         var currentStateIndex = router_history_getStateIndex();
+        if (router_listen_lastStateIndex === currentStateIndex || router_base_currentHref === href) {
+            return;
+        }
+        var href = location.href;
         if (router_listen_lastStateIndex > currentStateIndex) {
             if (router_base_routerType === 'refresh') {
                 router_base_routerType = 'back-refresh';
@@ -2292,16 +2292,8 @@ function router_listen() {
             router_base_routerType = 'forward';
         }
         router_listen_lastStateIndex = currentStateIndex;
-        var href = location.href;
-        if (popstateTime === 0 && router_base_currentHref === href) {
-            return;
-        }
         router_listen_handleHrefChenged(href);
     });
-    setTimeout(function() {
-        popstateTime = 1;
-    }, 1000);
-    //popstate 事件在第一次被绑定时也会触发，但不是100%，所以加了个延时
 }
 function router_listen_getHrefNode(el) {
     if (el && router_listen_count < router_listen_queryTime) {
@@ -2575,13 +2567,7 @@ function resource_queue_run(url, access, data){
 	access = access ? 0 : 1;
     for(var i = 0, len = resource_queue_list[url].length; i < len; i++) {
         var item = resource_queue_list[url][i];
-        try {
-            item[access](data, url);
-        } catch(e) {
-            core_asyncCall(function(item) {
-                item[1](data, url);
-            }, [item]);
-        }
+        item[access](data, url);
     }
 }
 function resource_queue_del(url) {
@@ -3002,7 +2988,6 @@ var resource_res = {
 };
 function resource_res_handle(type, name, succ, err) {
     var nameObj = resource_preLoad_get(name);
-    log('Info:', name, !!nameObj);
     if (router_router_get().type === 'init' && nameObj) {
         if (nameObj.complete) {
             if (nameObj.success) {
