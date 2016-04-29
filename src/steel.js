@@ -55,7 +55,7 @@
       render_control_destroyChildren(resContainer.toDestroyChildrenid);
     }
   };
-  
+
   core_notice_on('routerChange', function(routerValue) {
     var config = routerValue.config;
     var controller = config[1];

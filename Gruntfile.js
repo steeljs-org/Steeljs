@@ -7,7 +7,7 @@ module.exports = function(grunt) {
 		'steel-combine': {
 			'js': {
 				'cwd': 'src/',
-				'src': ['steel.js'],
+				'src': ['steel.js', 'steel-react.js'],
 				'dest': 'dist/'
 			}
 		},
@@ -46,5 +46,5 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 
-	grunt.registerTask('default', ['steel-combine', 'uglify']);
+	grunt.registerTask('default', ['steel-combine','uglify']);
 };

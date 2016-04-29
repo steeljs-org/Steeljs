@@ -14,8 +14,16 @@ var render_control_render_moduleAttrName = 's-module';
 var render_control_render_moduleAttrValue = 'ismodule';
 
 function render_control_render(resContainer) {
+
+    //如果是react组件，执行react_render逻辑
+    if(resContainer.component){
+        log("render_control_component_render",resContainer);
+        render_control_component_render(resContainer);
+    }
+
     var boxId = resContainer.boxId;
-    if (!resContainer.dataReady || !resContainer.tplReady || resContainer.rendered) {
+    
+    if ( !resContainer.dataReady || !resContainer.tplReady || resContainer.rendered) {
         return;
     }
     var tplFn = resContainer.tplFn;
@@ -71,6 +79,35 @@ function render_control_render(resContainer) {
     resContainer.rendered = true;
     render_control_startLogic(resContainer);
     render_control_handleChild(boxId, tplParseResult);
+    render_control_setCss_destroyCss(resContainer, true);
+    render_control_triggerRendered(boxId);
+}
+
+function render_control_component_render(resContainer) {
+    console.log(resContainer);
+    if(!resContainer.componentReady || !resContainer.cssReady || resContainer.rendered){
+        return;
+    }
+    
+    var boxId = resContainer.boxId;    
+    
+    var real_data = resContainer.real_data;
+
+    var virtualDom = resContainer.virtualDom;
+    if (!virtualDom) {
+        try {
+            resContainer.virtualDom = ReactDOM.render( 
+                React.createElement(resContainer.component, {data:real_data}, null),
+                getElementById(boxId)
+            );  
+        } catch (e) {
+            render_error(e);
+            render_control_triggerError(resContainer, 'render', e);
+            return;
+        }
+    }
+    
+    resContainer.rendered = true;
     render_control_setCss_destroyCss(resContainer, true);
     render_control_triggerRendered(boxId);
 }
