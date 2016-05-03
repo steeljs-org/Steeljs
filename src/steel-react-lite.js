@@ -1,3 +1,3 @@
 //import steel
-//import react/react
+//import react/react-lite
 //import react/react-dom

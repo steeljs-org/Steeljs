@@ -7,7 +7,7 @@ module.exports = function(grunt) {
 		'steel-combine': {
 			'js': {
 				'cwd': 'src/',
-				'src': ['steel.js', 'steel-react.js'],
+				'src': ['steel.js', 'steel-react.js','steel-react-lite.js'],
 				'dest': 'dist/'
 			}
 		},
