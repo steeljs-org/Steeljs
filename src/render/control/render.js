@@ -19,10 +19,11 @@ function render_control_render(resContainer) {
     if(resContainer.component){
         log("render_control_component_render",resContainer);
         render_control_component_render(resContainer);
+        return;
     }
 
     var boxId = resContainer.boxId;
-    
+
     if ( !resContainer.dataReady || !resContainer.tplReady || resContainer.rendered) {
         return;
     }
@@ -84,29 +85,28 @@ function render_control_render(resContainer) {
 }
 
 function render_control_component_render(resContainer) {
-    console.log(resContainer);
     if(!resContainer.componentReady || !resContainer.cssReady || resContainer.rendered){
         return;
     }
-    
-    var boxId = resContainer.boxId;    
-    
+
+    var boxId = resContainer.boxId;
+
     var real_data = resContainer.real_data;
 
     var virtualDom = resContainer.virtualDom;
     if (!virtualDom) {
         try {
-            resContainer.virtualDom = ReactDOM.render( 
+            resContainer.virtualDom = ReactDOM.render(
                 React.createElement(resContainer.component, {data:real_data}, null),
-                getElementById(boxId)
-            );  
+                document.getElementById(boxId)
+            );
         } catch (e) {
             render_error(e);
             render_control_triggerError(resContainer, 'render', e);
             return;
         }
     }
-    
+
     resContainer.rendered = true;
     render_control_setCss_destroyCss(resContainer, true);
     render_control_triggerRendered(boxId);
