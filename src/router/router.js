@@ -145,7 +145,11 @@ function router_router_back(url, num, data, refresh) {
     
     if (router_base_singlePage) {
         if (router_history_getStateIndex() < num) {
-            url && location.replace(core_fixUrl(router_router_get().url, url));
+            if (url) {
+                location.replace(core_fixUrl(router_router_get().url, url));
+            } else {
+                location.go(-num);
+            }
             return false;
         }
         core_notice_on('popstate', function popstate() {
