@@ -2525,7 +2525,7 @@ function router_router_back(url, num, data, refresh) {
             if (url) {
                 location.replace(core_fixUrl(router_router_get().url, url));
             } else {
-                location.go(-num);
+                history.go(-num);
             }
             return false;
         }
