@@ -120,19 +120,15 @@ var require_base_module_defined = {};
 var require_base_module_runed = {};
 //事件
 var require_base_event_defined = '-require-defined';
-var require_global_loadingNum = 0;
-
-
-
-/*
+var require_global_loadingNum = 0;/*
  * parse URL
  * @method core_parseURL
  * @private
- * @param {string} str
- *    可以传入 protocol//host 当protocol不写时使用location.protocol;
+ * @param {string} str 
+ *    可以传入 protocol//host 当protocol不写时使用location.protocol; 
  * @return {object}
  * @example
- * core_parseURL( 'http://t.sina.com.cn/profile?beijing=huanyingni' ) ===
+ * core_parseURL( 'http://t.sina.com.cn/profile?beijing=huanyingni' ) === 
 	{
 		hash : ''
 		host : 't.sina.com.cn'
@@ -164,8 +160,7 @@ function core_parseURL(url) {
     }
     retJson.path = retJson.path.replace(/\/+/g, '/') || '/';
     return retJson;
-}
-/*
+}/*
  * query to json
  * @method core_queryToJson
  * @private
@@ -187,8 +182,7 @@ function core_queryToJson( query ) {
 		}
 	}
 	return retJson;
-}
-/*
+}/*
  * typeof
  */
 function core_object_typeof( value ) {
@@ -213,8 +207,7 @@ function core_jsonToQuery( json ) {
 		}
 	}
 	return queryString.join( '&' );
-}
-/**
+}/**
  * is String
  */
 function core_object_isString(value) {
@@ -232,11 +225,10 @@ function core_object_extend(target, key, value) {
         }
     }
     return target;
-}
-/**
+}/**
  * 判断地址中是否有协议
- * @param  {string} url
- * @return {boolean}
+ * @param  {string} url 
+ * @return {boolean} 
  */
 function core_hasProtocol(url) {
     return /^([a-z]+:)?\/\/\w+/i.test(url);
@@ -306,15 +298,12 @@ function core_fixUrl_handleTwoDots(url) {
     url = url.charAt(url.length - 1) === '/' ? (url.slice(0, url.length - 1)) : url;
     return url.slice(0, url.lastIndexOf('/') + 1);
 }
-
-
-
-/**
+/**
  * Describe 对url进行解析变化
  * @id  core_URL
  * @alias
  * @param {String} url
- * @param {Object}
+ * @param {Object} 
     {
         'isEncodeQuery'  : {Boolean}, //对query编码
         'isEncodeHash'   : {Boolean}  //对hash编码
@@ -336,13 +325,10 @@ function core_fixUrl_handleTwoDots(url) {
  *      setHash('a1', 444444).toString()
  *  );
  */
-
-
-
-/*
+/*
  * 合并参数，不影响源
  * @param {Object} oSource 需要被赋值参数的对象
- * @param {Object} oParams 传入的参数对象
+ * @param {Object} oParams 传入的参数对象 
  * @param {Boolean} isown 是否仅复制自身成员，不复制prototype，默认为false，会复制prototype
 */
 function core_object_parseParam(oSource, oParams, isown){
@@ -361,8 +347,7 @@ function core_object_parseParam(oSource, oParams, isown){
         }
     }
     return obj;
-}
-
+}
 function core_URL(sURL,args){
     var opts = core_object_parseParam({
         'isEncodeQuery'  : false,
@@ -455,8 +440,7 @@ function core_URL(sURL,args){
         return url.join('');
     };
     return retJson;
-};
-/**
+};/**
  * 资源变量
  */
 var resource_jsPath;
@@ -467,11 +451,8 @@ var resource_base_apiRule;
 var resource_base_version;
 //资源列表{url->[[access_cb, fail_cb],....]}
 var resource_queue_list = {};
-
-
-//router资源
-
-var core_uniqueKey_index = 1;
+//router资源
+var core_uniqueKey_index = 1;
 var core_uniqueKey_prefix = 'SL_' + now();
 /*
  * 唯一字符串
@@ -492,15 +473,14 @@ var core_uniqueID_attr = '__SL_ID';
  */
 function core_uniqueID( obj ) {
 	return obj[ core_uniqueID_attr ] || ( obj[ core_uniqueID_attr ] = core_uniqueKey() );
-}
-/*
+}/*
  * 返回在数组中的索引
  * @method core_array_indexOf
  * @private
- * @param {Array} oElement
- * @param {Any} oElement
+ * @param {Array} oElement 
+ * @param {Any} oElement 
  *	需要查找的对象
- * @return {Number}
+ * @return {Number} 
  *	在数组中的索引,-1为未找到
  */
 function core_array_indexOf( oElement, aSource ) {
@@ -514,14 +494,13 @@ function core_array_indexOf( oElement, aSource ) {
 	}
 	return -1;
 }
-
-/*
+/*
  * 把类数组改变成数组
  * @method core_array_makeArray
  * @private
  * @param {arrayLike} obj
  *	需要查找的对象
- * @return {Array}
+ * @return {Array} 
  */
 function core_array_makeArray( obj ) {
     return slice.call(obj, 0, obj.length);
@@ -576,17 +555,13 @@ function core_notice_trigger( type ) {
 	for ( var i = typeArray.length - 1; i > -1; i-- ) {
 		typeArray[ i ] && typeArray[ i ].apply( undefined, args );
 	}
-}
-
-
+}
 /**
  * is Number
  */
 function core_object_isNumber(value) {
     return core_object_typeof(value) === 'number';
-}
-
-/**
+}/**
  * is Object
  */
 function core_object_isObject(value) {
@@ -633,7 +608,7 @@ function core_argsPolymorphism(args, keys, types) {
     }
     return result;
 }
-/**
+/**
  * 路由变量定义区
  *
  */
@@ -650,9 +625,7 @@ var router_base_singlePage = false;
 var router_base_routerType = 'init';
 var router_base_prevHref;
 var router_base_currentHref = location.toString();
-
-
-/*
+/*
  * dom事件绑定
  * @method core_event_addEventListener
  * @private
@@ -660,7 +633,7 @@ var router_base_currentHref = location.toString();
  * @param {string} type
  * @param {string} fn
  */
-var core_event_addEventListener = isAddEventListener ?
+var core_event_addEventListener = isAddEventListener ? 
 	function( el, type, fn, useCapture) {
 		el.addEventListener( type, fn, useCapture === undefined ? false : useCapture);
 	}
@@ -705,13 +678,11 @@ function core_dom_ready( handler ) {
 		}
 		core_event_addEventListener( window, 'load', DOMReady );
 	}
-}
-
-/*
+}/*
  * preventDefault
  * @method core_event_preventDefault
  * @private
- * @return {Event} e
+ * @return {Event} e 
  */
 function core_event_preventDefault( event ) {
 	if ( event.preventDefault ) {
@@ -719,9 +690,7 @@ function core_event_preventDefault( event ) {
 	} else {
 		event.returnValue = false;
 	}
-}
-
-
+}
 function router_parseURL(url) {
     url = url || location.toString();
     var result = core_parseURL(url);
@@ -759,8 +728,7 @@ function router_match(url) {
         }
     }
 }
-
-/**
+/**
  * 地址管理，负责管理state的数据和当面页面在state历史中的索引位置
  */
 // 当前页面在整个单页面跳转中的索引位置
@@ -821,14 +789,9 @@ function router_history_state_set(key, value) {
 //向下一个state的缓存区域添加数据项 并返回新的数据
 function router_history_state_setPush(key, value) {
     core_object_extend(router_history_state_dataForPush, key, value);
-}
-
-/**
+}/**
  * 公共对象方法定义文件
- */
-
-
-
+ */
 //control容器
 var render_base_controlCache = {};
 //controllerNs容器
@@ -858,15 +821,11 @@ var render_base_loadingBar_usable = false;
 //boxid生成器 当参数为true时要求：1.必须唯一 2.同一页面同一模块的id必须是固定的
 function render_base_idMaker(supId) {
     return core_uniqueKey();
-}
-
-
-
+}
 function render_error() {
     var args = core_array_makeArray(arguments);
     core_notice_trigger.apply(undefined, ['renderError'].concat(args));
-}
-/*
+}/*
  * control核心逻辑
  *//*
  * 给节点设置属性
@@ -907,19 +866,13 @@ function core_object_clone( obj ) {
  */
 function core_dom_removeNode( node ) {
 	node && node.parentNode && node.parentNode.removeChild( node );
-}
-
-
-
-
-
-
+}
 /**
  * 模块渲染和运行时的错误触发
  * @param  {object} resContainer 资源容器
  * @param  {string} type         错误类型
  * @param  {any} ...         错误信息
- * @return {undefined}
+ * @return {undefined}          
  */
 function render_control_triggerError(resContainer, type) {
     var args = core_array_makeArray(arguments).slice(1);
@@ -1003,9 +956,7 @@ function render_control_destroyLogic(resContainer) {
         }
       resContainer.logicResult = undefined;
     }
-}
-
-/**
+}/**
  * @param {Object} o
  * @param {boolean} isprototype 继承的属性是否也在检查之列
  * @example
@@ -1019,17 +970,10 @@ function core_object_isEmpty(o,isprototype){
         }
     }
     return true;
-}
-
-
-
-
-
-
+}
 function core_array_inArray(oElement, aSource){
     return core_array_indexOf(oElement, aSource) > -1;
-}
-/**
+}/**
  * 场景管理
  * 第一版本实现目标：
  *//*
@@ -1597,15 +1541,13 @@ function render_parse(jadeFunStr) {
         result.push({
             's-stage-scroll': true,
             's-all': g[1].replace(/\\\"/g, '"'),
-            's-id': render_base_idMaker(),
+            's-id': render_base_idMaker()
         });
     }
     return result;
 }/*
  * 处理子模块
-*/
-
-
+*/
 function render_control_handleChild(boxId, tplParseResult) {
     var resContainer = render_base_resContainer[boxId];
     var s_controller, s_child, s_id;
@@ -1644,8 +1586,7 @@ function render_control_handleChild(boxId, tplParseResult) {
             render_run(s_id, s_controller);//渲染提前
         }
     }
-}
-
+}
 //用户扩展类
 function render_control_setExtTplData_F() {}
 render_control_setExtTplData_F.prototype.constructor = render_control_setExtTplData_F;
@@ -1675,6 +1616,7 @@ function render_control_render(resContainer) {
     if(resContainer.component){
         log("render_control_component_render",resContainer);
         render_control_component_render(resContainer);
+        return;
     }
     var boxId = resContainer.boxId;
     if ( !resContainer.dataReady || !resContainer.tplReady || resContainer.rendered) {
@@ -1733,7 +1675,6 @@ function render_control_render(resContainer) {
     render_control_triggerRendered(boxId);
 }
 function render_control_component_render(resContainer) {
-    console.log(resContainer);
     if(!resContainer.componentReady || !resContainer.cssReady || resContainer.rendered){
         return;
     }
@@ -1744,7 +1685,7 @@ function render_control_component_render(resContainer) {
         try {
             resContainer.virtualDom = ReactDOM.render(
                 React.createElement(resContainer.component, {data:real_data}, null),
-                getElementById(boxId)
+                document.getElementById(boxId)
             );
         } catch (e) {
             render_error(e);
@@ -1756,8 +1697,7 @@ function render_control_component_render(resContainer) {
     render_control_setCss_destroyCss(resContainer, true);
     render_control_triggerRendered(boxId);
 }
-
-/**
+/**
  * 获取 url 的目录地址
  */
 function core_urlFolder(url){
@@ -1777,9 +1717,7 @@ function core_nameSpaceFix(id, basePath) {
         }
     }
     return id;
-}
-
-
+}
 var render_control_setCss_cssCache = {};//css容器
 var render_control_setCss_cssCallbackFn;
 function render_control_setCss(resContainer) {
@@ -1849,8 +1787,7 @@ function render_control_setCss_destroyCss(resContainer, excludeSelf) {
             }();
         }
     }
-}
-
+}
 function render_control_setChildren(resContainer) {
     var children = resContainer.children || {};
     for (var key in children) {
@@ -1862,13 +1799,7 @@ function render_control_setChildren(resContainer) {
 }
 function render_control_destroyChildren(childrenid) {
     render_control_destroy(childrenid);
-}
-
-
-
-
-
-
+}
 function render_control_setTpl(resContainer) {
     var controllerNs = render_base_controllerNs[resContainer.boxId];
     var tplCallbackFn;
@@ -1904,11 +1835,7 @@ function render_control_setTpl(resContainer) {
 function render_control_setTpl_toRender(resContainer) {
     resContainer.tplReady = true;
     render_control_render(resContainer);
-}
-
-
-
-//http://www.sharejs.com/codes/javascript/1985
+}//http://www.sharejs.com/codes/javascript/1985
 function core_object_equals(x, y){
     // If both x and y are null or undefined and exactly the same
     if ( x === y ) {
@@ -1971,12 +1898,7 @@ function render_contorl_toTiggerChildren(resContainer) {
         }
     }
     resContainer.needToTriggerChildren = false;
-}
-
-
-
-
-
+}
 var render_control_setData_dataCallbackFn;
 function render_control_setData(resContainer, tplChanged) {
     var data = resContainer.data;
@@ -2069,8 +1991,7 @@ function render_control_setComponent(resContainer) {
 function render_control_setComponent_toRender(resContainer) {
     resContainer.componentReady = true;
     render_control_render(resContainer);
-}
-
+}
 //检查资源是否改变
 function render_control_checkResChanged(resContainer, type, value) {
     var valueType = core_object_typeof(value);
@@ -2409,10 +2330,7 @@ function render_run(stageBox, controller) {
         }
         core_notice_trigger(boxId + 'enter', transferData, isInit);
     }
-}
-
-
-
+}
 //@Finrila 未处理hashchange事件
 var router_listen_queryTime = 5;
 var router_listen_count;
@@ -2479,10 +2397,7 @@ function router_listen_handleHrefChenged(url) {
 //派发routerChange事件，返回router变化数据 @shaobo3
 function router_listen_fireRouterChange() {
     core_notice_trigger('routerChange', router_router_get());
-}
-
-
-
+}
 //当前访问path的变量集合,以及location相关的解析结果
 var router_router_value;
 var router_router_transferData;
@@ -2526,7 +2441,7 @@ function router_router_get(refreshRouterValue) {
  * 路由前进到某个地址
  * @param  {string} url 页面地址
  * @param  {Object} data 想要传递到新页面的对象
- * @return {undefined}
+ * @return {undefined} 
  */
 function router_router_push(url, data) {
     router_router_set(url, data);
@@ -2545,7 +2460,7 @@ function router_router_replace(url, data) {
  * @param  {string} url     地址 必添
  * @param  {boolean} replace 是否替换当前页面 不产生历史
  * @param  {Object} data 想要传递到新页面的对象
- * @return {undefined}
+ * @return {undefined} 
  */
 function router_router_set(url, replace, data) {
     //多态
@@ -2580,7 +2495,7 @@ function router_router_set(url, replace, data) {
 }
 /**
  * 单页面刷新
- * @return {undefined}
+ * @return {undefined} 
  */
 function router_router_refresh() {
     if (router_base_singlePage) {
@@ -2607,7 +2522,11 @@ function router_router_back(url, num, data, refresh) {
     num = (core_object_isNumber(num) && num > 0) ? num : 1;
     if (router_base_singlePage) {
         if (router_history_getStateIndex() < num) {
-            url && location.replace(core_fixUrl(router_router_get().url, url));
+            if (url) {
+                location.replace(core_fixUrl(router_router_get().url, url));
+            } else {
+                location.go(-num);
+            }
             return false;
         }
         core_notice_on('popstate', function popstate() {
@@ -2704,21 +2623,19 @@ function resource_fixUrl(url, type) {
 }
 function resource_fixUrl_handle(path, url, basePath, hrefPath) {
     return core_fixUrl(path || basePath || hrefPath, url);
-}
-
-/**
- * 异步调用方法
+}/**
+ * 异步调用方法 
  */
 function core_asyncCall(fn, args) {
     setTimeout(function() {
         fn.apply(undefined, args);
     });
 }
-/**
+/** 
  * 资源队列管理
  * @params
  * url 请求资源地址
- * succ
+ * succ 
  * err
  * access 是否成功
  * data 资源数据
@@ -2738,9 +2655,7 @@ function resource_queue_run(url, access, data){
 }
 function resource_queue_del(url) {
     url in resource_queue_list && (delete resource_queue_list[url]);
-}
-
-/**
+}/**
  * make an ajax request
  * @alias loader_ajax
  * @param {Object}  {
@@ -2756,7 +2671,7 @@ function resource_queue_del(url) {
         'contentType': 'application/x-www-form-urlencoded',
         'responseType': 'text'// xml or text or json
     };
- * @return {Void}
+ * @return {Void} 
  * @example
  * loader_ajax(url, {//'url':'/ajax.php',
     'args':{'id':123,'test':'true'},
@@ -2868,15 +2783,15 @@ function loader_ajax(url, onComplete, onFail){//(url, callback)
         var _XHR = false;
         try {
             _XHR = new XMLHttpRequest();
-        }
+        } 
         catch (try_MS) {
             try {
                 _XHR = new ActiveXObject("Msxml2.XMLHTTP");
-            }
+            } 
             catch (other_MS) {
                 try {
                     _XHR = new ActiveXObject("Microsoft.XMLHTTP");
-                }
+                } 
                 catch (failed) {
                     _XHR = false;
                 }
@@ -3003,7 +2918,7 @@ function resource_preLoad_setRes(url, type, complete, success, fail) {
 }
 /**
  * 得到预加载的资源
- * @param  {string} url
+ * @param  {string} url 
  */
 function resource_preLoad_get(url) {
     return resource_preLoad_resMap[url];
@@ -3067,12 +2982,7 @@ function loader_js(url, callback){
         }, opts.timeout);
     }
     return js;
-}
-
-
-
-
-
+}
 var core_hideDiv_hideDiv;
 /*
  * 向隐藏容器添加节点
@@ -3095,8 +3005,7 @@ function core_hideDiv_appendChild( el ) {
  */
 function core_hideDiv_removeChild( el ) {
 	core_hideDiv_hideDiv && core_hideDiv_hideDiv.removeChild( el );
-}
-
+}
 function loader_css(url, callback, load_ID) {
     var load_div = null;
     var domID = core_uniqueKey();
@@ -3144,8 +3053,7 @@ function loader_css_remove(load_ID) {
         return true;
     }
     return false;
-}
-
+}
 var resource_res_cssPrefix = 'S_CSS_';
 var resource_res = {
     js: function(name, succ, err) {
@@ -3215,12 +3123,7 @@ function resource_res_do(type, name, succ, err) {
 }
 function resource_res_getCssId(path) {
     return path && resource_res_cssPrefix + path.replace(/(\.css)$/i, '').replace(/\//g, '_');
-}
-
-
-
-
-
+}
 //外部异步调用require方法
 function require_global(deps, complete, errcb, currNs, runDeps) {
     var depNs;
@@ -3273,12 +3176,7 @@ function require_global(deps, complete, errcb, currNs, runDeps) {
             });
         }
     }
-}
-
-
-
-
-
+}
 //内部同步调用require方法
 function require_runner_makeRequire(currNs) {
     var basePath = core_urlFolder(currNs);
@@ -3326,9 +3224,7 @@ function require_runner(pkg, basePath) {
         }
     }
     return resultList;
-}
-
-
+}
 //全局define
 function require_define(ns, deps, construtor) {
     if (require_base_module_defined[ns]) {
@@ -3350,13 +3246,8 @@ function require_define(ns, deps, construtor) {
         core_notice_trigger(require_base_event_defined, ns);
         log('Debug: define ns("' + ns + '")');
     }
-}
-
-
-
-
-
-//暂不做
+}
+ //暂不做
 var resource_config_slash = '/';
 config_push(function (parseParamFn) {
     resource_jsPath = parseParamFn('jsPath', resource_jsPath);
@@ -3369,15 +3260,13 @@ config_push(function (parseParamFn) {
 function resource_boot() {
     resource_preLoad_bootLoad();
 }
-
-/**
+ /**
  * 渲染管理器的主页面
  */
 var render_render_stage = {
     getBox: render_stage_getBox,
     getScrollBox: render_stage_getScrollBox
-};
-
+};
 config_push(function(parseParamFn) {
     if (isHTML5) {
         render_base_dataCache_usable = parseParamFn('dataCache', render_base_dataCache_usable);
@@ -3394,38 +3283,28 @@ config_push(function(parseParamFn) {
         }
     }
     render_base_useCssPrefix_usable = parseParamFn('useCssPrefix', render_base_useCssPrefix_usable);
-});
-/**
+});/**
  * 渲染的启动入口
  */
 function render_boot() {
     render_stage_init();
 }
-
-/**
+ /**
  * 路由配置
- */
-
-
+ */
 config_push(router_config);
 function router_config(parseParamFn, config) {
   router_base_routerTable = parseParamFn('router', router_base_routerTable);
   // @Finrila hash模式处理不可用状态，先下掉
   // router_base_useHash = parseParamFn('useHash', router_base_useHash);
   router_base_singlePage = isHTML5 ? parseParamFn('singlePage', router_base_singlePage) : false;
-}
-
-
-/**
+}/**
  * 路由启动接口
  * 1、设置侦听
  * 2、主动响应第一次的url(第一次是由后端渲染的，如果没有真实文件，无法启动页面)
  *
  */
-
-
-
-/**
+/**
  * router.use
  * 设置单条路由规则
  * 路由语法说明：
@@ -3433,9 +3312,7 @@ function router_config(parseParamFn, config) {
  * 2、支持query和hash
  * 3、低版浏览器支持用hash模式来设置路由
  */
-
-
-/**
+/**
  * Turn an Express-style path string such as /user/:name into a regular expression.
  *
  */
