@@ -39,7 +39,7 @@ function render_control_setLogic(resContainer) {
             require_global(logic, cb, function() {
                 render_error();
                 render_control_triggerError(resContainer, 'logic', logic);
-            }, controllerNs);
+            });
         }
     }
 }

@@ -6,6 +6,7 @@
 //import core/object/typeof
 //import core/dom/getAttribute
 //import core/object/clone
+//import core/nameSpaceFix
 //import core/dom/removeNode
 //import render/control/setChildren
 //import render/control/setCss
@@ -46,6 +47,7 @@ function render_control_main(boxId) {
     };
     var box = getElementById(boxId);
     var dealCalledByUser;
+    var controllerNs = render_base_controllerNs[boxId];
 
     //状态类型 newset|loading|ready
     //tpl,css,data,logic,children,render,
@@ -75,6 +77,7 @@ function render_control_main(boxId) {
                 }
                 return;
             }
+            value = core_nameSpaceFix(value, controllerNs);
             changeResList[type] = render_control_checkResChanged(resContainer, type, value);
             resContainer[type] = value;
             if (changeResList[type] && toDeal) {
@@ -144,6 +147,7 @@ function render_control_main(boxId) {
             if (box) {
                 attrValue = core_dom_getAttribute(box, 's-' + type);
                 if (attrValue) {
+                    attrValue = core_nameSpaceFix(attrValue, controllerNs);
                     if (render_control_checkResChanged(resContainer, type, attrValue)) {
                         changeResList[type] = true;
                         resContainer[type] = attrValue;

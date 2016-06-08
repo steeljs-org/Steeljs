@@ -26,7 +26,7 @@ function render_control_setCss(resContainer) {
     var box;
     var cssId;
     var controllerNs = render_base_controllerNs[boxId];
-    var css = core_nameSpaceFix(resContainer.css, controllerNs);
+    var css = resContainer.css;
     //给模块添加css前缀
     if (render_base_useCssPrefix_usable && (box = getElementById(boxId)) && (cssId = resource_res_getCssId(css))) {
         core_dom_className(box, cssId);
@@ -65,8 +65,7 @@ function render_control_setCss(resContainer) {
 
 function render_control_setCss_destroyCss(resContainer, excludeSelf) {
     var boxId = resContainer.boxId;
-    var controllerNs = render_base_controllerNs[boxId];
-    var excludeCss = excludeSelf && core_nameSpaceFix(resContainer.css, controllerNs);
+    var excludeCss = excludeSelf && resContainer.css;
     for(var css in render_control_setCss_cssCache) {
         if (excludeCss === css) {
             continue;

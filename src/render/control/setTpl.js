@@ -37,7 +37,7 @@ function render_control_setTpl(resContainer) {
         require_global(tpl, cb, function() {
             render_error();
             render_control_triggerError(resContainer, 'tpl', tpl);
-        }, controllerNs);
+        });
     }
 }
 

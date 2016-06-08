@@ -38,7 +38,7 @@ function render_control_setComponent(resContainer) {
         require_global(component, cb, function() {
             render_error();
             render_control_triggerError(resContainer, 'component', component);
-        }, controllerNs);
+        });
     }
 }
 
