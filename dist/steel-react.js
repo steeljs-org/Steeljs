@@ -856,7 +856,27 @@ function core_object_clone( obj ) {
 	}
 	return ret;
 }
-/*
+/**
+ * 获取 url 的目录地址
+ */
+function core_urlFolder(url){
+    return url.substr(0, url.lastIndexOf('/') + 1);
+}
+/**
+ * 命名空间的适应
+ */
+function core_nameSpaceFix(id, basePath) {
+    basePath = basePath && core_urlFolder(basePath);
+    if (id) {
+        if (id.indexOf('.') === 0) {
+            id = basePath ? (basePath + id).replace(/\/\.\//, '/') : id.replace(/^\.\//, '');
+        }
+        while (id.indexOf('../') !== -1) {
+            id = id.replace(/\w+\/\.\.\//, '');
+        }
+    }
+    return id;
+}/*
  * 返回指定ID或者DOM的节点句柄
  * @method core_dom_removeNode
  * @private
@@ -910,7 +930,7 @@ function render_control_setLogic(resContainer) {
             require_global(logic, cb, function() {
                 render_error();
                 render_control_triggerError(resContainer, 'logic', logic);
-            }, controllerNs);
+            });
         }
     }
 }
@@ -1697,27 +1717,6 @@ function render_control_component_render(resContainer) {
     render_control_setCss_destroyCss(resContainer, true);
     render_control_triggerRendered(boxId);
 }
-/**
- * 获取 url 的目录地址
- */
-function core_urlFolder(url){
-    return url.substr(0, url.lastIndexOf('/') + 1);
-}
-/**
- * 命名空间的适应
- */
-function core_nameSpaceFix(id, basePath) {
-    basePath = basePath && core_urlFolder(basePath);
-    if (id) {
-        if (id.indexOf('.') === 0) {
-            id = basePath ? (basePath + id).replace(/\/\.\//, '/') : id.replace(/^\.\//, '');
-        }
-        while (id.indexOf('../') !== -1) {
-            id = id.replace(/\w+\/\.\.\//, '');
-        }
-    }
-    return id;
-}
 var render_control_setCss_cssCache = {};//css容器
 var render_control_setCss_cssCallbackFn;
 function render_control_setCss(resContainer) {
@@ -1733,7 +1732,7 @@ function render_control_setCss(resContainer) {
     var box;
     var cssId;
     var controllerNs = render_base_controllerNs[boxId];
-    var css = core_nameSpaceFix(resContainer.css, controllerNs);
+    var css = resContainer.css;
     //给模块添加css前缀
     if (render_base_useCssPrefix_usable && (box = getElementById(boxId)) && (cssId = resource_res_getCssId(css))) {
         core_dom_className(box, cssId);
@@ -1769,8 +1768,7 @@ function render_control_setCss(resContainer) {
 }
 function render_control_setCss_destroyCss(resContainer, excludeSelf) {
     var boxId = resContainer.boxId;
-    var controllerNs = render_base_controllerNs[boxId];
-    var excludeCss = excludeSelf && core_nameSpaceFix(resContainer.css, controllerNs);
+    var excludeCss = excludeSelf && resContainer.css;
     for(var css in render_control_setCss_cssCache) {
         if (excludeCss === css) {
             continue;
@@ -1829,7 +1827,7 @@ function render_control_setTpl(resContainer) {
         require_global(tpl, cb, function() {
             render_error();
             render_control_triggerError(resContainer, 'tpl', tpl);
-        }, controllerNs);
+        });
     }
 }
 function render_control_setTpl_toRender(resContainer) {
@@ -1985,7 +1983,7 @@ function render_control_setComponent(resContainer) {
         require_global(component, cb, function() {
             render_error();
             render_control_triggerError(resContainer, 'component', component);
-        }, controllerNs);
+        });
     }
 }
 function render_control_setComponent_toRender(resContainer) {
@@ -2041,6 +2039,7 @@ function render_control_main(boxId) {
     };
     var box = getElementById(boxId);
     var dealCalledByUser;
+    var controllerNs = render_base_controllerNs[boxId];
     //状态类型 newset|loading|ready
     //tpl,css,data,logic,children,render,
     //tplReady,cssReady,dataReady,logicReady,rendered,logicRunned
@@ -2066,6 +2065,9 @@ function render_control_main(boxId) {
                     deal();
                 }
                 return;
+            }
+            if (typeof value === 'string') {
+                value = core_nameSpaceFix(value, controllerNs);
             }
             changeResList[type] = render_control_checkResChanged(resContainer, type, value);
             resContainer[type] = value;
@@ -2129,6 +2131,7 @@ function render_control_main(boxId) {
             if (box) {
                 attrValue = core_dom_getAttribute(box, 's-' + type);
                 if (attrValue) {
+                    attrValue = core_nameSpaceFix(attrValue, controllerNs);
                     if (render_control_checkResChanged(resContainer, type, attrValue)) {
                         changeResList[type] = true;
                         resContainer[type] = attrValue;
