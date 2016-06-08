@@ -77,7 +77,9 @@ function render_control_main(boxId) {
                 }
                 return;
             }
-            value = core_nameSpaceFix(value, controllerNs);
+            if (typeof value === 'string') {
+                value = core_nameSpaceFix(value, controllerNs);
+            }
             changeResList[type] = render_control_checkResChanged(resContainer, type, value);
             resContainer[type] = value;
             if (changeResList[type] && toDeal) {
